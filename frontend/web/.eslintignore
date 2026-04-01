@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+*.css
+*.json
+*.svg
+*.png
+*.jpg
+*.ico
