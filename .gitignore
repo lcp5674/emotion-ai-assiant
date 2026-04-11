@@ -55,3 +55,17 @@ logs/
 
 # Docker
 docker-compose.override.yml
+
+# 部署相关敏感文件
+deploy/ssl/
+deploy/backup/
+deploy/logs/
+*.sql
+*.sql.gz
+*.tar.gz
+*.pem
+*.key
+*.crt
+
+# 上传文件
+backend/uploads/

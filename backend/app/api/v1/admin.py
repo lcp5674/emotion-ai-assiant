@@ -3,7 +3,7 @@ Admin API - 系统管理
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, desc
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timedelta, date
@@ -12,7 +12,7 @@ import loguru
 
 from app.core.database import get_db
 from app.api.deps import get_current_user
-from app.models import User, SystemConfig, Conversation, Message, EmotionDiary, MbtiResult
+from app.models import User, SystemConfig, Conversation, Message, EmotionDiary, MbtiResult, ContentAuditQueue
 from app.models.user import MemberLevel
 from app.models.chat import ConversationStatus
 
@@ -610,4 +610,113 @@ async def get_daily_stats(
         message_counts=message_counts,
         conversation_counts=conversation_counts,
     )
+
+
+# ============ 内容审核 ============
+
+class AuditQueueListResponse(BaseModel):
+    total: int
+    list: List[dict]
+
+
+@router.get("/audit-queue", summary="获取待审核内容列表")
+async def get_audit_queue(
+    status: Optional[str] = Query("pending", description="状态筛选: pending/processing/approved/rejected"),
+    risk_level: Optional[str] = Query(None, description="风险等级筛选"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """获取内容审核队列"""
+    query = db.query(ContentAuditQueue)
+
+    if status:
+        query = query.filter(ContentAuditQueue.status == status)
+    if risk_level:
+        query = query.filter(ContentAuditQueue.risk_level == risk_level)
+
+    total = query.count()
+    items = query.order_by(desc(ContentAuditQueue.created_at)).offset(
+        (page - 1) * page_size
+    ).limit(page_size).all()
+
+    result = []
+    for item in items:
+        result.append({
+            "id": item.id,
+            "user_id": item.user_id,
+            "content_type": item.content_type,
+            "content_id": item.content_id,
+            "content_text": item.content_text[:200] + ("..." if len(item.content_text) > 200 else ""),
+            "risk_level": item.risk_level,
+            "categories": item.categories,
+            "detected_keywords": item.detected_keywords,
+            "confidence": item.confidence,
+            "status": item.status,
+            "reviewed_by": item.reviewed_by,
+            "reviewed_at": item.reviewed_at,
+            "review_note": item.review_note,
+            "created_at": item.created_at,
+        })
+
+    return AuditQueueListResponse(total=total, list=result)
+
+
+class AuditReviewRequest(BaseModel):
+    status: str
+    note: Optional[str] = None
+
+
+@router.post("/audit-queue/{item_id}/review", summary="审核内容")
+async def review_audit_item(
+    item_id: int,
+    request: AuditReviewRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """审核内容项"""
+    item = db.query(ContentAuditQueue).filter(ContentAuditQueue.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="审核项不存在")
+
+    item.status = request.status
+    item.reviewed_by = current_user.id
+    item.reviewed_at = datetime.now()
+    item.review_note = request.note
+
+    db.commit()
+
+    return {
+        "message": f"已审核，状态更新为: {request.status}",
+        "id": item_id,
+    }
+
+
+@router.get("/audit-queue/stats", summary="获取审核统计")
+async def get_audit_stats(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """获取审核队列统计"""
+    pending = db.query(ContentAuditQueue).filter(
+        ContentAuditQueue.status == "pending"
+    ).count()
+    processing = db.query(ContentAuditQueue).filter(
+        ContentAuditQueue.status == "processing"
+    ).count()
+    approved = db.query(ContentAuditQueue).filter(
+        ContentAuditQueue.status == "approved"
+    ).count()
+    rejected = db.query(ContentAuditQueue).filter(
+        ContentAuditQueue.status == "rejected"
+    ).count()
+
+    return {
+        "pending": pending,
+        "processing": processing,
+        "approved": approved,
+        "rejected": rejected,
+        "total": pending + processing + approved + rejected,
+    }
 

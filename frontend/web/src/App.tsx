@@ -23,6 +23,9 @@ const DiaryList = lazy(() => import('./views/diary'))
 const DiaryDetail = lazy(() => import('./views/diary/detail'))
 const DiaryCreate = lazy(() => import('./views/diary/create'))
 const DiaryStats = lazy(() => import('./views/diary/stats'))
+const Onboarding = lazy(() => import('./views/onboarding'))
+const PrivacyPage = lazy(() => import('./views/privacy'))
+const CrisisPage = lazy(() => import('./views/crisis'))
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme()
@@ -68,6 +71,9 @@ function AppRoutes() {
       <Route path="/diary/:id" element={<DiaryDetail />} />
       <Route path="/diary/:id/edit" element={<DiaryCreate />} />
       <Route path="/diary/stats" element={<DiaryStats />} />
+      <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/crisis" element={<CrisisPage />} />
     </Routes>
   )
 }

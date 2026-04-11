@@ -1,4 +1,7 @@
 # 情感日记相关API
+import pytest
+from unittest.mock import patch, MagicMock
+from fastapi import APIRouter
 from app.schemas.diary import (
     DiaryCreate,
     DiaryUpdate,

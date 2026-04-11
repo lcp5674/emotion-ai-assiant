@@ -148,13 +148,18 @@ class MemberOrder(Base):
     duration = Column(Integer, nullable=False, comment="时长(天)")
 
     # 支付
-    payment_method = Column(String(20), nullable=True, comment="支付方式")
+    payment_method = Column(String(20), nullable=True, comment="支付方式(wechat/alipay/stripe)")
+    transaction_id = Column(String(100), nullable=True, comment="支付平台交易号")
     paid_at = Column(DateTime, nullable=True, comment="支付时间")
 
     # 状态
     status = Column(String(20), default="pending", comment="状态(pending/paid/cancelled/refunded)")
+    refund_amount = Column(Integer, default=0, comment="退款金额(分)")
+    refund_at = Column(DateTime, nullable=True, comment="退款时间")
+    refund_reason = Column(String(500), nullable=True, comment="退款原因")
 
     created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
 
     # 关系
     user = relationship("User", back_populates="members")

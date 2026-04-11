@@ -234,6 +234,64 @@ body {
   .text-base {
     font-size: var(--font-size-base);
   }
+
+  /* 按钮移动端适配 */
+  .ant-btn {
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  /* 输入框移动端适配 */
+  .ant-input,
+  .ant-input-textarea {
+    font-size: 16px;
+  }
+
+  /* 减少移动端padding */
+  .ant-card-body {
+    padding: 16px;
+  }
+
+  /* 导航栏移动端适配 */
+  header .container {
+    padding: 0 8px;
+  }
+
+  /* 内容区域移动端间距调整 */
+  section {
+    padding: 32px 0 !important;
+  }
+}
+
+/* 平板适配 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    max-width: 90%;
+  }
+}
+
+/* 大屏幕适配 */
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1320px;
+  }
+}
+
+/* 深色模式适配 */
+.dark {
+  body {
+    background-color: #141414;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .ant-card {
+    background-color: #1f1f1f;
+    border-color: #434343;
+  }
+
+  .ant-list-item {
+    border-bottom-color: #434343;
+  }
 }
 
 /* 可访问性优化 */

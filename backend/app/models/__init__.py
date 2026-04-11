@@ -15,6 +15,9 @@ from app.models.knowledge import (
 )
 from app.models.system import SystemConfig
 from app.models.diary import EmotionDiary, MoodRecord, DiaryTag, MoodLevel, EmotionType
+from app.models.user_memory import UserLongTermMemory, UserMemoryInsight, UserPreference, MemoryType, MemoryImportance
+from app.models.content_audit import ContentAuditQueue
+from app.models.growth import Badge, UserBadge, UserLevel, ExpRecord, GrowthTask, BadgeRarity
 
 __all__ = [
     "User",
@@ -43,4 +46,16 @@ __all__ = [
     "DiaryTag",
     "MoodLevel",
     "EmotionType",
+    "UserLongTermMemory",
+    "UserMemoryInsight",
+    "UserPreference",
+    "MemoryType",
+    "MemoryImportance",
+    "ContentAuditQueue",
+    "Badge",
+    "UserBadge",
+    "UserLevel",
+    "ExpRecord",
+    "GrowthTask",
+    "BadgeRarity",
 ]

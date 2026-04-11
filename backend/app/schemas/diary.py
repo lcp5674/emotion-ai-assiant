@@ -3,7 +3,7 @@
 """
 
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import date, datetime
 
 
@@ -116,6 +116,12 @@ class DiarySummarySchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator('date', mode='before')
+    def format_date(cls, v):
+        if isinstance(v, date):
+            return v.isoformat()
+        return v
+
     class Config:
         from_attributes = True
 
@@ -141,6 +147,12 @@ class DiaryDetailSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator('date', mode='before')
+    def format_date(cls, v):
+        if isinstance(v, date):
+            return v.isoformat()
+        return v
+
     class Config:
         from_attributes = True
 
@@ -161,6 +173,12 @@ class MoodTrendPoint(BaseModel):
     mood_level: Optional[str] = None
     primary_emotion: Optional[str] = None
     count: int = 1
+    
+    @field_validator('date', mode='before')
+    def format_date(cls, v):
+        if isinstance(v, date):
+            return v.isoformat()
+        return v
 
 
 class MoodTrendResponse(BaseModel):

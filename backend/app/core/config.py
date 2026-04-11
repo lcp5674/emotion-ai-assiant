@@ -125,6 +125,29 @@ class Settings(BaseSettings):
     STRIPE_API_KEY: Optional[str] = None
     STRIPE_WEBHOOK_SECRET: Optional[str] = None
 
+    # 支付宝支付配置
+    ALIPAY_ENABLED: bool = False
+    ALIPAY_APPID: str = ""
+    ALIPAY_PRIVATE_KEY_PATH: str = ""
+    ALIPAY_PUBLIC_KEY_PATH: str = ""
+    ALIPAY_GATEWAY: str = "https://openapi.alipay.com/gateway.do"
+    ALIPAY_NOTIFY_URL: str = ""
+    ALIPAY_RETURN_URL: str = ""
+
+    # 语音服务配置
+    VOICE_PROVIDER: str = "mock"  # mock/alibaba/baidu/openai/tencent
+    
+    # 阿里云语音
+    ALIBABA_VOICE_APP_KEY: str = ""
+    
+    # 百度语音
+    BAIDU_VOICE_API_KEY: Optional[str] = None
+    BAIDU_VOICE_SECRET_KEY: Optional[str] = None
+    
+    # 腾讯云语音
+    TENCENT_VOICE_SECRET_ID: Optional[str] = None
+    TENCENT_VOICE_SECRET_KEY: Optional[str] = None
+
     # API基础URL (用于支付回调)
     API_BASE_URL: str = "http://localhost:3000"
 

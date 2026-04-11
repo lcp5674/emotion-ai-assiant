@@ -198,6 +198,8 @@ export const api = {
 
   // 支付
   payment: {
+    plans: (): Promise<any> => request.get('/payment/plans'),
+    currentMembership: (): Promise<any> => request.get('/payment/current-membership'),
     wechat: {
       createOrder: (level: string): Promise<any> => 
         request.post('/payment/wechat/native', { level }),
@@ -212,5 +214,32 @@ export const api = {
       complete: (orderNo: string): Promise<any> => 
         request.post(`/payment/mock/${orderNo}/complete`),
     },
+  },
+
+  // 新增的API
+  user: {
+    onboardingStatus: (): Promise<any> => request.get('/user/onboarding-status'),
+    markOnboardingStep: (data: { step: string }): Promise<any> => 
+      request.post('/user/mark-onboarding-step', data),
+    privacyInfo: (): Promise<any> => request.get('/user/privacy-info'),
+    exportData: (): Promise<any> => request.get('/user/export-data'),
+    deleteAccount: (password: string): Promise<any> => 
+      request.post('/user/delete-account', { password }),
+  },
+
+  // 危机资源
+  auth: {
+    crisisResources: (): Promise<any> => request.get('/auth/crisis-resources'),
+  },
+
+  // 日记分享
+  diary: {
+    shareImage: (time_range: string = 'week'): Promise<any> => 
+      request.get('/diary/trend/share-image', { params: { time_range } }),
+  },
+
+  // 隐私政策
+  diary: {
+    privacyPolicy: (): Promise<any> => request.get('/diary/privacy-policy'),
   },
 }

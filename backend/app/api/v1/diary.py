@@ -39,7 +39,7 @@ async def create_diary(
     diary_service = get_diary_service()
 
     try:
-        diary = diary_service.create_diary(db, current_user.id, request)
+        diary = await diary_service.create_diary(db, current_user.id, request)
         return DiaryDetailSchema.from_orm(diary)
 
     except ValueError as e:
@@ -53,6 +53,76 @@ async def create_diary(
             detail=f"创建日记失败: {str(e)}",
         )
 
+
+# ============ 统计和分析 ============
+
+@router.get("/stats", summary="获取日记统计", response_model=DiaryStatsResponse)
+async def get_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取日记统计数据"""
+    diary_service = get_diary_service()
+
+    stats = diary_service.get_stats(db, current_user.id)
+
+    return DiaryStatsResponse(
+        total_count=stats["total_count"],
+        current_streak=stats["current_streak"],
+        max_streak=stats["max_streak"],
+        avg_mood=stats["avg_mood"],
+        most_common_emotion=stats["most_common_emotion"],
+        avg_words_per_day=stats["avg_words_per_day"],
+        categories=stats["categories"],
+        this_month_count=stats["this_month_count"],
+        last_month_count=stats["last_month_count"],
+    )
+
+
+@router.get("/trend", summary="获取心情趋势", response_model=MoodTrendResponse)
+async def get_mood_trend(
+    time_range: str = Query("week", description="时间范围: week/month/quarter/year"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取心情变化趋势"""
+    valid_ranges = {"week", "month", "quarter", "year"}
+    if time_range not in valid_ranges:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{time_range} 不是有效的时间范围，应使用 week/month/quarter/year",
+        )
+
+    diary_service = get_diary_service()
+
+    trend = diary_service.get_mood_trend(db, current_user.id, time_range)
+
+    return MoodTrendResponse(
+        time_range=trend["time_range"],
+        start_date=trend["start_date"],
+        end_date=trend["end_date"],
+        avg_score=trend["avg_score"],
+        trend_data=trend["trend_data"],
+        emotion_distribution=trend["emotion_distribution"],
+        mood_distribution=trend["mood_distribution"],
+    )
+
+
+@router.get("/emotion-config", summary="获取情绪配置")
+async def get_emotion_config():
+    """获取情绪配置信息"""
+    from app.services.diary_service import DiaryService
+    return list(DiaryService.EMOTION_CONFIGS.values())
+
+
+@router.get("/mood-config", summary="获取心情配置")
+async def get_mood_config():
+    """获取心情等级配置信息"""
+    from app.services.diary_service import DiaryService
+    return list(DiaryService.MOOD_CONFIGS.values())
+
+
+# ============ 日记操作 ============
 
 @router.get("/{diary_id}", summary="获取日记详情", response_model=DiaryDetailSchema)
 async def get_diary(
@@ -167,7 +237,7 @@ async def update_diary(
     """更新日记内容"""
     diary_service = get_diary_service()
 
-    diary = diary_service.update_diary(db, current_user.id, diary_id, request)
+    diary = await diary_service.update_diary(db, current_user.id, diary_id, request)
 
     if not diary:
         raise HTTPException(
@@ -344,59 +414,7 @@ async def delete_tag(
     return {"message": "标签已删除"}
 
 
-# ============ 统计和分析 ============
-
-@router.get("/stats", summary="获取日记统计", response_model=DiaryStatsResponse)
-async def get_stats(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """获取日记统计数据"""
-    diary_service = get_diary_service()
-
-    stats = diary_service.get_stats(db, current_user.id)
-
-    return DiaryStatsResponse(
-        total_count=stats["total_count"],
-        current_streak=stats["current_streak"],
-        max_streak=stats["max_streak"],
-        avg_mood=stats["avg_mood"],
-        most_common_emotion=stats["most_common_emotion"],
-        avg_words_per_day=stats["avg_words_per_day"],
-        categories=stats["categories"],
-        this_month_count=stats["this_month_count"],
-        last_month_count=stats["last_month_count"],
-    )
-
-
-@router.get("/trend", summary="获取心情趋势", response_model=MoodTrendResponse)
-async def get_mood_trend(
-    time_range: str = Query("week", description="时间范围: week/month/quarter/year"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """获取心情变化趋势"""
-    valid_ranges = {"week", "month", "quarter", "year"}
-    if time_range not in valid_ranges:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{time_range} 不是有效的时间范围，应使用 week/month/quarter/year",
-        )
-
-    diary_service = get_diary_service()
-
-    trend = diary_service.get_mood_trend(db, current_user.id, time_range)
-
-    return MoodTrendResponse(
-        time_range=trend["time_range"],
-        start_date=trend["start_date"],
-        end_date=trend["end_date"],
-        avg_score=trend["avg_score"],
-        trend_data=trend["trend_data"],
-        emotion_distribution=trend["emotion_distribution"],
-        mood_distribution=trend["mood_distribution"],
-    )
-
+# ============ AI分析 ============
 
 @router.post("/analyze/{diary_id}", summary="AI分析日记", response_model=AnalysisResponse)
 async def analyze_diary(
@@ -434,17 +452,67 @@ async def analyze_diary(
         )
 
 
-# ============ 配置 ============
+@router.get("/trend/share-image", summary="生成情绪趋势分享图片")
+async def generate_mood_trend_share_image(
+    time_range: str = Query("week", description="时间范围: week/month/quarter/year"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """生成情绪趋势分享图片"""
+    from app.services.diary_service import get_diary_service
+    
+    diary_service = get_diary_service()
+    trend = diary_service.get_mood_trend(db, current_user.id, time_range)
+    
+    # 生成分享图片数据
+    share_data = {
+        "username": current_user.nickname or "用户",
+        "time_range": trend["time_range"],
+        "avg_score": trend["avg_score"],
+        "trend_data": trend["trend_data"],
+        "emotion_distribution": trend["emotion_distribution"],
+        "mood_distribution": trend["mood_distribution"],
+        "generated_at": datetime.now().isoformat(),
+    }
+    
+    return share_data
 
-@router.get("/emotion-config", summary="获取情绪配置")
-async def get_emotion_config():
-    """获取情绪配置信息"""
-    from app.services.diary_service import DiaryService
-    return list(DiaryService.EMOTION_CONFIGS.values())
+
+@router.get("/privacy-policy", summary="获取隐私政策")
+async def get_privacy_policy():
+    """获取数据隐私说明"""
+    return {
+        "title": "数据隐私保护说明",
+        "content": """
+<h2>数据隐私保护说明</h2>
+<p>我们非常重视您的数据隐私保护：</p>
+<ul>
+  <li><strong>数据所有权：</strong>您记录的所有数据（日记、心情、MBTI结果）都完全属于您</li>
+  <li><strong>加密存储：</strong>您的个人数据采用加密方式存储，只有您本人可以访问</li>
+  <li><strong>AI处理说明：</strong>当您使用AI功能时，内容会被发送给AI服务商处理，我们不会将您的数据用于其他用途</li>
+  <li><strong>第三方分享：</strong>我们绝不会将您的个人数据出售或分享给第三方用于广告或营销目的</li>
+  <li><strong>数据导出：</strong>您可以随时导出或删除您的所有个人数据</li>
+  <li><strong>本地优先：</strong>在技术允许的范围内，我们优先采用本地处理的方式保护您的隐私</li>
+</ul>
+<h3>数据使用范围</h3>
+<p>我们仅在以下情况使用您的数据：</p>
+<ul>
+  <li>为您提供AI情感陪伴服务</li>
+  <li>生成您的情绪统计和成长报告</li>
+  <li>改进和优化服务质量</li>
+  <li>遵循法律法规要求</li>
+</ul>
+        """.strip(),
+        "last_updated": "2024-01-01",
+        "version": "1.0"
+    }
 
 
-@router.get("/mood-config", summary="获取心情配置")
-async def get_mood_config():
-    """获取心情等级配置信息"""
-    from app.services.diary_service import DiaryService
-    return list(DiaryService.MOOD_CONFIGS.values())
+@router.get("/terms-of-service", summary="获取用户服务条款")
+async def get_terms_of_service():
+    """获取用户服务条款"""
+    return {
+        "title": "用户服务条款",
+        "last_updated": "2024-01-01",
+        "version": "1.0"
+    }

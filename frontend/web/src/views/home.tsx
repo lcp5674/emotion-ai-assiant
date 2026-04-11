@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Carousel, Card, Row, Col, Spin, Tag } from 'antd'
-import { HeartOutlined, TeamOutlined, BookOutlined, MessageOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons'
+import { Button, Carousel, Card, Row, Col, Spin, Tag, Alert } from 'antd'
+import { HeartOutlined, TeamOutlined, BookOutlined, MessageOutlined, UserOutlined, CalendarOutlined, PhoneOutlined, WarningOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
 
@@ -112,14 +112,14 @@ export default function Home() {
         color: '#fff',
       }}>
         <div className="container">
-          <h2 style={{ fontSize: 42, marginBottom: 16 }}>
+          <h2 style={{ fontSize: 'clamp(28px, 5vw, 42px)', marginBottom: 16 }}>
             你的AI情感伴侣
           </h2>
-          <p style={{ fontSize: 18, marginBottom: 32, opacity: 0.9 }}>
+          <p style={{ fontSize: 'clamp(16px, 3vw, 18px)', marginBottom: 32, opacity: 0.9 }}>
             基于MBTI人格测试，匹配最适合你的AI助手<br />
             随时随地倾听你的心声，陪伴你成长
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
             <Link to="/mbti">
               <Button size="large" style={{ background: '#fff', color: '#722ed1', height: 48, paddingInline: 32 }}>
                 开始测试
@@ -137,7 +137,7 @@ export default function Home() {
       {/* Features */}
       <section style={{ padding: '60px 0', background: '#fafafa' }}>
         <div className="container">
-          <h2 style={{ textAlign: 'center', marginBottom: 40, fontSize: 28 }}>
+          <h2 style={{ textAlign: 'center', marginBottom: 40, fontSize: 'clamp(24px, 4vw, 28px)' }}>
             核心功能
           </h2>
           <Row gutter={[24, 24]}>
@@ -148,7 +148,7 @@ export default function Home() {
                   onClick={() => navigate(feature.path)}
                   style={{ textAlign: 'center', height: '100%' }}
                 >
-                  <div style={{ marginBottom: 16 }}>
+                  <div style={{ marginBottom: 16, position: 'relative' }}>
                     {feature.icon}
                     {feature.tag && (
                       <Tag color={feature.tag === '新功能' ? 'red' : 'orange'} style={{ position: 'absolute', top: 12, right: 12 }}>
@@ -173,7 +173,7 @@ export default function Home() {
               border: 'none',
             }}
           >
-            <Row align="middle" gutter={24}>
+            <Row align="middle" gutter={[24, 16]}>
               <Col flex="auto">
                 <h3 style={{ fontSize: 24, marginBottom: 8 }}>还没有做过MBTI测试？</h3>
                 <p style={{ color: '#8c8c8c', marginBottom: 16 }}>
@@ -185,13 +185,13 @@ export default function Home() {
                   </Button>
                 </Link>
               </Col>
-              <Col>
+              <Col xs={24} sm={6} style={{ textAlign: 'center' }}>
                 <div style={{
                   width: 120,
                   height: 120,
                   borderRadius: '50%',
                   background: 'linear-gradient(135deg, #722ed1 0%, #b37feb 100%)',
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#fff',
@@ -205,6 +205,26 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Crisis Intervention Banner */}
+      {isAuthenticated && (
+        <section style={{ padding: '24px 0' }}>
+          <div className="container">
+            <Alert
+              message="如果你正在经历心理危机，请立即寻求帮助"
+              description="这里有专业的危机干预资源，随时为你提供帮助"
+              type="warning"
+              showIcon
+              icon={<WarningOutlined />}
+              action={
+                <Button danger size="small" icon={<PhoneOutlined />} onClick={() => navigate('/crisis')}>
+                  查看求助资源
+                </Button>
+              }
+            />
+          </div>
+        </section>
+      )}
+
       {/* Footer */}
       <footer style={{
         background: '#262626',
@@ -214,6 +234,15 @@ export default function Home() {
       }}>
         <div className="container">
           <p>© 2024 心灵伴侣AI - 你的AI情感助手</p>
+          <div style={{ marginTop: 16 }}>
+            <Link to="/privacy" style={{ color: '#8c8c8c', marginRight: 16 }}>
+              隐私政策
+            </Link>
+            <span>|</span>
+            <Link to="/crisis" style={{ color: '#8c8c8c', marginLeft: 16 }}>
+              危机求助
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

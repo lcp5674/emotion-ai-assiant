@@ -1,0 +1,49 @@
+# 多阶段构建 - 生产环境
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY package*.json ./
+
+# 安装依赖
+RUN npm ci --only=production --legacy-peer-deps
+
+# 复制源代码
+COPY . .
+
+# 构建参数 - 运行时注入
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+# 构建生产版本
+RUN npm run build
+
+# 生产镜像 - 使用轻量化Nginx
+FROM nginx:alpine
+
+# 安装必要工具
+RUN apk add --no-cache curl
+
+# 复制构建产物
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# 复制Nginx配置
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# 创建健康检查目录
+RUN mkdir -p /usr/share/nginx/html/health \
+    && echo 'ok' > /usr/share/nginx/html/health/index.html
+
+# 调整权限
+RUN chown -R nginx:nginx /usr/share/nginx/html \
+    && chmod -R 755 /usr/share/nginx/html
+
+# 切换到非root用户
+USER nginx
+
+# 暴露端口
+EXPOSE 80
+
+# 启动命令
+CMD ["nginx", "-g", "daemon off;"]

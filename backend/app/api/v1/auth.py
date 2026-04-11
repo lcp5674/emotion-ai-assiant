@@ -228,3 +228,50 @@ async def reset_password(
     await redis_client.delete(key)
 
     return {"message": "密码重置成功"}
+
+
+@router.get("/crisis-resources", summary="获取危机干预资源")
+async def get_crisis_resources():
+    """获取危机干预资源和求助热线"""
+    return {
+        "title": "危机干预求助资源",
+        "description": "如果你正在经历心理危机，请立即寻求帮助",
+        "hotlines": [
+            {
+                "name": "全国心理援助热线",
+                "number": "400-161-9995",
+                "description": "24小时免费心理援助热线",
+                "url": ""
+            },
+            {
+                "name": "北京心理危机研究与干预中心",
+                "number": "800-810-1117",
+                "description": "24小时危机干预热线",
+                "url": ""
+            },
+            {
+                "name": "希望24热线",
+                "number": "400-161-9995",
+                "description": "生命危机干预",
+                "url": "http://www.hope24.org/"
+            }
+        ],
+        "online_resources": [
+            {
+                "name": "简单心理 - 危机干预",
+                "url": "https://www.jiandanxinli.com/crisis"
+            },
+            {
+                "name": "KnowYourself",
+                "url": "https://www.knowyourself.cc/"
+            }
+        ],
+        "urgent_message": "如果你或你身边的人正面临立即的生命危险，请立即拨打120或110求助。",
+        "self_help_tips": [
+            "试着做几次深呼吸，放松身体",
+            "告诉自己：这只是暂时的，情绪会过去的",
+            "联系你信任的朋友或家人，告诉他们你的感受",
+            "离开危险环境，去一个安全的地方",
+            "记住：你值得被帮助，你不孤单"
+        ]
+    }

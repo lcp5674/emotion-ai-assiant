@@ -1,0 +1,266 @@
+version: '3.8'
+
+services:
+  # MySQL数据库 - 生产配置
+  mysql:
+    image: mysql:8.0
+    container_name: emotion-ai-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-emotion_ai}
+      MYSQL_USER: ${MYSQL_USER:-emotion_ai}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deploy/config/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./deploy/backup/mysql:/backup
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  # Redis缓存 - 生产配置
+  redis:
+    image: redis:7-alpine
+    container_name: emotion-ai-redis
+    restart: always
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    volumes:
+      - redis_data:/data
+      - ./deploy/config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "AUTH", "${REDIS_PASSWORD}", "PING"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  # 后端API服务 - 生产配置
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: emotion-ai-backend
+    restart: always
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=${MYSQL_USER:-emotion_ai}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-emotion_ai}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - LOG_LEVEL=info
+      - MAX_WORKERS=${BACKEND_WORKERS:-4}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - backend_logs:/app/logs
+      - ./backend/uploads:/app/uploads
+    networks:
+      - backend
+      - frontend
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # 前端Web服务 - 生产配置
+  web:
+    build:
+      context: ./frontend/web
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-/api}
+    container_name: emotion-ai-web
+    restart: always
+    depends_on:
+      - backend
+    volumes:
+      - web_logs:/var/log/nginx
+    networks:
+      - frontend
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Nginx反向代理 - 生产配置
+  nginx:
+    image: nginx:alpine
+    container_name: emotion-ai-nginx
+    restart: always
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+      - ./frontend/web/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+      - web
+    networks:
+      - frontend
+      - web
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: emotion-ai-prometheus
+    restart: always
+    volumes:
+      - ./deploy/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+    expose:
+      - 9090
+    security_opt:
+      - no-new-privileges:true
+
+  # Grafana可视化
+  grafana:
+    image: grafana/grafana:latest
+    container_name: emotion-ai-grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD is required}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+      - frontend
+    expose:
+      - 3000
+    security_opt:
+      - no-new-privileges:true
+
+  # Node Exporter - 主机监控
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: emotion-ai-node-exporter
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - monitoring
+    expose:
+      - 9100
+    security_opt:
+      - no-new-privileges:true
+
+# 持久化卷
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_logs:
+    driver: local
+  web_logs:
+    driver: local
+  nginx_logs:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# 网络隔离
+networks:
+  web:
+    name: emotion-ai-web
+    driver: bridge
+  frontend:
+    name: emotion-ai-frontend
+    driver: bridge
+    internal: false
+  backend:
+    name: emotion-ai-backend
+    driver: bridge
+    internal: true
+  monitoring:
+    name: emotion-ai-monitoring
+    driver: bridge
+    internal: true

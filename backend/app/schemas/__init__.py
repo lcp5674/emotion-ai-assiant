@@ -50,6 +50,42 @@ from app.schemas.knowledge import (
     ArticleCollectionRequest,
     ArticleLikeRequest,
 )
+from app.schemas.diary import (
+    DiaryCreate,
+    DiaryUpdate,
+    DiaryDetailSchema,
+    DiaryListResponse,
+    DiarySummarySchema,
+    MoodCreate,
+    MoodRecordSchema,
+    TagCreate,
+    TagUpdate,
+    DiaryTagSchema,
+    DiaryQuery,
+    MoodTrendResponse,
+    DiaryStatsResponse,
+    AnalysisResponse,
+)
+from app.schemas.user_memory import (
+    UserMemoryCreate,
+    UserMemoryUpdate,
+    UserMemoryResponse,
+    UserMemoryListResponse,
+    MemoryInsightCreate,
+    MemoryInsightResponse,
+    UserPreferenceSet,
+    UserPreferenceResponse,
+    MemoryStatisticsResponse,
+)
+from app.schemas.growth import (
+    BadgeInfo,
+    UserBadgeInfo,
+    BadgeProgressResponse,
+    UserLevelResponse,
+    ExpRecordResponse,
+    GrowthTaskResponse,
+    SetBadgeDisplayRequest,
+)
 
 __all__ = [
     # user
@@ -97,4 +133,37 @@ __all__ = [
     "AnnouncementSchema",
     "ArticleCollectionRequest",
     "ArticleLikeRequest",
+    # diary
+    "DiaryCreate",
+    "DiaryUpdate",
+    "DiaryDetailSchema",
+    "DiaryListResponse",
+    "DiarySummarySchema",
+    "MoodCreate",
+    "MoodRecordSchema",
+    "TagCreate",
+    "TagUpdate",
+    "DiaryTagSchema",
+    "DiaryQuery",
+    "MoodTrendResponse",
+    "DiaryStatsResponse",
+    "AnalysisResponse",
+    # user memory
+    "UserMemoryCreate",
+    "UserMemoryUpdate",
+    "UserMemoryResponse",
+    "UserMemoryListResponse",
+    "MemoryInsightCreate",
+    "MemoryInsightResponse",
+    "UserPreferenceSet",
+    "UserPreferenceResponse",
+    "MemoryStatisticsResponse",
+    # growth
+    "BadgeInfo",
+    "UserBadgeInfo",
+    "BadgeProgressResponse",
+    "UserLevelResponse",
+    "ExpRecordResponse",
+    "GrowthTaskResponse",
+    "SetBadgeDisplayRequest",
 ]

@@ -46,13 +46,17 @@ class DiaryService:
 
     # ============ 日记操作 ============
 
-    def create_diary(self, db: Session, user_id: int, request: DiaryCreate) -> EmotionDiary:
+    async def create_diary(self, db: Session, user_id: int, request: DiaryCreate) -> EmotionDiary:
         """创建日记"""
+        from datetime import datetime
+        # 转换日期字符串为date对象
+        diary_date = datetime.strptime(request.date, "%Y-%m-%d").date()
+        
         # 检查该日期是否已有日记
         existing = db.query(EmotionDiary).filter(
             and_(
                 EmotionDiary.user_id == user_id,
-                EmotionDiary.date == request.date,
+                EmotionDiary.date == diary_date,
                 EmotionDiary.is_deleted == False,
             )
         ).first()
@@ -64,7 +68,7 @@ class DiaryService:
 
         diary = EmotionDiary(
             user_id=user_id,
-            date=request.date,
+            date=diary_date,
             mood_score=request.mood_score,
             mood_level=MoodLevel(mood_level) if mood_level else None,
             primary_emotion=EmotionType(request.primary_emotion) if request.primary_emotion else None,
@@ -152,7 +156,7 @@ class DiaryService:
 
         return diaries, total
 
-    def update_diary(
+    async def update_diary(
         self,
         db: Session,
         user_id: int,
@@ -169,7 +173,11 @@ class DiaryService:
         update_data = request.model_dump(exclude_unset=True)
 
         if "mood_score" in update_data:
-            update_data["mood_level"] = request.mood_level or self._get_mood_level(request.mood_score)
+            if request.mood_level:
+                update_data["mood_level"] = request.mood_level
+            else:
+                mood_level_str = self._get_mood_level(request.mood_score)
+                update_data["mood_level"] = mood_level_str.upper()
         if "secondary_emotions" in update_data and request.secondary_emotions:
             update_data["secondary_emotions"] = request.secondary_emotions
 
@@ -407,8 +415,8 @@ class DiaryService:
 
         return {
             "time_range": time_range,
-            "start_date": start_date,
-            "end_date": today,
+            "start_date": start_date.isoformat() if start_date else None,
+            "end_date": today.isoformat() if today else None,
             "avg_score": round(avg_score, 2),
             "trend_data": trend_data,
             "emotion_distribution": emotion_distribution,

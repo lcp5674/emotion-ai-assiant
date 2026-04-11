@@ -17,10 +17,58 @@ from app.services.payment_service import get_wechat_pay_service
 router = APIRouter(prefix="/payment", tags=["支付"])
 
 
+@router.get("/plans", summary="获取会员套餐列表")
+async def get_member_plans(
+    current_user: User = Depends(get_current_user),
+):
+    """获取所有可用会员套餐列表"""
+    from app.models.user import User
+    current_info = None
+    if current_user.member_level and current_user.member_level != MemberLevel.FREE:
+        current_info = {
+            "level": current_user.member_level.value,
+            "expire_at": current_user.member_expire_at,
+        }
+    
+    return {
+        "plans": MEMBER_PRICES,
+        "current_member": current_info,
+        "benefits": [
+            {
+                "name": "无限AI对话",
+                "description": "不再限制每日聊天次数，随时倾诉你的心情"
+            },
+            {
+                "name": "深度情绪分析",
+                "description": "AI分析你的情绪变化趋势，生成专业报告"
+            },
+            {
+                "name": "情绪趋势图表",
+                "description": "可视化展示你的情绪变化，助你成长"
+            },
+            {
+                "name": "MBTI深度解析",
+                "description": "更详细的人格特点分析和成长建议"
+            },
+            {
+                "name": "优先客服支持",
+                "description": "更快的问题响应和问题解决"
+            }
+        ]
+    }
+
+
 MEMBER_PRICES = [
-    {"level": "vip", "name": "VIP会员", "price": 2900, "duration": 30},
-    {"level": "svip", "name": "超级会员", "price": 9900, "duration": 90},
-    {"level": "enterprise", "name": "企业会员", "price": 39900, "duration": 365},
+    {"level": "vip", "name": "月度VIP", "price": 2900, "duration": 30, 
+     "description": "解锁所有AI对话功能，无限聊天次数", 
+     "features": ["无限AI对话", "优先AI处理", "基础情绪分析", "MBTI完整报告"]},
+    {"level": "svip", "name": "季度超级VIP", "price": 9900, "duration": 90, 
+     "description": "全部功能开放，享受最佳体验", 
+     "features": ["无限AI对话", "专属AI助手", "完整情绪分析报告", "情绪趋势图表", 
+                 "MBTI深度解析", "无限制成长记录", "优先客服支持"]},
+    {"level": "yearly", "name": "年度会员", "price": 29900, "duration": 365, 
+     "description": "最划算选择，年度优惠", 
+     "features": ["全部SVIP功能", "享受7折优惠", "专属功能优先体验", "一对一顾问咨询"]},
 ]
 
 
@@ -282,3 +330,315 @@ async def stripe_webhook(
             loguru.logger.info(f"Stripe webhook订单 {order_no} 支付成功")
 
     return {"received": True}
+
+
+@router.post("/alipay/page", summary="创建支付宝网页支付订单")
+async def create_alipay_page_order(
+    request: MemberOrderCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    price_info = next((p for p in MEMBER_PRICES if p["level"] == request.level), None)
+    if not price_info:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="无效的会员等级")
+
+    order_no = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8]}"
+
+    order = MemberOrder(
+        user_id=current_user.id,
+        order_no=order_no,
+        level=request.level,
+        amount=price_info["price"],
+        duration=price_info["duration"],
+        status="pending",
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    from app.services.alipay_service import get_alipay_service
+    alipay_service = get_alipay_service()
+    description = f"心灵伴侣AI-{price_info['name']}"
+    # 分转元
+    amount = price_info["price"] / 100
+    
+    result = await alipay_service.create_page_pay_order(
+        order_no=order_no,
+        amount=amount,
+        subject=description,
+    )
+
+    if result.get("mode") in ["alipay", "mock"]:
+        return {
+            "order_no": order_no,
+            "pay_url": result.get("pay_url"),
+            "amount": price_info["price"],
+            "mode": result.get("mode"),
+        }
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="支付创建失败")
+
+
+@router.post("/alipay/wap", summary="创建支付宝手机网站支付订单")
+async def create_alipay_wap_order(
+    request: MemberOrderCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    price_info = next((p for p in MEMBER_PRICES if p["level"] == request.level), None)
+    if not price_info:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="无效的会员等级")
+
+    order_no = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S')}{uuid.uuid4().hex[:8]}"
+
+    order = MemberOrder(
+        user_id=current_user.id,
+        order_no=order_no,
+        level=request.level,
+        amount=price_info["price"],
+        duration=price_info["duration"],
+        status="pending",
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    from app.services.alipay_service import get_alipay_service
+    alipay_service = get_alipay_service()
+    description = f"心灵伴侣AI-{price_info['name']}"
+    # 分转元
+    amount = price_info["price"] / 100
+    
+    result = await alipay_service.create_wap_pay_order(
+        order_no=order_no,
+        amount=amount,
+        subject=description,
+    )
+
+    if result.get("mode") in ["alipay", "mock"]:
+        return {
+            "order_no": order_no,
+            "pay_url": result.get("pay_url"),
+            "amount": price_info["price"],
+            "mode": result.get("mode"),
+        }
+    else:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="支付创建失败")
+
+
+@router.post("/alipay/notify", summary="支付宝支付异步回调")
+async def alipay_notify(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    form_data = await request.form()
+    params = dict(form_data)
+
+    from app.services.alipay_service import get_alipay_service
+    alipay_service = get_alipay_service()
+    
+    if not alipay_service.verify_notify(params):
+        return "failure"
+
+    trade_status = params.get("trade_status")
+    order_no = params.get("out_trade_no")
+    
+    if trade_status == "TRADE_SUCCESS" or trade_status == "TRADE_FINISHED":
+        order = db.query(MemberOrder).filter(MemberOrder.order_no == order_no).first()
+
+        if order and order.status != "paid":
+            order.status = "paid"
+            order.paid_at = datetime.now()
+            order.transaction_id = params.get("trade_no")
+
+            user = db.query(User).filter(User.id == order.user_id).first()
+            if user:
+                user.member_level = MemberLevel[order.level.upper()]
+
+                from datetime import timedelta
+                if user.member_expire_at and user.member_expire_at > datetime.now():
+                    user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
+                else:
+                    user.member_expire_at = datetime.now() + timedelta(days=order.duration)
+
+            db.commit()
+            loguru.logger.info(f"支付宝订单 {order_no} 支付成功")
+
+    return "success"
+
+
+@router.get("/alipay/return", summary="支付宝支付同步跳转")
+async def alipay_return(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    params = dict(request.query_params)
+
+    from app.services.alipay_service import get_alipay_service
+    alipay_service = get_alipay_service()
+    
+    if not alipay_service.verify_return(params):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="支付验证失败")
+
+    order_no = params.get("out_trade_no")
+    order = db.query(MemberOrder).filter(MemberOrder.order_no == order_no).first()
+
+    if order and order.status != "paid":
+        # 同步跳转可能延迟，主动查询订单状态
+        order_result = await alipay_service.query_order(order_no)
+        if order_result and order_result.get("status") in ["TRADE_SUCCESS", "TRADE_FINISHED"]:
+            order.status = "paid"
+            order.paid_at = datetime.now()
+            order.transaction_id = order_result.get("trade_no")
+
+            user = db.query(User).filter(User.id == order.user_id).first()
+            if user:
+                user.member_level = MemberLevel[order.level.upper()]
+
+                from datetime import timedelta
+                if user.member_expire_at and user.member_expire_at > datetime.now():
+                    user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
+                else:
+                    user.member_expire_at = datetime.now() + timedelta(days=order.duration)
+
+            db.commit()
+            loguru.logger.info(f"支付宝订单 {order_no} 支付成功（同步跳转）")
+
+    return {"message": "支付成功", "redirect_url": "/payment/success"}
+
+
+@router.get("/alipay/query/{order_no}", summary="查询支付宝订单状态")
+async def query_alipay_order(
+    order_no: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    order = db.query(MemberOrder).filter(
+        MemberOrder.order_no == order_no,
+        MemberOrder.user_id == current_user.id,
+    ).first()
+
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
+
+    from app.services.alipay_service import get_alipay_service
+    alipay_service = get_alipay_service()
+    
+    # 如果本地状态已支付，直接返回
+    if order.status == "paid":
+        return {
+            "order_no": order.order_no,
+            "status": order.status,
+            "level": order.level,
+            "amount": order.amount,
+            "paid_at": order.paid_at,
+            "transaction_id": order.transaction_id,
+        }
+    
+    # 否则主动查询支付宝
+    result = await alipay_service.query_order(order_no)
+    if result and result.get("status") in ["TRADE_SUCCESS", "TRADE_FINISHED"]:
+        # 更新订单状态
+        order.status = "paid"
+        order.paid_at = datetime.now()
+        order.transaction_id = result.get("trade_no")
+        
+        user = db.query(User).filter(User.id == order.user_id).first()
+        if user:
+            user.member_level = MemberLevel[order.level.upper()]
+
+            from datetime import timedelta
+            if user.member_expire_at and user.member_expire_at > datetime.now():
+                user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
+            else:
+                user.member_expire_at = datetime.now() + timedelta(days=order.duration)
+        
+        db.commit()
+        loguru.logger.info(f"支付宝订单 {order_no} 支付成功（主动查询）")
+        
+        return {
+            "order_no": order.order_no,
+            "status": "paid",
+            "level": order.level,
+            "amount": order.amount,
+            "paid_at": order.paid_at,
+            "transaction_id": order.transaction_id,
+        }
+    
+    return {
+        "order_no": order.order_no,
+        "status": order.status,
+        "level": order.level,
+        "amount": order.amount,
+        "paid_at": order.paid_at,
+        "transaction_id": order.transaction_id,
+    }
+
+
+@router.get("/current-membership", summary="获取当前会员状态")
+async def get_current_membership(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取当前用户会员状态"""
+    from datetime import datetime
+    
+    is_active = False
+    days_remaining = 0
+    
+    if (current_user.member_level != MemberLevel.FREE 
+        and current_user.member_expire_at 
+        and current_user.member_expire_at > datetime.now()):
+        is_active = True
+        days_remaining = (current_user.member_expire_at - datetime.now()).days
+    
+    return {
+        "is_active": is_active,
+        "level": current_user.member_level.value if current_user.member_level else "free",
+        "expire_at": current_user.member_expire_at,
+        "days_remaining": days_remaining,
+        "features_available": {
+            "unlimited_chat": is_active or current_user.member_level != MemberLevel.FREE,
+            "mood_charts": is_active,
+            "advanced_analysis": is_active,
+            "full_mbti_report": is_active,
+        }
+    }
+
+
+@router.get("/order-list", summary="获取用户订单列表")
+async def get_user_order_list(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    page: int = 1,
+    page_size: int = 10,
+):
+    """获取用户的订单列表"""
+    from sqlalchemy import desc
+    
+    query = db.query(MemberOrder).filter(
+        MemberOrder.user_id == current_user.id
+    ).order_by(desc(MemberOrder.created_at))
+    
+    total = query.count()
+    offset = (page - 1) * page_size
+    orders = query.offset(offset).limit(page_size).all()
+    
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_next": page * page_size < total,
+        "orders": [
+            {
+                "order_no": o.order_no,
+                "level": o.level,
+                "amount": o.amount,
+                "duration": o.duration,
+                "status": o.status,
+                "created_at": o.created_at,
+                "paid_at": o.paid_at,
+            }
+            for o in orders
+        ]
+    }

@@ -1,5 +1,38 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+// 类型定义
+declare global {
+  interface Window {
+    SpeechRecognition: SpeechRecognitionConstructor;
+    webkitSpeechRecognition: SpeechRecognitionConstructor;
+  }
+}
+
+interface SpeechRecognitionConstructor {
+  new(): SpeechRecognition;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
 interface VoiceRecognitionHook {
   isListening: boolean;
   transcript: string;
@@ -21,8 +54,8 @@ export function useVoiceRecognition(): VoiceRecognitionHook {
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
+    const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognitionRef.current = new SpeechRecognitionConstructor();
     
     const recognition = recognitionRef.current;
     recognition.continuous = true;
@@ -140,11 +173,4 @@ export function useSpeechSynthesis(): SpeechSynthesisHook {
     speak,
     stop,
   };
-}
-
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
-  }
 }

@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { Input, Button, List, Spin, Empty, Drawer, App } from 'antd'
-import { SendOutlined, ArrowLeftOutlined, UserOutlined, MenuOutlined } from '@ant-design/icons'
+import { SendOutlined, ArrowLeftOutlined, UserOutlined, MenuOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore, useChatStore } from '../stores'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -30,7 +30,10 @@ export default function Chat() {
   const [sending, setSending] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState(sessionId)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [streamingMessage, setStreamingMessage] = useState('')
+  const [tempMessageId, setTempMessageId] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const wsRef = useRef<WebSocket | null>(null)
   const isMobile = useIsMobile()
 
   useEffect(() => {
@@ -43,7 +46,7 @@ export default function Chat() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, streamingMessage])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -70,47 +73,118 @@ export default function Chat() {
     }
   }
 
-  const handleSend = async () => {
+  const closeWebSocket = () => {
+    if (wsRef.current) {
+      wsRef.current.close()
+      wsRef.current = null
+    }
+  }
+
+  const handleSend = useCallback(() => {
     if (!inputValue.trim() || sending) return
 
     const content = inputValue.trim()
     setInputValue('')
     setSending(true)
+    setStreamingMessage('')
 
-    const tempId = Date.now()
+    const userTempId = Date.now()
     addMessage({
-      id: tempId,
+      id: userTempId,
       role: 'user',
       content,
       created_at: new Date().toISOString(),
     } as any)
 
-    try {
-      const res = await api.chat.send({
-        session_id: currentSessionId,
+    // Connect WebSocket
+    const wsUrl = api.websocket.connect(currentSessionId)
+    const ws = new WebSocket(wsUrl)
+    wsRef.current = ws
+
+    const assistantTempId = userTempId + 1
+    setTempMessageId(assistantTempId)
+
+    ws.onopen = () => {
+      // Send message
+      ws.send(JSON.stringify({
         content,
-      })
-
-      if (!currentSessionId && res.session_id) {
-        setCurrentSessionId(res.session_id)
-        navigate(`/chat/${res.session_id}`, { replace: true })
-      }
-
-      addMessage({
-        id: res.assistant_message.id,
-        role: 'assistant',
-        content: res.assistant_message.content,
-        created_at: res.assistant_message.created_at,
-        message_type: 'text',
-        is_collected: false,
-      } as Message)
-
-      loadConversations()
-    } catch (error: any) {
-      message.error(error.response?.data?.detail || '发送失败')
-    } finally {
-      setSending(false)
+        session_id: currentSessionId || null,
+      }))
     }
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        
+        if (data.type === 'start') {
+          // Session started, get session_id
+          if (!currentSessionId && data.session_id) {
+            setCurrentSessionId(data.session_id)
+            navigate(`/chat/${data.session_id}`, { replace: true })
+          }
+        } else if (data.type === 'chunk') {
+          // Streaming chunk
+          setStreamingMessage(prev => prev + data.content)
+        } else if (data.type === 'done') {
+          // Stream finished
+          const fullMessage = data.content || streamingMessage
+          addMessage({
+            id: data.message_id || assistantTempId,
+            role: 'assistant',
+            content: fullMessage,
+            created_at: new Date().toISOString(),
+            message_type: 'text',
+            is_collected: false,
+          } as Message)
+          setStreamingMessage('')
+          setTempMessageId(null)
+          setSending(false)
+          closeWebSocket()
+          loadConversations()
+        } else if (data.type === 'error') {
+          // Error
+          message.error(data.detail || '发送失败')
+          setStreamingMessage('')
+          setTempMessageId(null)
+          setSending(false)
+          closeWebSocket()
+        }
+      } catch (error) {
+        console.error('WebSocket message parse error:', error)
+      }
+    }
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error)
+      message.error('连接失败，请重试')
+      setSending(false)
+      setStreamingMessage('')
+      setTempMessageId(null)
+      closeWebSocket()
+    }
+
+    ws.onclose = () => {
+      // If still sending, make sure we clean up
+      if (sending) {
+        setSending(false)
+        setStreamingMessage('')
+        setTempMessageId(null)
+      }
+      wsRef.current = null
+    }
+  }, [inputValue, currentSessionId, sending, addMessage, navigate, message])
+
+  const handleRegenerate = () => {
+    if (sending || messages.length === 0) return
+    
+    // Find last user message
+    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user')
+    if (!lastUserMessage) return
+    
+    setInputValue(lastUserMessage.content)
+    // Remove last assistant message
+    const newMessages = messages.slice(0, -1)
+    setMessages(newMessages)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -185,6 +259,14 @@ export default function Chat() {
         />
       )}
       <h3 style={{ flex: 1, margin: 0 }}>与AI助手聊天</h3>
+      {messages.length > 0 && !sending && (
+        <Button
+          type="text"
+          icon={<ReloadOutlined />}
+          onClick={handleRegenerate}
+          title="重新生成"
+        />
+      )}
       <Link to="/profile">
         <Button type="text" icon={<UserOutlined />}>
           {user?.nickname || '我的'}
@@ -206,9 +288,10 @@ export default function Chat() {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="输入你想说的话..."
+          placeholder="输入你想说的话...（Enter发送，Shift+Enter换行）"
           autoSize={{ minRows: 1, maxRows: 4 }}
           style={{ flex: 1 }}
+          disabled={sending}
         />
         <Button
           type="primary"
@@ -283,9 +366,30 @@ export default function Chat() {
                   </div>
                 </div>
               ))}
-              <div ref={messagesEndRef} />
               
-              {sending && (
+              {/* Streaming message */}
+              {sending && streamingMessage.length > 0 && tempMessageId && (
+                <div style={{
+                  display: 'flex',
+                  marginBottom: 24,
+                  justifyContent: 'flex-start',
+                }}>
+                  <div style={{
+                    maxWidth: isMobile ? '85%' : '70%',
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    background: '#fff',
+                    color: '#262626',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    wordBreak: 'break-word',
+                  }}>
+                    {streamingMessage}
+                  </div>
+                </div>
+              )}
+
+              {/* Typing indicator */}
+              {sending && streamingMessage.length === 0 && (
                 <div style={{
                   display: 'flex',
                   marginBottom: 24,
@@ -335,6 +439,8 @@ export default function Chat() {
                   </div>
                 </div>
               )}
+              
+              <div ref={messagesEndRef} />
             </div>
           )}
         </div>

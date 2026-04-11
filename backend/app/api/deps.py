@@ -67,3 +67,21 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="用户已被禁用")
     return current_user
+
+
+async def get_current_user_ws(
+    token: str,
+    db: Session = Depends(get_db),
+) -> User | None:
+    """WebSocket获取当前用户 (无异常抛出，失败返回None)"""
+    try:
+        payload = verify_token(token)
+        user_id = payload.get("sub")
+        if user_id is None:
+            return None
+        user = db.query(User).filter(User.id == int(user_id)).first()
+        if user and user.is_active:
+            return user
+        return None
+    except Exception:
+        return None

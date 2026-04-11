@@ -293,3 +293,171 @@ async def update_conversation_title(
     db.commit()
 
     return {"title": conversation.title}
+
+
+@router.delete("/message/{message_id}", summary="撤回消息")
+async def delete_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    撤回最后一条消息
+    - 只能撤回对话中最后一条消息
+    - 只能撤回用户自己发送的消息
+    """
+    # 查找消息
+    message = db.query(Message).filter(
+        Message.id == message_id,
+    ).first()
+
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="消息不存在",
+        )
+
+    # 验证对话属于当前用户
+    conversation = db.query(Conversation).filter(
+        Conversation.id == message.conversation_id,
+        Conversation.user_id == current_user.id,
+    ).first()
+
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="你没有权限操作此消息",
+        )
+
+    # 检查是否是最后一条消息
+    last_message = db.query(Message).filter(
+        Message.conversation_id == conversation.id
+    ).order_by(Message.id.desc()).first()
+
+    if not last_message or last_message.id != message_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="只能撤回对话中的最后一条消息",
+        )
+
+    # 删除消息
+    db.delete(message)
+    # 更新对话消息计数
+    conversation.message_count = max(0, conversation.message_count - 1)
+    db.commit()
+
+    return {
+        "message": "消息已撤回",
+        "conversation_id": conversation.id,
+        "message_count": conversation.message_count,
+    }
+
+
+@router.post("/regenerate/{conversation_id}", summary="重新生成回复")
+async def regenerate_response(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    重新生成AI最后一次回复
+    - 删除最后一条AI回复，重新生成
+    """
+    # 验证对话属于当前用户
+    conversation = db.query(Conversation).filter(
+        Conversation.id == conversation_id,
+        Conversation.user_id == current_user.id,
+    ).first()
+
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="对话不存在",
+        )
+
+    # 找到最后一条AI回复
+    last_assistant_message = db.query(Message).filter(
+        Message.conversation_id == conversation.id,
+        Message.role == "assistant",
+    ).order_by(Message.id.desc()).first()
+
+    if not last_assistant_message:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="没有可重新生成的AI回复",
+        )
+
+    # 找到对应用户消息
+    previous_user_message = db.query(Message).filter(
+        Message.conversation_id == conversation.id,
+        Message.role == "user",
+        Message.id < last_assistant_message.id
+    ).order_by(Message.id.desc()).first()
+
+    if not previous_user_message:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="找不到对应的用户消息",
+        )
+
+    # 删除旧的AI回复
+    db.delete(last_assistant_message)
+    conversation.message_count = max(0, conversation.message_count - 1)
+    db.commit()
+
+    # 获取助手信息
+    ai_asst = db.query(AiAssistant).filter(AiAssistant.id == conversation.assistant_id).first() if conversation.assistant_id else None
+    assistant_info = None
+    if ai_asst:
+        assistant_info = {
+            "name": ai_asst.name,
+            "personality": ai_asst.personality,
+            "speaking_style": ai_asst.speaking_style,
+            "greeting": ai_asst.greeting,
+        }
+
+    user_mbti = current_user.mbti_type
+
+    # 获取历史上下文（排除刚删除的AI回复）
+    history = db.query(Message).filter(
+        Message.conversation_id == conversation.id,
+    ).order_by(Message.created_at.desc()).limit(10).all()
+    ctx = "\n".join([f"{m.role}: {m.content}" for m in reversed(history)])
+
+    from app.services.stream_service import get_stream_service
+    from fastapi.responses import StreamingResponse
+    from app.services.member_service import get_member_service
+    from app.core.database import get_redis
+    import asyncio
+
+    # 检查消息限额
+    redis_client = await get_redis()
+    member_svc = get_member_service()
+    member_level = current_user.member_level.value if hasattr(current_user.member_level, 'value') else current_user.member_level
+    allowed, msg, _ = await member_svc.check_message_limit(
+        current_user.id, member_level, current_user.member_expire_at, redis_client
+    )
+    if not allowed:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+
+    stream_svc = get_stream_service()
+
+    async def event_generator():
+        if member_level == "free":
+            await member_svc.increment_message_count(current_user.id, redis_client)
+        async for chunk in stream_svc.stream_generate(
+            query=previous_user_message.content,
+            user_mbti=user_mbti,
+            conversation_context=ctx,
+            assistant_info=assistant_info,
+        ):
+            yield chunk
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache",
+        },
+    )
