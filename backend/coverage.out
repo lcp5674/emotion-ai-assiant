@@ -1,0 +1,43 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.0.0, pluggy-1.6.0 -- /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/bin/python
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.3', 'Platform': 'Linux-6.8.0-101-generic-x86_64-with-glibc2.39', 'Packages': {'pytest': '8.0.0', 'pluggy': '1.6.0'}, 'Plugins': {'cov': '4.1.0', 'anyio': '4.13.0', 'metadata': '3.1.1', 'html': '4.2.0', 'asyncio': '0.21.1'}}
+rootdir: /root/.openclaw/workspace/emotion-ai-assiant/backend
+configfile: pytest.ini
+testpaths: tests
+plugins: cov-4.1.0, anyio-4.13.0, metadata-3.1.1, html-4.2.0, asyncio-0.21.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 703 items
+
+tests/api/test_admin.py::test_get_system_stats ERROR                     [  0%]
+tests/api/test_admin.py::test_get_config ERROR                           [  0%]
+tests/api/test_admin.py::test_update_config ERROR                        [  0%]
+tests/api/test_admin.py::test_test_llm ERROR                             [  0%]
+tests/api/test_admin.py::test_get_assistants ERROR                       [  0%]
+tests/api/test_admin.py::test_create_assistant ERROR                     [  0%]
+tests/api/test_admin.py::test_update_assistant ERROR                     [  0%]
+tests/api/test_admin.py::test_delete_assistant ERROR                     [  1%]
+tests/api/test_admin.py::test_get_dashboard_stats ERROR                  [  1%]
+tests/api/test_admin.py::test_list_users ERROR                           [  1%]
+tests/api/test_admin.py::test_get_conversation_stats ERROR               [  1%]
+tests/api/test_admin.py::test_get_daily_stats ERROR                      [  1%]
+tests/api/test_admin.py::test_get_user_detail ERROR                      [  1%]
+tests/api/test_admin.py::test_update_user_status ERROR                   [  1%]
+tests/api/test_admin.py::test_delete_user ERROR                          [  2%]
+tests/api/test_admin.py::test_list_diaries ERROR                         [  2%]
+tests/api/test_admin.py::test_get_audit_queue ERROR                      [  2%]
+tests/api/test_admin.py::test_review_audit_item ERROR                    [  2%]
+tests/api/test_admin.py::test_get_audit_stats ERROR                      [  2%]
+tests/api/test_admin.py::test_get_audit_logs ERROR                       [  2%]
+tests/api/test_admin.py::test_non_admin_access_forbidden ERROR           [  2%]
+tests/api/test_auth.py::test_send_verify_code PASSED                     [  3%]
+tests/api/test_auth.py::test_register PASSED                             [  3%]
+tests/api/test_auth.py::test_register_duplicate_phone PASSED             [  3%]
+tests/api/test_auth.py::test_login PASSED                                [  3%]
+tests/api/test_auth.py::test_login_wrong_password PASSED                 [  3%]
+tests/api/test_auth.py::test_login_inactive_user PASSED                  [  3%]
+tests/api/test_auth.py::test_refresh_token PASSED                        [  3%]
+tests/api/test_auth.py::test_refresh_token_invalid PASSED                [  4%]
+tests/api/test_auth.py::test_get_current_user_info PASSED                [  4%]
+tests/api/test_auth.py::test_logout PASSED                               [  4%]
+tests/api/test_auth.py::test_reset_password 

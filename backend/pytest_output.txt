@@ -1,0 +1,123 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.0.0, pluggy-1.6.0 -- /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/bin/python
+cachedir: .pytest_cache
+metadata: {'Python': '3.12.3', 'Platform': 'Linux-6.8.0-101-generic-x86_64-with-glibc2.39', 'Packages': {'pytest': '8.0.0', 'pluggy': '1.6.0'}, 'Plugins': {'cov': '4.1.0', 'anyio': '4.13.0', 'metadata': '3.1.1', 'html': '4.2.0', 'asyncio': '0.21.1'}}
+rootdir: /root/.openclaw/workspace/emotion-ai-assiant/backend
+configfile: pytest.ini
+testpaths: tests
+plugins: cov-4.1.0, anyio-4.13.0, metadata-3.1.1, html-4.2.0, asyncio-0.21.1
+asyncio: mode=Mode.AUTO
+collecting ... collected 709 items / 1 error
+
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/compatibility/test_browser.py _____________
+ImportError while importing test module '/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/compatibility/test_browser.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/compatibility/test_browser.py:5: in <module>
+    from selenium import webdriver
+E   ModuleNotFoundError: No module named 'selenium'
+=============================== warnings summary ===============================
+venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:271: 19 warnings
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:271: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.5/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+app/core/database.py:36
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/app/core/database.py:36: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:321
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:321: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+tests/unit/test_llm_services.py:281
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/unit/test_llm_services.py:281: PytestCollectionWarning: cannot collect test class 'TestProvider' because it has a __init__ constructor (from: tests/unit/test_llm_services.py::TestBaseProvider)
+    class TestProvider(LLMProvider):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform linux, python 3.12.3-final-0 -----------
+Name                                     Stmts   Miss  Cover
+------------------------------------------------------------
+app/api/deps.py                             43     30    30%
+app/api/v1/__init__.py                      17      0   100%
+app/api/v1/admin.py                        298    171    43%
+app/api/v1/auth.py                          97     68    30%
+app/api/v1/chat.py                         153    119    22%
+app/api/v1/diary.py                        171    122    29%
+app/api/v1/growth.py                        63     36    43%
+app/api/v1/knowledge.py                     72     49    32%
+app/api/v1/mbti.py                          70     47    33%
+app/api/v1/member.py                        50     31    38%
+app/api/v1/payment.py                      281    236    16%
+app/api/v1/user.py                          64     38    41%
+app/api/v1/user_memory.py                   89     52    42%
+app/api/v1/voice.py                         56     40    29%
+app/core/config.py                         121      7    94%
+app/core/database.py                        30     13    57%
+app/core/exceptions.py                      87      4    95%
+app/core/security.py                        51     33    35%
+app/main.py                                 50     24    52%
+app/middleware/__init__.py                   0      0   100%
+app/middleware/rate_limit.py                51     40    22%
+app/middleware/security.py                  36     25    31%
+app/models/__init__.py                      10      0   100%
+app/models/chat.py                          55      3    95%
+app/models/content_audit.py                 22      1    95%
+app/models/diary.py                         74      2    97%
+app/models/growth.py                        80      5    94%
+app/models/knowledge.py                     97      5    95%
+app/models/mbti.py                          85      4    95%
+app/models/system.py                        12      1    92%
+app/models/user.py                          36      1    97%
+app/models/user_memory.py                   68      3    96%
+app/schemas/__init__.py                      8      0   100%
+app/schemas/auth.py                         44     44     0%
+app/schemas/chat.py                         54      0   100%
+app/schemas/diary.py                       165      9    95%
+app/schemas/growth.py                       68      0   100%
+app/schemas/knowledge.py                    53      0   100%
+app/schemas/mbti.py                         65      0   100%
+app/schemas/user.py                        106     33    69%
+app/schemas/user_memory.py                  81      0   100%
+app/services/alipay_service.py             114     95    17%
+app/services/auth_service.py                77     61    21%
+app/services/chat_service.py                97     76    22%
+app/services/content_filter.py              50     37    26%
+app/services/crisis_service.py              89     54    39%
+app/services/diary_service.py              242    212    12%
+app/services/growth_service.py             145    118    19%
+app/services/html_sanitizer.py              40     27    32%
+app/services/llm/__init__.py                 3      0   100%
+app/services/llm/factory.py                 64     54    16%
+app/services/llm/providers/__init__.py     254    181    29%
+app/services/mbti_service.py                91     64    30%
+app/services/member_service.py              68     54    21%
+app/services/payment_service.py             85     67    21%
+app/services/rag/__init__.py                 5      0   100%
+app/services/rag/generator.py               46     34    26%
+app/services/rag/knowledge_data.py           8      3    62%
+app/services/rag/retriever.py               28     19    32%
+app/services/rag/vectorstore.py            176    146    17%
+app/services/sms_service.py                 46     36    22%
+app/services/stream_service.py              35     24    31%
+app/services/user_memory_service.py        164    138    16%
+app/services/voice_service.py              255    221    13%
+app/websocket/__init__.py                   17      8    53%
+app/websocket/chat.py                      138    111    20%
+------------------------------------------------------------
+TOTAL                                     5470   3136    43%
+Coverage HTML written to dir reports/htmlcov
+
+- Generated html report: file:///root/.openclaw/workspace/emotion-ai-assiant/backend/reports/test_report.html -
+=========================== short test summary info ============================
+ERROR tests/compatibility/test_browser.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+======================== 23 warnings, 1 error in 2.52s =========================

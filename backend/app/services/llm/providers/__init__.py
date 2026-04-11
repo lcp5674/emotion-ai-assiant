@@ -98,7 +98,7 @@ class MockProvider(LLMProvider):
             )
 
         # 恋爱相关
-        if any(word in message_lower for word in ["恋爱", "喜欢", "表白", "追", "分手", "约会"]):
+        if any(word in message_lower for word in ["恋爱", "喜欢", "表白", "追", "分手", "约会", "女朋友", "男朋友"]):
             return (
                 "恋爱中的喜怒哀乐都是那么真实而美好。 "
                 "在感情中，保持真诚和尊重是最重要的。 "

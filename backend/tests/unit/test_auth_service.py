@@ -116,6 +116,50 @@ class TestAuthServiceRegister:
         # Pydantic验证在入口已经做了，这里只验证service逻辑
         pass
 
+    async def test_register_debug_mode_skips_sms_verification(self, db_session):
+        """测试DEBUG模式跳过验证码验证"""
+        service = AuthService(db_session)
+        req = RegisterRequest(
+            phone="13900000009",
+            password="Password@123",
+            code="123456",
+        )
+
+        original_debug = settings.DEBUG
+        settings.DEBUG = True
+
+        try:
+            # DEBUG模式不需要调用SMS验证
+            user = await service.register(req)
+            assert user is not None
+            assert user.phone == "13900000009"
+        finally:
+            settings.DEBUG = original_debug
+
+    async def test_register_invalid_sms_code_raises(self, db_session):
+        """测试验证码错误注册失败"""
+        mock_sms = Mock()
+        from unittest.mock import AsyncMock
+        mock_sms.verify_code = AsyncMock(return_value=False)
+
+        with patch("app.services.auth_service.get_sms_service", return_value=mock_sms):
+            service = AuthService(db_session)
+            req = RegisterRequest(
+                phone="13900000010",
+                password="Password@123",
+                code="123456",
+            )
+
+            original_debug = settings.DEBUG
+            settings.DEBUG = False
+
+            try:
+                with pytest.raises(ValueError) as exc_info:
+                    await service.register(req)
+                assert "验证码错误或已过期" in str(exc_info.value)
+            finally:
+                settings.DEBUG = original_debug
+
 
 class TestAuthServiceLogin:
     """AuthService登录测试"""
@@ -217,7 +261,7 @@ class TestAuthServiceSmsLogin:
             
             try:
                 with pytest.raises(ValueError) as exc_info:
-                    await service.login_with_sms("13900000007", "wrong")
+                    await service.login_with_sms("13900000007", "12345w")
                 assert "验证码错误或已过期" in str(exc_info.value)
             finally:
                 settings.DEBUG = original_debug
@@ -252,3 +296,215 @@ class TestRefreshToken:
         result = await service.refresh_token("invalid_token")
         
         assert result is None
+
+    async def test_refresh_token_wrong_type_returns_none(self, db_session):
+        """token类型不对返回None"""
+        from app.core.security import create_access_token
+        
+        user = User(
+            phone="13900000011",
+            password_hash=get_password_hash("pass"),
+            is_active=True,
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        # 使用access token而不是refresh token
+        wrong_token = create_access_token(data={"sub": str(user.id)})
+        service = AuthService(db_session)
+        
+        result = await service.refresh_token(wrong_token)
+        assert result is None
+
+    async def test_refresh_token_no_sub_returns_none(self, db_session):
+        """token没有sub返回None"""
+        from app.core.security import create_refresh_token
+        
+        user = User(
+            phone="13900000012",
+            password_hash=get_password_hash("pass"),
+            is_active=True,
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        refresh_token = create_refresh_token(data={"no_sub_here": str(user.id)})
+        service = AuthService(db_session)
+        
+        result = await service.refresh_token(refresh_token)
+        assert result is None
+
+    async def test_refresh_token_user_not_found_returns_none(self, db_session):
+        """用户不存在返回None"""
+        from app.core.security import create_refresh_token
+        
+        refresh_token = create_refresh_token(data={"sub": "99999"})
+        service = AuthService(db_session)
+        
+        result = await service.refresh_token(refresh_token)
+        assert result is None
+
+    async def test_refresh_token_inactive_user_returns_none(self, db_session):
+        """用户不活跃返回None"""
+        from app.core.security import create_refresh_token
+        
+        user = User(
+            phone="13900000013",
+            password_hash=get_password_hash("pass"),
+            is_active=False,
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        service = AuthService(db_session)
+        
+        result = await service.refresh_token(refresh_token)
+        assert result is None
+
+    async def test_refresh_token_exception_returns_none(self, db_session):
+        """token解码异常返回None"""
+        service = AuthService(db_session)
+        
+        with patch("app.core.security.decode_token", side_effect=Exception("Decode failed")):
+            result = await service.refresh_token("any_token")
+            assert result is None
+
+
+class TestAuthServiceSmsLoginCoverage:
+    """短信登录更多测试覆盖"""
+
+    async def test_sms_login_debug_skips_verification(self, db_session):
+        """DEBUG模式跳过验证码验证"""
+        service = AuthService(db_session)
+        original_debug = settings.DEBUG
+        settings.DEBUG = True
+
+        try:
+            result = await service.login_with_sms("13900000014", "any")
+            assert result is not None
+            # 用户自动创建
+            user = db_session.query(User).filter(User.phone == "13900000014").first()
+            assert user is not None
+            assert user.nickname == "用户0014"
+        finally:
+            settings.DEBUG = original_debug
+
+    async def test_sms_login_inactive_user_raises(self, db_session):
+        """不活跃用户短信登录抛出异常"""
+        user = User(
+            phone="13900000015",
+            password_hash=get_password_hash("pass"),
+            is_active=False,
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        mock_sms = Mock()
+        from unittest.mock import AsyncMock
+        mock_sms.verify_code = AsyncMock(return_value=True)
+
+        with patch("app.services.auth_service.get_sms_service", return_value=mock_sms):
+            service = AuthService(db_session)
+            original_debug = settings.DEBUG
+            settings.DEBUG = False
+
+            try:
+                with pytest.raises(ValueError) as exc_info:
+                    await service.login_with_sms("13900000015", "123456")
+                assert "用户已被禁用" in str(exc_info.value)
+            finally:
+                settings.DEBUG = original_debug
+
+
+class TestAuthServiceLoginMore:
+    """登录更多测试覆盖"""
+
+    async def test_login_user_not_found_returns_none(self, db_session):
+        """用户不存在返回None"""
+        service = AuthService(db_session)
+        result = await service.login("19999999999", "password")
+        assert result is None
+
+    async def test_login_wrong_password_returns_none(self, db_session):
+        """密码错误返回None"""
+        user = User(
+            phone="13900000016",
+            password_hash=get_password_hash("correct_password"),
+            is_active=True,
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        service = AuthService(db_session)
+        result = await service.login("13900000016", "wrong_password")
+        assert result is None
+
+
+def test_get_auth_service_factory(db_session):
+    """测试工厂函数"""
+    from app.services.auth_service import get_auth_service
+    service = get_auth_service(db_session)
+    assert service is not None
+    assert isinstance(service, AuthService)
+    assert service.db == db_session
+
+
+async def test_login_with_sms_existing_active_user_success(db_session):
+    """短信登录 - 已存在活跃用户成功"""
+    from app.core.config import settings
+    user = User(
+        phone="13900000020",
+        password_hash=get_password_hash("pass"),
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    mock_sms = Mock()
+    from unittest.mock import AsyncMock
+    mock_sms.verify_code = AsyncMock(return_value=True)
+
+    with patch("app.services.auth_service.get_sms_service", return_value=mock_sms):
+        service = AuthService(db_session)
+        original_debug = settings.DEBUG
+        settings.DEBUG = False
+
+        try:
+            result = await service.login_with_sms("13900000020", "123456")
+            assert result is not None
+            assert result.access_token is not None
+            assert result.user.id == user.id
+        finally:
+            settings.DEBUG = original_debug
+
+
+
+
+
+async def test_register_default_nickname(db_session):
+    """注册使用默认昵称生成"""
+    from app.core.config import settings
+    mock_sms = Mock()
+    from unittest.mock import AsyncMock
+    mock_sms.verify_code = AsyncMock(return_value=True)
+
+    with patch("app.services.auth_service.get_sms_service", return_value=mock_sms):
+        service = AuthService(db_session)
+        original_debug = settings.DEBUG
+        settings.DEBUG = False
+
+        try:
+            req = RegisterRequest(
+                phone="13900123456",
+                password="Password@123",
+                code="123456",
+            )
+            # 不传nickname
+            if hasattr(req, 'nickname'):
+                req.nickname = None
+            user = await service.register(req)
+            assert user is not None
+            assert user.nickname == "用户3456"
+        finally:
+            settings.DEBUG = original_debug

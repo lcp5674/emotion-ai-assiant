@@ -692,3 +692,179 @@ class TestDiaryServiceAiAnalysis:
         result = await service.analyze_diary(db_session, 1, diary.id)
         
         assert result["status"] == "no_content"
+
+
+    def test_list_diaries_with_filters(self, db_session):
+        """测试筛选日记列表 - 各种筛选条件"""
+        user = User(
+            id=1,
+            phone="13900000001",
+            password_hash="hash",
+            is_active=True,
+        )
+        db_session.add(user)
+        today = date.today()
+        # 添加不同情绪和分数的日记
+        from app.models.diary import EmotionType
+        diaries = [
+            EmotionDiary(user_id=1, date=today, content="happy diary", mood_score=8, primary_emotion=EmotionType.HAPPY, is_deleted=False),
+            EmotionDiary(user_id=1, date=today - timedelta(days=1), content="sad diary", mood_score=3, primary_emotion=EmotionType.SAD, is_deleted=False),
+            EmotionDiary(user_id=1, date=today - timedelta(days=2), content="angry diary", mood_score=2, primary_emotion=EmotionType.ANGRY, is_deleted=False),
+        ]
+        for d in diaries:
+            db_session.add(d)
+        db_session.commit()
+
+        service = DiaryService()
+        # 筛选开心情绪
+        diaries_result, total = service.list_diaries(db_session, 1, emotion="happy")
+        assert len(diaries_result) == 1
+        assert total == 1
+        # 筛选心情等级分数
+        diaries_result, total = service.list_diaries(db_session, 1, mood_level="bad")
+        assert len(diaries_result) == 1
+        assert total == 1
+
+
+    def test_get_stats_empty(self, db_session):
+        """测试获取统计数据 - 没有日记"""
+        user = User(
+            id=1,
+            phone="13900000001",
+            password_hash="hash",
+            is_active=True,
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        service = DiaryService()
+        stats = service.get_stats(db_session, 1)
+        
+        assert stats["total_count"] == 0
+        assert stats["avg_mood"] == 0
+        assert stats["this_month_count"] == 0
+
+
+    def test_create_mood_record_empty_note(self, db_session):
+        """测试创建心情记录 - 空note"""
+        from app.schemas.diary import MoodCreate
+        user = User(
+            id=1,
+            phone="13900000001",
+            password_hash="hash",
+            is_active=True,
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        req = MoodCreate(mood_score=5)
+        service = DiaryService()
+        record = service.create_mood_record(db_session, 1, req)
+        
+        assert record is not None
+        assert record.note is None
+
+
+    def test_list_mood_records_with_date_filter(self, db_session):
+        """测试心情记录按日期筛选"""
+        from app.models.diary import MoodRecord
+        from datetime import datetime
+        user = User(
+            id=1,
+            phone="13900000001",
+            password_hash="hash",
+            is_active=True,
+        )
+        db_session.add(user)
+        # 添加7天前到今天的记录
+        today = date.today()
+        for i in range(7):
+            record = MoodRecord(
+                user_id=1,
+                mood_score=i + 1,
+                created_at=datetime.combine(today - timedelta(days=i), datetime.min.time()),
+            )
+            db_session.add(record)
+        db_session.commit()
+        
+        start_date = (today - timedelta(days=3)).isoformat()
+        end_date = today.isoformat()
+        
+        service = DiaryService()
+        start_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+        records = service.list_mood_records(db_session, 1, start_obj, end_obj)
+        
+        assert len(records) == 4  # 包含开始和结束共4天
+
+
+    def test_update_tag_rename_only(self, db_session):
+        """测试只更新标签名称不更新颜色"""
+        from app.models.diary import DiaryTag
+        from app.schemas.diary import TagUpdate
+        user = User(
+            id=1,
+            phone="13900000001",
+            password_hash="hash",
+            is_active=True,
+        )
+        db_session.add(user)
+        tag = DiaryTag(user_id=1, name="旧名称", color="#ff0000", use_count=5)
+        db_session.add(tag)
+        db_session.commit()
+
+        req = TagUpdate(name="新名称")
+        service = DiaryService()
+        result = service.update_tag(db_session, 1, tag.id, req)
+        
+        assert result is not None
+        assert result.name == "新名称"
+        assert result.color == "#ff0000"  # 颜色保持不变
+
+
+    async def test_create_diary_with_tags_updates_usage(self, db_session):
+        """测试创建日记带标签会更新标签使用计数"""
+        from app.models.diary import DiaryTag
+        from app.schemas.diary import DiaryCreate
+        user = User(
+            id=1,
+            phone="13900000001",
+            password_hash="hash",
+            is_active=True,
+        )
+        db_session.add(user)
+        tag = DiaryTag(user_id=1, name="开心", color="#ff0000", use_count=1)
+        db_session.add(tag)
+        db_session.commit()
+
+        req = DiaryCreate(
+            date=date.today().isoformat(),
+            content="今天很开心",
+            mood_score=8,
+            tags="开心",
+        )
+
+        service = DiaryService()
+        diary = await service.create_diary(db_session, 1, req)
+        
+        assert diary is not None
+        # 检查使用计数增加
+        updated_tag = db_session.query(DiaryTag).filter(DiaryTag.name == "开心").first()
+        assert updated_tag.use_count == 2
+
+
+    def test__get_mood_level_boundary(self, db_session):
+        """测试心情等级边界值"""
+        service = DiaryService()
+        # 边界测试
+        assert service._get_mood_level(0) == "neutral"  # 超出下限返回默认
+        assert service._get_mood_level(1) == "terrible"
+        assert service._get_mood_level(2) == "terrible"
+        assert service._get_mood_level(3) == "bad"
+        assert service._get_mood_level(4) == "bad"
+        assert service._get_mood_level(5) == "neutral"
+        assert service._get_mood_level(6) == "good"
+        assert service._get_mood_level(8) == "good"
+        assert service._get_mood_level(9) == "excellent"
+        assert service._get_mood_level(10) == "excellent"
+        assert service._get_mood_level(11) == "neutral"  # 超出上限返回默认

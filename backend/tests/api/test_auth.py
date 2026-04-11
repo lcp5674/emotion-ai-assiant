@@ -189,3 +189,83 @@ def test_unauthorized_access(client):
     
     response = client.post("/api/v1/auth/logout")
     assert response.status_code == 401
+
+
+def test_send_verify_code_sms_failure(client):
+    """测试发送验证码 - 短信发送失败仍返回成功"""
+    with patch("app.services.sms_service.get_sms_service") as mock_sms:
+        mock_instance = AsyncMock()
+        mock_instance.send_verify_code = AsyncMock(return_value=False)
+        mock_sms.return_value = mock_instance
+        
+        response = client.post("/api/v1/auth/send_code", json={
+            "phone": "13800138000"
+        })
+        # 即使发送失败，接口仍返回200（不暴露给前端知道发送失败）
+        assert response.status_code == 200
+        assert "message" in response.json()
+
+
+def test_register_wrong_verification_code(client, db_session):
+    """测试注册 - 验证码错误（非DEBUG模式）"""
+    with patch("app.core.config.settings.DEBUG", new=False):
+        response = client.post("/api/v1/auth/register", json={
+            "phone": "13800138002",
+            "password": "Password123!",
+            "nickname": "测试用户",
+            "code": "wrong",
+        })
+        assert response.status_code == 400
+        assert "验证码错误" in response.json()["detail"]
+
+
+def test_refresh_token_wrong_type(client, test_user):
+    """测试刷新令牌 - 令牌类型不对"""
+    from app.core.security import create_access_token
+    
+    # 使用access token作为refresh token
+    wrong_token = create_access_token(data={"sub": str(test_user.id)})  # 类型是access
+    
+    response = client.post("/api/v1/auth/refresh", json={
+        "refresh_token": wrong_token,
+    })
+    assert response.status_code == 401
+    assert "无效的刷新令牌" in response.json()["detail"]
+
+
+def test_refresh_token_user_inactive(client, test_user, db_session):
+    """测试刷新令牌 - 用户已禁用"""
+    from app.core.security import create_refresh_token
+    
+    # 禁用用户
+    test_user.is_active = False
+    db_session.commit()
+    
+    refresh_token = create_refresh_token(data={"sub": str(test_user.id)})
+    
+    response = client.post("/api/v1/auth/refresh", json={
+        "refresh_token": refresh_token,
+    })
+    assert response.status_code == 401
+    assert "用户不存在或已被禁用" in response.json()["detail"]
+
+
+def test_reset_password_wrong_code(client, test_user):
+    """测试重置密码 - 验证码错误"""
+    response = client.post("/api/v1/auth/reset_password", json={
+        "phone": test_user.phone,
+        "code": "wrong",
+        "new_password": "Newpass1!",
+    })
+    assert response.status_code == 400
+    assert "验证码错误" in response.json()["detail"]
+
+
+def test_login_user_not_exists(client):
+    """测试登录 - 用户不存在"""
+    response = client.post("/api/v1/auth/login", json={
+        "phone": "19999999999",
+        "password": "Password123!",
+    })
+    assert response.status_code == 401
+    assert "手机号或密码错误" in response.json()["detail"]

@@ -1,0 +1,660 @@
+=== Testing admin ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.0.0, pluggy-1.6.0
+rootdir: /root/.openclaw/workspace/emotion-ai-assiant/backend
+configfile: pytest.ini
+plugins: cov-4.1.0, anyio-4.13.0, metadata-3.1.1, html-4.2.0, asyncio-0.21.1
+asyncio: mode=Mode.AUTO
+collected 21 items
+
+tests/api/test_admin.py EEEEEEEEEEEEEEEEEEEEE                            [100%]
+
+==================================== ERRORS ====================================
+___________________ ERROR at setup of test_get_system_stats ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 7
+  def test_get_system_stats(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:7
+______________________ ERROR at setup of test_get_config _______________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 19
+  def test_get_config(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:19
+_____________________ ERROR at setup of test_update_config _____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 30
+  def test_update_config(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:30
+_______________________ ERROR at setup of test_test_llm ________________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 45
+  def test_test_llm(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:45
+____________________ ERROR at setup of test_get_assistants _____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 54
+  def test_get_assistants(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:54
+___________________ ERROR at setup of test_create_assistant ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 63
+  def test_create_assistant(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:63
+___________________ ERROR at setup of test_update_assistant ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 80
+  def test_update_assistant(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:80
+___________________ ERROR at setup of test_delete_assistant ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 104
+  def test_delete_assistant(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:104
+__________________ ERROR at setup of test_get_dashboard_stats __________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 120
+  def test_get_dashboard_stats(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:120
+______________________ ERROR at setup of test_list_users _______________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 133
+  def test_list_users(authorized_admin_client, admin_user, test_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:133
+________________ ERROR at setup of test_get_conversation_stats _________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 146
+  def test_get_conversation_stats(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:146
+____________________ ERROR at setup of test_get_daily_stats ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 157
+  def test_get_daily_stats(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:157
+____________________ ERROR at setup of test_get_user_detail ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 169
+  def test_get_user_detail(authorized_admin_client, admin_user, test_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:169
+__________________ ERROR at setup of test_update_user_status ___________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 179
+  def test_update_user_status(authorized_admin_client, admin_user, test_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:179
+______________________ ERROR at setup of test_delete_user ______________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 205
+  def test_delete_user(authorized_admin_client, admin_user, test_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:205
+_____________________ ERROR at setup of test_list_diaries ______________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 212
+  def test_list_diaries(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:212
+____________________ ERROR at setup of test_get_audit_queue ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 222
+  def test_get_audit_queue(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:222
+___________________ ERROR at setup of test_review_audit_item ___________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 232
+  def test_review_audit_item(authorized_admin_client, admin_user, db_session):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:232
+____________________ ERROR at setup of test_get_audit_stats ____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 254
+  def test_get_audit_stats(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:254
+____________________ ERROR at setup of test_get_audit_logs _____________________
+file /root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py, line 266
+  def test_get_audit_logs(authorized_admin_client, admin_user):
+E       fixture 'authorized_admin_client' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, authorized_client, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, client, cov, db_session, doctest_namespace, event_loop, extra, extras, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, include_metadata_in_junit_xml, metadata, mock_llm_service, mock_sms_service, monkeypatch, no_cover, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, test_user, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/root/.openclaw/workspace/emotion-ai-assiant/backend/tests/api/test_admin.py:266
+______________ ERROR at setup of test_non_admin_access_forbidden _______________
+
+self = <sqlalchemy.engine.base.Connection object at 0x735979e3b2f0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x73597ab05820>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x735979e3b8f0>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x735979e3b410>
+parameters = [('13800138000', 'test@example.com', '测试用户', None, '$2b$12$JVT1gKh/TRAiw0QG8mHJquuEJLYpMZNyeO.pbBMVcGPQpLeD8tCZ.', None, ...)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x73597ab05820>
+cursor = <sqlite3.Cursor object at 0x73597a8a1d40>
+statement = 'INSERT INTO users (phone, email, nickname, avatar, password_hash, mbti_type, mbti_result_id, member_level, member_exp...leted, is_admin, last_login_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at, updated_at'
+parameters = ('13800138000', 'test@example.com', '测试用户', None, '$2b$12$JVT1gKh/TRAiw0QG8mHJquuEJLYpMZNyeO.pbBMVcGPQpLeD8tCZ.', None, ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x735979e3b8f0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: users.phone
+
+venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:922: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+db_session = <sqlalchemy.orm.session.Session object at 0x73597a94da00>
+
+    @pytest.fixture(scope="function")
+    def test_user(db_session):
+        """测试用户fixture"""
+        from app.models.user import User
+        from app.services.auth_service import get_password_hash
+    
+        user = User(
+            phone="13800138000",
+            email="test@example.com",
+            nickname="测试用户",
+            password_hash=get_password_hash("Test@123456"),
+            is_active=True
+        )
+        db_session.add(user)
+>       db_session.commit()
+
+tests/conftest.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1969: in commit
+    trans.commit(_to_root=True)
+venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:139: in _go
+    ret_value = fn(self, *arg, **kw)
+venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1256: in commit
+    self._prepare_impl()
+venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py:139: in _go
+    ret_value = fn(self, *arg, **kw)
+venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:1231: in _prepare_impl
+    self.session.flush()
+venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4312: in flush
+    self._flush(objects)
+venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4447: in _flush
+    with util.safe_reraise():
+venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py:146: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:4408: in _flush
+    flush_context.execute()
+venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:466: in execute
+    rec.execute(self)
+venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py:642: in execute
+    util.preloaded.orm_persistence.save_obj(
+venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:93: in save_obj
+    _emit_insert_statements(
+venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py:1227: in _emit_insert_statements
+    result = connection.execute(
+venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1416: in execute
+    return meth(
+venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:517: in _execute_on_connection
+    return connection._execute_clauseelement(
+venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1639: in _execute_clauseelement
+    ret = self._execute_context(
+venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2344: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x73597ab05820>
+cursor = <sqlite3.Cursor object at 0x73597a8a1d40>
+statement = 'INSERT INTO users (phone, email, nickname, avatar, password_hash, mbti_type, mbti_result_id, member_level, member_exp...leted, is_admin, last_login_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at, updated_at'
+parameters = ('13800138000', 'test@example.com', '测试用户', None, '$2b$12$JVT1gKh/TRAiw0QG8mHJquuEJLYpMZNyeO.pbBMVcGPQpLeD8tCZ.', None, ...)
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x735979e3b8f0>
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+>       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: users.phone
+E       [SQL: INSERT INTO users (phone, email, nickname, avatar, password_hash, mbti_type, mbti_result_id, member_level, member_expire_at, is_active, is_verified, is_deleted, is_admin, last_login_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at, updated_at]
+E       [parameters: ('13800138000', 'test@example.com', '测试用户', None, '$2b$12$JVT1gKh/TRAiw0QG8mHJquuEJLYpMZNyeO.pbBMVcGPQpLeD8tCZ.', None, None, 'FREE', None, 1, 0, 0, 0, None)]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:922: IntegrityError
+---------------------------- Captured stdout setup -----------------------------
+2026-04-11 09:56:37,642 INFO sqlalchemy.engine.Engine SELECT DATABASE()
+2026-04-11 09:56:37,642 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,643 INFO sqlalchemy.engine.Engine SELECT @@sql_mode
+2026-04-11 09:56:37,643 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,644 INFO sqlalchemy.engine.Engine SELECT @@lower_case_table_names
+2026-04-11 09:56:37,644 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,645 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-11 09:56:37,645 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`users`
+2026-04-11 09:56:37,645 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,648 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`mbti_questions`
+2026-04-11 09:56:37,648 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,650 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`mbti_answers`
+2026-04-11 09:56:37,650 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,651 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`mbti_results`
+2026-04-11 09:56:37,652 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,653 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`ai_assistants`
+2026-04-11 09:56:37,653 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,655 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`conversations`
+2026-04-11 09:56:37,655 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,657 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`messages`
+2026-04-11 09:56:37,657 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,658 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`message_collections`
+2026-04-11 09:56:37,658 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,660 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`knowledge_articles`
+2026-04-11 09:56:37,660 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,662 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`article_collections`
+2026-04-11 09:56:37,662 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,663 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`banners`
+2026-04-11 09:56:37,663 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,665 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`announcements`
+2026-04-11 09:56:37,665 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,667 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`member_orders`
+2026-04-11 09:56:37,667 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,668 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`system_configs`
+2026-04-11 09:56:37,669 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,670 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`emotion_diaries`
+2026-04-11 09:56:37,670 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,672 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`mood_records`
+2026-04-11 09:56:37,672 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,674 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`diary_tags`
+2026-04-11 09:56:37,674 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,675 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`user_long_term_memory`
+2026-04-11 09:56:37,675 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,677 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`user_memory_insights`
+2026-04-11 09:56:37,677 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,679 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`user_preferences`
+2026-04-11 09:56:37,679 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,680 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`content_audit_queue`
+2026-04-11 09:56:37,681 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,682 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`badges`
+2026-04-11 09:56:37,682 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,684 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`user_badges`
+2026-04-11 09:56:37,684 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,686 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`user_levels`
+2026-04-11 09:56:37,686 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,687 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`exp_records`
+2026-04-11 09:56:37,687 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,689 INFO sqlalchemy.engine.Engine DESCRIBE `emotion_ai`.`growth_tasks`
+2026-04-11 09:56:37,689 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-04-11 09:56:37,693 INFO sqlalchemy.engine.Engine COMMIT
+2026-04-11 09:56:37,758 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-04-11 09:56:37,763 INFO sqlalchemy.engine.Engine SELECT ai_assistants.id AS ai_assistants_id, ai_assistants.name AS ai_assistants_name, ai_assistants.avatar AS ai_assistants_avatar, ai_assistants.mbti_type AS ai_assistants_mbti_type, ai_assistants.personality AS ai_assistants_personality, ai_assistants.speaking_style AS ai_assistants_speaking_style, ai_assistants.expertise AS ai_assistants_expertise, ai_assistants.greeting AS ai_assistants_greeting, ai_assistants.tags AS ai_assistants_tags, ai_assistants.is_recommended AS ai_assistants_is_recommended, ai_assistants.is_active AS ai_assistants_is_active, ai_assistants.sort_order AS ai_assistants_sort_order, ai_assistants.created_at AS ai_assistants_created_at, ai_assistants.updated_at AS ai_assistants_updated_at 
+FROM ai_assistants 
+ LIMIT %(param_1)s
+2026-04-11 09:56:37,763 INFO sqlalchemy.engine.Engine [generated in 0.00040s] {'param_1': 1}
+2026-04-11 09:56:37,765 INFO sqlalchemy.engine.Engine ROLLBACK
+---------------------------- Captured stderr setup -----------------------------
+2026-04-11 09:56:37.627 | INFO     | app.main:lifespan:18 - Starting 心灵伴侣AI v1.0.0
+2026-04-11 09:56:37.693 | INFO     | app.main:lifespan:23 - Database initialized
+------------------------------ Captured log setup ------------------------------
+INFO     sqlalchemy.engine.Engine:base.py:1848 SELECT DATABASE()
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 SELECT @@sql_mode
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 SELECT @@lower_case_table_names
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:2690 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`users`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`mbti_questions`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`mbti_answers`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`mbti_results`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`ai_assistants`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`conversations`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`messages`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`message_collections`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`knowledge_articles`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`article_collections`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`banners`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`announcements`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`member_orders`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`system_configs`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`emotion_diaries`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`mood_records`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`diary_tags`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`user_long_term_memory`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`user_memory_insights`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`user_preferences`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`content_audit_queue`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`badges`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`user_badges`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`user_levels`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`exp_records`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:1848 DESCRIBE `emotion_ai`.`growth_tasks`
+INFO     sqlalchemy.engine.Engine:base.py:1848 [raw sql] {}
+INFO     sqlalchemy.engine.Engine:base.py:2696 COMMIT
+INFO     sqlalchemy.engine.Engine:base.py:2690 BEGIN (implicit)
+INFO     sqlalchemy.engine.Engine:base.py:1848 SELECT ai_assistants.id AS ai_assistants_id, ai_assistants.name AS ai_assistants_name, ai_assistants.avatar AS ai_assistants_avatar, ai_assistants.mbti_type AS ai_assistants_mbti_type, ai_assistants.personality AS ai_assistants_personality, ai_assistants.speaking_style AS ai_assistants_speaking_style, ai_assistants.expertise AS ai_assistants_expertise, ai_assistants.greeting AS ai_assistants_greeting, ai_assistants.tags AS ai_assistants_tags, ai_assistants.is_recommended AS ai_assistants_is_recommended, ai_assistants.is_active AS ai_assistants_is_active, ai_assistants.sort_order AS ai_assistants_sort_order, ai_assistants.created_at AS ai_assistants_created_at, ai_assistants.updated_at AS ai_assistants_updated_at 
+FROM ai_assistants 
+ LIMIT %(param_1)s
+INFO     sqlalchemy.engine.Engine:base.py:1848 [generated in 0.00040s] {'param_1': 1}
+INFO     sqlalchemy.engine.Engine:base.py:2693 ROLLBACK
+=============================== warnings summary ===============================
+venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:271: 38 warnings
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:271: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.5/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+app/core/database.py:36
+app/core/database.py:36
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/app/core/database.py:36: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:321
+venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:321
+  /root/.openclaw/workspace/emotion-ai-assiant/backend/venv/lib/python3.12/site-packages/pydantic/_internal/_config.py:321: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform linux, python 3.12.3-final-0 -----------
+Name                                     Stmts   Miss  Cover
+------------------------------------------------------------
+app/api/deps.py                             43     30    30%
+app/api/v1/__init__.py                      17      0   100%
+app/api/v1/admin.py                        298    171    43%
+app/api/v1/auth.py                          97     68    30%
+app/api/v1/chat.py                         153    119    22%
+app/api/v1/diary.py                        171    122    29%
+app/api/v1/growth.py                        63     36    43%
+app/api/v1/knowledge.py                     72     49    32%
+app/api/v1/mbti.py                          70     47    33%
+app/api/v1/member.py                        50     31    38%
+app/api/v1/payment.py                      281    236    16%
+app/api/v1/user.py                          64     38    41%
+app/api/v1/user_memory.py                   89     52    42%
+app/api/v1/voice.py                         56     40    29%
+app/core/config.py                         121      7    94%
+app/core/database.py                        30      9    70%
+app/core/security.py                        51     32    37%
+app/main.py                                 50     12    76%
+app/middleware/__init__.py                   0      0   100%
+app/middleware/rate_limit.py                51     38    25%
+app/middleware/security.py                  36     23    36%
+app/models/__init__.py                      10      0   100%
+app/models/chat.py                          55      3    95%
+app/models/content_audit.py                 22      1    95%
+app/models/diary.py                         74      2    97%
+app/models/growth.py                        80      5    94%
+app/models/knowledge.py                     97      5    95%
+app/models/mbti.py                          85      4    95%
+app/models/system.py                        12      1    92%
+app/models/user.py                          36      1    97%
+app/models/user_memory.py                   68      3    96%
+app/schemas/__init__.py                      8      0   100%
+app/schemas/auth.py                         44     44     0%
+app/schemas/chat.py                         54      0   100%
+app/schemas/diary.py                       165      9    95%
+app/schemas/growth.py                       68      0   100%
+app/schemas/knowledge.py                    53      0   100%
+app/schemas/mbti.py                         65      0   100%
+app/schemas/user.py                        106     33    69%
+app/schemas/user_memory.py                  81      0   100%
+app/services/auth_service.py                77     61    21%
+app/services/chat_service.py                97     76    22%
+app/services/content_filter.py              50     37    26%
+app/services/crisis_service.py              89     54    39%
+app/services/diary_service.py              242    212    12%
+app/services/growth_service.py             145    118    19%
+app/services/html_sanitizer.py              40     27    32%
+app/services/llm/__init__.py                 3      0   100%
+app/services/llm/factory.py                 64     54    16%
+app/services/llm/providers/__init__.py     254    181    29%
+app/services/mbti_service.py                91     61    33%
+app/services/member_service.py              68     54    21%
+app/services/payment_service.py             85     67    21%
+app/services/rag/__init__.py                 5      0   100%
+app/services/rag/generator.py               46     34    26%
+app/services/rag/knowledge_data.py           8      3    62%
+app/services/rag/retriever.py               28     19    32%
+app/services/rag/vectorstore.py            176    146    17%
+app/services/sms_service.py                 46     36    22%
+app/services/stream_service.py              35     24    31%
+app/services/user_memory_service.py        164    138    16%
+app/services/voice_service.py              255    221    13%
+app/websocket/__init__.py                   17      8    53%
+app/websocket/chat.py                      138    111    20%
+------------------------------------------------------------
+TOTAL                                     5269   3013    43%
+Coverage HTML written to dir reports/coverage
+
+- Generated html report: file:///root/.openclaw/workspace/emotion-ai-assiant/backend/reports/test_report.html -
+=========================== short test summary info ============================
+ERROR tests/api/test_admin.py::test_get_system_stats
+ERROR tests/api/test_admin.py::test_get_config
+ERROR tests/api/test_admin.py::test_update_config
+ERROR tests/api/test_admin.py::test_test_llm
+ERROR tests/api/test_admin.py::test_get_assistants
+ERROR tests/api/test_admin.py::test_create_assistant
+ERROR tests/api/test_admin.py::test_update_assistant
+ERROR tests/api/test_admin.py::test_delete_assistant
+ERROR tests/api/test_admin.py::test_get_dashboard_stats
+ERROR tests/api/test_admin.py::test_list_users
+ERROR tests/api/test_admin.py::test_get_conversation_stats
+ERROR tests/api/test_admin.py::test_get_daily_stats
+ERROR tests/api/test_admin.py::test_get_user_detail
+ERROR tests/api/test_admin.py::test_update_user_status
+ERROR tests/api/test_admin.py::test_delete_user
+ERROR tests/api/test_admin.py::test_list_diaries
+ERROR tests/api/test_admin.py::test_get_audit_queue
+ERROR tests/api/test_admin.py::test_review_audit_item
+ERROR tests/api/test_admin.py::test_get_audit_stats
+ERROR tests/api/test_admin.py::test_get_audit_logs
+ERROR tests/api/test_admin.py::test_non_admin_access_forbidden - sqlalchemy.e...
+======================= 44 warnings, 21 errors in 4.61s ========================
+
+=== Testing auth ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.0.0, pluggy-1.6.0
+rootdir: /root/.openclaw/workspace/emotion-ai-assiant/backend
+configfile: pytest.ini
+plugins: cov-4.1.0, anyio-4.13.0, metadata-3.1.1, html-4.2.0, asyncio-0.21.1
+asyncio: mode=Mode.AUTO
+collected 20 items
+
+tests/api/test_auth.py ..........

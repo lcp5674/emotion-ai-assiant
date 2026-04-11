@@ -374,3 +374,165 @@ def test_unauthorized_access(client):
     
     response = client.get("/api/v1/diary/list")
     assert response.status_code == 401
+
+
+def test_create_diary_value_error(authorized_client, test_user):
+    """测试创建日记发生ValueError"""
+    from unittest.mock import patch
+    
+    with patch("app.services.diary_service.DiaryService.create_diary") as mock_create:
+        mock_create.side_effect = ValueError("测试错误")
+        
+        response = authorized_client.post("/api/v1/diary/create", json={
+            "title": "测试",
+            "content": "测试",
+            "mood_level": 3,
+        })
+        assert response.status_code == 400
+        assert "测试错误" in response.json()["detail"]
+
+
+def test_create_diary_generic_error(authorized_client, test_user):
+    """测试创建日记发生其他异常"""
+    from unittest.mock import patch
+    
+    with patch("app.services.diary_service.DiaryService.create_diary") as mock_create:
+        mock_create.side_effect = Exception("系统错误")
+        
+        response = authorized_client.post("/api/v1/diary/create", json={
+            "title": "测试",
+            "content": "测试",
+            "mood_level": 3,
+        })
+        assert response.status_code == 500
+        assert "创建日记失败" in response.json()["detail"]
+
+
+def test_get_diary_by_date_not_found(authorized_client, test_user):
+    """测试根据日期获取日记 - 该日期没有日记"""
+    from datetime import date
+    tomorrow = date.today().replace(day=date.today().day + 1).strftime("%Y-%m-%d")
+    
+    response = authorized_client.get(f"/api/v1/diary/date/{tomorrow}")
+    assert response.status_code == 404
+    assert "该日期没有日记记录" in response.json()["detail"]
+
+
+def test_list_diaries_invalid_start_date(authorized_client, test_user):
+    """测试获取日记列表 - 无效开始日期格式"""
+    response = authorized_client.get("/api/v1/diary/list?start_date=2024/01/01")
+    assert response.status_code == 400
+    assert "开始日期格式无效" in response.json()["detail"]
+
+
+def test_list_diaries_invalid_end_date(authorized_client, test_user):
+    """测试获取日记列表 - 无效结束日期格式"""
+    response = authorized_client.get("/api/v1/diary/list?end_date=2024/01/01")
+    assert response.status_code == 400
+    assert "结束日期格式无效" in response.json()["detail"]
+
+
+def test_update_diary_not_found(authorized_client, test_user):
+    """测试更新不存在日记"""
+    response = authorized_client.put("/api/v1/diary/99999", json={
+        "title": "测试",
+        "content": "测试",
+    })
+    assert response.status_code == 404
+
+
+def test_delete_diary_not_found(authorized_client, test_user):
+    """测试删除不存在日记"""
+    response = authorized_client.delete("/api/v1/diary/99999")
+    assert response.status_code == 404
+
+
+def test_create_mood_record_error(authorized_client, test_user):
+    """测试创建心情记录发生异常"""
+    from unittest.mock import patch
+    
+    with patch("app.services.diary_service.DiaryService.create_mood_record") as mock_create:
+        mock_create.side_effect = Exception("创建失败")
+        
+        response = authorized_client.post("/api/v1/diary/mood", json={
+            "mood_level": 4,
+        })
+        assert response.status_code == 500
+        assert "记录心情失败" in response.json()["detail"]
+
+
+def test_list_mood_records_invalid_start_date(authorized_client):
+    """测试获取心情记录 - 无效开始日期"""
+    response = authorized_client.get("/api/v1/diary/mood/list?start_date=2024/01/01")
+    assert response.status_code == 400
+    assert "开始日期格式无效" in response.json()["detail"]
+
+
+def test_list_mood_records_invalid_end_date(authorized_client):
+    """测试获取心情记录 - 无效结束日期"""
+    response = authorized_client.get("/api/v1/diary/mood/list?end_date=2024/01/01")
+    assert response.status_code == 400
+    assert "结束日期格式无效" in response.json()["detail"]
+
+
+def test_create_tag_value_error(authorized_client):
+    """测试创建标签 - ValueError"""
+    from unittest.mock import patch
+    
+    with patch("app.services.diary_service.DiaryService.create_tag") as mock_create:
+        mock_create.side_effect = ValueError("标签名称已存在")
+        
+        response = authorized_client.post("/api/v1/diary/tags", json={
+            "name": "重复",
+            "color": "#ff0000",
+        })
+        assert response.status_code == 400
+        assert "标签名称已存在" in response.json()["detail"]
+
+
+def test_create_tag_generic_error(authorized_client):
+    """测试创建标签 - 其他异常"""
+    from unittest.mock import patch
+    
+    with patch("app.services.diary_service.DiaryService.create_tag") as mock_create:
+        mock_create.side_effect = Exception("系统错误")
+        
+        response = authorized_client.post("/api/v1/diary/tags", json={
+            "name": "测试",
+            "color": "#ff0000",
+        })
+        assert response.status_code == 500
+        assert "创建标签失败" in response.json()["detail"]
+
+
+def test_update_tag_not_found(authorized_client):
+    """测试更新不存在标签"""
+    response = authorized_client.put("/api/v1/diary/tags/99999", json={
+        "name": "测试",
+    })
+    assert response.status_code == 404
+
+
+def test_delete_tag_not_found(authorized_client):
+    """测试删除不存在标签"""
+    response = authorized_client.delete("/api/v1/diary/tags/99999")
+    assert response.status_code == 404
+
+
+def test_analyze_diary_exception(authorized_client, test_user, db_session):
+    """测试分析日记发生异常"""
+    # 先创建日记
+    create_resp = authorized_client.post("/api/v1/diary/create", json={
+        "title": "分析测试",
+        "content": "测试内容",
+        "mood_level": 3,
+    })
+    diary_id = create_resp.json()["id"]
+    
+    from unittest.mock import patch
+    with patch("app.services.diary_service.DiaryService.analyze_diary") as mock_analyze:
+        mock_analyze.side_effect = Exception("分析失败")
+        
+        response = authorized_client.post(f"/api/v1/diary/analyze/{diary_id}")
+        assert response.status_code == 500
+        assert "分析失败" in response.json()["detail"]
