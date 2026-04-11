@@ -67,13 +67,52 @@ class TestGenerator:
         from app.services.llm.factory import chat
         with patch("app.services.rag.generator.chat") as mock_chat:
             mock_chat.return_value = "这是生成的回复"
-            
+
             generator = Generator()
             response = await generator.generate(
                 query="测试问题"
             )
             assert response["answer"] == "这是生成的回复"
             assert "references" in response
+
+    def test_build_system_prompt_with_persona_context(self):
+        """测试带画像上下文构建prompt"""
+        generator = Generator()
+        persona_context = {
+            "has_profile": True,
+            "mbti": {"type": "INTJ", "summary": "富有想象力和战略性的思想家"},
+            "sbti": {"top_themes": ["分析", "战略"]},
+            "attachment": {"style": "安全型"},
+        }
+        prompt = generator._build_system_prompt(
+            assistant_info=None,
+            user_mbti="INTJ",
+            persona_context=persona_context
+        )
+        assert "个性化沟通提示" in prompt or "INTJ" in prompt
+
+    def test_get_response_guidance_intj(self):
+        """测试INTJ类型的回答引导"""
+        generator = Generator()
+        persona_context = {
+            "has_profile": True,
+            "mbti": {"type": "INTJ"},
+            "attachment": {"style": "安全型"},
+        }
+        guidance = generator._get_response_guidance(persona_context)
+        assert guidance is not None
+        assert len(guidance) > 0
+
+    def test_get_response_guidance_anxious_attachment(self):
+        """测试焦虑型依恋的回答引导"""
+        generator = Generator()
+        persona_context = {
+            "has_profile": True,
+            "mbti": {"type": "ENFP"},
+            "attachment": {"style": "焦虑型"},
+        }
+        guidance = generator._get_response_guidance(persona_context)
+        assert "安全感" in guidance or "焦虑" in guidance
 
 
 class TestVectorStore:

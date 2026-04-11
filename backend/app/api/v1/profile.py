@@ -1,0 +1,285 @@
+"""
+深度画像API
+"""
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from datetime import datetime
+from typing import Optional
+import json
+import loguru
+
+from app.core.database import get_db
+from app.models import User, MbtiResult, SBTIResult, AttachmentResult, DeepPersonaProfile
+from app.schemas.profile import (
+    DeepPersonaProfile as DeepPersonaProfileSchema,
+    ProfileSummary,
+    GenerateProfileRequest,
+    CompletionStatus,
+    MbtiSection,
+    SbtiSection,
+    AttachmentSection,
+    IntegratedInsights,
+    AiCompanionRecommendation,
+    AiPartnerListResponse,
+    AiPartnerItem,
+)
+from app.models import AiAssistant
+from app.services.profile_service import get_profile_service
+from app.api.deps import get_current_user
+
+router = APIRouter(prefix="/profile", tags=["深度画像"])
+
+
+@router.get("/deep", summary="获取三位一体深度画像")
+async def get_deep_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取MBTI + SBTI + 依恋风格三位一体的深度画像"""
+    profile_service = get_profile_service()
+    
+    # 获取各模块结果
+    mbti_result = None
+    sbti_result = None
+    attachment_result = None
+    
+    if hasattr(current_user, 'mbti_result_id') and current_user.mbti_result_id:
+        mbti_result = db.query(MbtiResult).filter(
+            MbtiResult.id == current_user.mbti_result_id
+        ).first()
+    
+    if hasattr(current_user, 'sbti_result_id') and current_user.sbti_result_id:
+        sbti_result = db.query(SBTIResult).filter(
+            SBTIResult.user_id == current_user.id,
+            SBTIResult.is_latest == True
+        ).first()
+    
+    if hasattr(current_user, 'attachment_result_id') and current_user.attachment_result_id:
+        attachment_result = db.query(AttachmentResult).filter(
+            AttachmentResult.user_id == current_user.id,
+            AttachmentResult.is_latest == True
+        ).first()
+    
+    # 计算完成状态
+    completed_count = sum([
+        mbti_result is not None,
+        sbti_result is not None,
+        attachment_result is not None,
+    ])
+    
+    completion_percentage = int(completed_count / 3 * 100)
+    
+    if completed_count == 0:
+        completion_status = CompletionStatus.PENDING
+    elif completed_count == 3:
+        completion_status = CompletionStatus.COMPLETE
+    else:
+        completion_status = CompletionStatus.PARTIAL
+    
+    # 构建画像
+    profile = profile_service.build_profile(
+        mbti_result=mbti_result,
+        sbti_result=sbti_result,
+        attachment_result=attachment_result,
+        user_id=current_user.id,
+    )
+    
+    return DeepPersonaProfileSchema(
+        user_id=current_user.id,
+        completion_status=completion_status,
+        completion_percentage=completion_percentage,
+        mbti=profile.get("mbti"),
+        sbti=profile.get("sbti"),
+        attachment=profile.get("attachment"),
+        integrated_insights=profile.get("integrated_insights"),
+        ai_companion_recommendation=profile.get("ai_companion_recommendation"),
+        generated_at=datetime.now(),
+    )
+
+
+@router.post("/generate", summary="重新生成深度画像")
+async def generate_profile(
+    request: Optional[GenerateProfileRequest] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """强制重新生成深度画像"""
+    if request and not request.force_regenerate:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="如需重新生成，请设置 force_regenerate=true",
+        )
+    
+    profile_service = get_profile_service()
+    
+    # 获取各模块结果
+    mbti_result = None
+    sbti_result = None
+    attachment_result = None
+    
+    if hasattr(current_user, 'mbti_result_id') and current_user.mbti_result_id:
+        mbti_result = db.query(MbtiResult).filter(
+            MbtiResult.id == current_user.mbti_result_id
+        ).first()
+    
+    if hasattr(current_user, 'sbti_result_id') and current_user.sbti_result_id:
+        sbti_result = db.query(SBTIResult).filter(
+            SBTIResult.user_id == current_user.id,
+            SBTIResult.is_latest == True
+        ).first()
+    
+    if hasattr(current_user, 'attachment_result_id') and current_user.attachment_result_id:
+        attachment_result = db.query(AttachmentResult).filter(
+            AttachmentResult.user_id == current_user.id,
+            AttachmentResult.is_latest == True
+        ).first()
+    
+    # 检查是否至少有一个测评完成
+    if not any([mbti_result, sbti_result, attachment_result]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="请至少完成一个测评后再生成画像",
+        )
+    
+    # 计算完成状态
+    completed_count = sum([
+        mbti_result is not None,
+        sbti_result is not None,
+        attachment_result is not None,
+    ])
+    
+    completion_percentage = int(completed_count / 3 * 100)
+    
+    if completed_count == 0:
+        completion_status = CompletionStatus.PENDING
+    elif completed_count == 3:
+        completion_status = CompletionStatus.COMPLETE
+    else:
+        completion_status = CompletionStatus.PARTIAL
+    
+    # 构建画像
+    profile = profile_service.build_profile(
+        mbti_result=mbti_result,
+        sbti_result=sbti_result,
+        attachment_result=attachment_result,
+        user_id=current_user.id,
+    )
+    
+    return DeepPersonaProfileSchema(
+        user_id=current_user.id,
+        completion_status=completion_status,
+        completion_percentage=completion_percentage,
+        mbti=profile.get("mbti"),
+        sbti=profile.get("sbti"),
+        attachment=profile.get("attachment"),
+        integrated_insights=profile.get("integrated_insights"),
+        ai_companion_recommendation=profile.get("ai_companion_recommendation"),
+        generated_at=datetime.now(),
+    )
+
+
+@router.get("/summary", summary="获取画像摘要")
+async def get_profile_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取简短画像摘要，用于对话上下文"""
+    profile_service = get_profile_service()
+    
+    # 获取各模块结果
+    mbti_result = None
+    sbti_result = None
+    attachment_result = None
+    
+    if hasattr(current_user, 'mbti_result_id') and current_user.mbti_result_id:
+        mbti_result = db.query(MbtiResult).filter(
+            MbtiResult.id == current_user.mbti_result_id
+        ).first()
+    
+    if hasattr(current_user, 'sbti_result_id') and current_user.sbti_result_id:
+        sbti_result = db.query(SBTIResult).filter(
+            SBTIResult.user_id == current_user.id,
+            SBTIResult.is_latest == True
+        ).first()
+    
+    if hasattr(current_user, 'attachment_result_id') and current_user.attachment_result_id:
+        attachment_result = db.query(AttachmentResult).filter(
+            AttachmentResult.user_id == current_user.id,
+            AttachmentResult.is_latest == True
+        ).first()
+    
+    # 生成摘要
+    summary = profile_service.generate_summary(
+        mbti_result=mbti_result,
+        sbti_result=sbti_result,
+        attachment_result=attachment_result,
+        user_id=current_user.id,
+    )
+    
+    return ProfileSummary(
+        user_id=current_user.id,
+        summary=summary.get("summary", ""),
+        personality_tags=summary.get("personality_tags", []),
+        relationship_style=summary.get("relationship_style", ""),
+        communication_tips=summary.get("communication_tips", []),
+    )
+
+
+@router.get("/ai-partners", summary="获取推荐的AI伴侣")
+async def get_ai_partners(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """根据用户的人格画像获取推荐的AI伴侣列表"""
+    # 获取用户的MBTI和依恋风格
+    user_mbti = current_user.mbti_type
+    user_attachment_style = None
+    
+    if current_user.attachment_result_id:
+        attachment_result = db.query(AttachmentResult).filter(
+            AttachmentResult.id == current_user.attachment_result_id
+        ).first()
+        if attachment_result:
+            user_attachment_style = attachment_result.attachment_style.value if hasattr(attachment_result.attachment_style, 'value') else str(attachment_result.attachment_style)
+    
+    # 获取推荐的AI助手
+    query = db.query(AiAssistant).filter(AiAssistant.is_active == True)
+    
+    # 如果有MBTI，优先推荐匹配类型
+    if user_mbti:
+        query = query.order_by(AiAssistant.mbti_type == user_mbti, AiAssistant.is_recommended == True, AiAssistant.sort_order)
+    else:
+        query = query.order_by(AiAssistant.is_recommended == True, AiAssistant.sort_order)
+    
+    assistants = query.limit(6).all()
+    
+    # 构建响应
+    partners = []
+    for assistant in assistants:
+        # 生成匹配原因
+        match_reasons = []
+        if user_mbti and assistant.mbti_type == user_mbti:
+            match_reasons.append(f"与您同为{user_mbti}型人格")
+        if assistant.is_recommended:
+            match_reasons.append("官方推荐")
+        if assistant.tags:
+            match_reasons.append(f"擅长{assistant.tags.split(',')[0]}")
+        
+        # 解析标签
+        tags = assistant.tags.split(',') if assistant.tags else []
+        
+        partners.append(AiPartnerItem(
+            id=assistant.id,
+            name=assistant.name,
+            avatar=assistant.avatar,
+            mbti_type=assistant.mbti_type.value if hasattr(assistant.mbti_type, 'value') else str(assistant.mbti_type),
+            personality=assistant.personality,
+            attachment_style=None,  # AI助手暂无此字段
+            match_reason="、".join(match_reasons) if match_reasons else "综合匹配",
+            tags=tags,
+        ))
+    
+    return AiPartnerListResponse(
+        total=len(partners),
+        list=partners,
+    )

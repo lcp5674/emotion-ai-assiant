@@ -18,6 +18,17 @@ from app.models.diary import EmotionDiary, MoodRecord, DiaryTag, MoodLevel, Emot
 from app.models.user_memory import UserLongTermMemory, UserMemoryInsight, UserPreference, MemoryType, MemoryImportance
 from app.models.content_audit import ContentAuditQueue
 from app.models.growth import Badge, UserBadge, UserLevel, ExpRecord, GrowthTask, BadgeRarity
+from app.models.personality import (
+    AttachmentStyle,
+    SBTIQuestion,
+    SBTIAnswer,
+    SBTIResult,
+    AttachmentQuestion,
+    AttachmentAnswer,
+    AttachmentResult,
+    DeepPersonaProfile,
+    PersonaInsight,
+)
 
 __all__ = [
     "User",
@@ -58,4 +69,14 @@ __all__ = [
     "ExpRecord",
     "GrowthTask",
     "BadgeRarity",
+    # SBTI和依恋风格模型
+    "AttachmentStyle",
+    "SBTIQuestion",
+    "SBTIAnswer",
+    "SBTIResult",
+    "AttachmentQuestion",
+    "AttachmentAnswer",
+    "AttachmentResult",
+    "DeepPersonaProfile",
+    "PersonaInsight",
 ]

@@ -347,11 +347,15 @@ class TestChatServiceSendMessage:
             "references": []
         })
 
+        mock_persona_builder = Mock()
+        mock_persona_builder.build_user_context = AsyncMock(return_value={"has_profile": False})
+
         mock_redis = Mock()
 
         with patch("app.services.chat_service.get_member_service", return_value=mock_member_svc), \
              patch("app.services.chat_service.get_content_filter", return_value=mock_content_filter), \
              patch("app.services.chat_service.get_generator", return_value=mock_generator), \
+             patch("app.services.chat_service.get_persona_builder", return_value=mock_persona_builder), \
              patch("app.services.chat_service.get_redis", return_value=AsyncMock(return_value=mock_redis)):
 
             service = ChatService()
@@ -542,11 +546,15 @@ class TestChatServiceSendMessage:
             "references": []
         })
 
+        mock_persona_builder = Mock()
+        mock_persona_builder.build_user_context = AsyncMock(return_value={"has_profile": False})
+
         mock_redis = Mock()
 
         with patch("app.services.chat_service.get_member_service", return_value=mock_member_svc), \
              patch("app.services.chat_service.get_content_filter", return_value=mock_content_filter), \
              patch("app.services.chat_service.get_generator", return_value=mock_generator), \
+             patch("app.services.chat_service.get_persona_builder", return_value=mock_persona_builder), \
              patch("app.services.chat_service.get_redis", return_value=AsyncMock(return_value=mock_redis)):
 
             service = ChatService()
@@ -733,11 +741,15 @@ async def test_send_message_existing_conversation(db_session):
         "references": [],
     })
 
+    mock_persona_builder = Mock()
+    mock_persona_builder.build_user_context = AsyncMock(return_value={"has_profile": False})
+
     mock_redis = Mock()
 
     with patch("app.services.chat_service.get_member_service", return_value=mock_member_svc), \
          patch("app.services.chat_service.get_content_filter", return_value=mock_content_filter), \
          patch("app.services.chat_service.get_generator", return_value=mock_generator), \
+         patch("app.services.chat_service.get_persona_builder", return_value=mock_persona_builder), \
          patch("app.services.chat_service.get_redis", return_value=AsyncMock(return_value=mock_redis)):
 
         result = await service.send_message(

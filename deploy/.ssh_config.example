@@ -1,0 +1,13 @@
+# SSH 配置示例
+
+Host emotion-ai-prod
+    HostName your-server-ip
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/emotion_ai_prod
+
+Host emotion-ai-staging
+    HostName staging-server-ip
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/emotion_ai_staging

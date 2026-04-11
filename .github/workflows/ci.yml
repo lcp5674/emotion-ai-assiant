@@ -1,0 +1,221 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # ===========================================================================
+  # 后端测试
+  # ===========================================================================
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_root
+          MYSQL_DATABASE: emotion_ai_test
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements-core.txt
+          pip install pytest pytest-cov pytest-asyncio httpx black flake8 mypy
+
+      - name: Run linting
+        run: |
+          cd backend
+          black --check app/ tests/
+          flake8 app/ tests/ --max-line-length=120 --ignore=E501,W503
+
+      - name: Run type checking
+        run: |
+          cd backend
+          mypy app/ --ignore-missing-imports || true
+
+      - name: Run tests
+        env:
+          DATABASE_URL: mysql+pymysql://test_user:test_password@127.0.0.1:3306/emotion_ai_test
+          REDIS_URL: redis://127.0.0.1:6379/0
+          LLM_PROVIDER: mock
+        run: |
+          cd backend
+          pytest tests/unit/ -v --cov=app --cov-report=xml --cov-report=html
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage.xml
+          flags: unittests
+          name: backend-coverage
+
+  # ===========================================================================
+  # 前端测试
+  # ===========================================================================
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/web/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend/web
+          npm ci
+
+      - name: Run linting
+        run: |
+          cd frontend/web
+          npm run lint || true
+
+      - name: Run type checking
+        run: |
+          cd frontend/web
+          npm run type-check || true
+
+      - name: Run tests
+        run: |
+          cd frontend/web
+          npm test -- --coverage --passWithNoTests
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          flags: frontend
+          name: frontend-coverage
+
+  # ===========================================================================
+  # 构建
+  # ===========================================================================
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        if: github.event_name != 'pull_request'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: emotion-ai-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend/web
+          push: false
+          tags: emotion-ai-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # 部署预览 (PR)
+  # ===========================================================================
+  preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Preview
+        run: |
+          echo "Preview deployment for PR #${{ github.event.pull_request.number }}"
+          # 部署预览环境逻辑
+          echo "Preview URL will be posted as PR comment"
+
+  # ===========================================================================
+  # 部署生产
+  # ===========================================================================
+  deploy:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/emotion-ai
+            ./deploy/deploy.sh
+            ./deploy/health_check.sh
+
+      - name: Notify Success
+        run: |
+          echo "Deployment successful!"

@@ -26,6 +26,16 @@ const DiaryStats = lazy(() => import('./views/diary/stats'))
 const Onboarding = lazy(() => import('./views/onboarding'))
 const PrivacyPage = lazy(() => import('./views/privacy'))
 const CrisisPage = lazy(() => import('./views/crisis'))
+// SBTI
+const SbtiIndex = lazy(() => import('./views/sbti'))
+const SbtiTest = lazy(() => import('./views/sbti/test'))
+const SbtiResult = lazy(() => import('./views/sbti/result'))
+// 依恋风格
+const AttachmentIndex = lazy(() => import('./views/attachment'))
+const AttachmentTest = lazy(() => import('./views/attachment/test'))
+const AttachmentResult = lazy(() => import('./views/attachment/result'))
+// 深度画像
+const DeepProfile = lazy(() => import('./views/profile/deep'))
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme()
@@ -74,6 +84,19 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/crisis" element={<CrisisPage />} />
+
+      {/* SBTI */}
+      <Route path="/sbti" element={<SbtiIndex />} />
+      <Route path="/sbti/test" element={<SbtiTest />} />
+      <Route path="/sbti/result" element={<SbtiResult />} />
+
+      {/* 依恋风格 */}
+      <Route path="/attachment" element={<AttachmentIndex />} />
+      <Route path="/attachment/test" element={<AttachmentTest />} />
+      <Route path="/attachment/result" element={<AttachmentResult />} />
+
+      {/* 深度画像 */}
+      <Route path="/profile/deep" element={<DeepProfile />} />
     </Routes>
   )
 }

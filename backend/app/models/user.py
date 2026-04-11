@@ -32,6 +32,12 @@ class User(Base):
     mbti_type = Column(String(4), nullable=True, comment="MBTI类型")
     mbti_result_id = Column(Integer, nullable=True, comment="MBTI结果ID")
 
+    # SBTI相关
+    sbti_result_id = Column(Integer, nullable=True, comment="SBTI结果ID")
+
+    # 依恋风格相关
+    attachment_result_id = Column(Integer, nullable=True, comment="依恋风格结果ID")
+
     # 会员相关
     member_level = Column(Enum(MemberLevel), default=MemberLevel.FREE, comment="会员等级")
     member_expire_at = Column(DateTime, nullable=True, comment="会员过期时间")
@@ -53,6 +59,14 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     members = relationship("MemberOrder", back_populates="user", cascade="all, delete-orphan")
     diaries = relationship("EmotionDiary", back_populates="user", cascade="all, delete-orphan")
+    
+    # SBTI和依恋风格关系
+    sbti_answers = relationship("SBTIAnswer", back_populates="user", cascade="all, delete-orphan")
+    sbti_results = relationship("SBTIResult", back_populates="user", cascade="all, delete-orphan")
+    attachment_answers = relationship("AttachmentAnswer", back_populates="user", cascade="all, delete-orphan")
+    attachment_results = relationship("AttachmentResult", back_populates="user", cascade="all, delete-orphan")
+    deep_persona_profile = relationship("DeepPersonaProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    persona_insights = relationship("PersonaInsight", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, nickname={self.nickname}, mbti={self.mbti_type})>"

@@ -13,6 +13,7 @@ from app.models.chat import MessageType, ConversationStatus
 from app.services.rag.generator import get_generator
 from app.services.member_service import get_member_service
 from app.services.content_filter import get_content_filter
+from app.services.persona_context_builder import get_persona_builder
 
 
 class ChatService:
@@ -142,6 +143,10 @@ class ChatService:
 
         user_mbti = user.mbti_type
 
+        # 获取用户画像上下文（MBTI + SBTI + 依恋风格）
+        persona_builder = get_persona_builder()
+        persona_context = await persona_builder.build_user_context(user)
+
         # 调用RAG生成回答
         generator = get_generator()
         result = await generator.generate(
@@ -149,6 +154,7 @@ class ChatService:
             user_mbti=user_mbti,
             conversation_context=conversation_context,
             assistant_info=assistant_info,
+            persona_context=persona_context,
         )
 
         # 保存助手回复

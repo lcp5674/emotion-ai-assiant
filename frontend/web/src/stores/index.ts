@@ -175,3 +175,6 @@ export const useMbtiStore = create<MbtiState>((set) => ({
 
 // 重新导出diary store
 export * from './diary'
+
+// 评估相关 store
+export * from './assessment'

@@ -214,6 +214,21 @@ export default function Profile() {
               },
               {
                 icon: <CrownOutlined />,
+                title: 'SBTI才干',
+                path: '/sbti/result',
+              },
+              {
+                icon: <HeartOutlined />,
+                title: '依恋风格',
+                path: '/attachment/result',
+              },
+              {
+                icon: <CrownOutlined />,
+                title: '深度画像',
+                path: '/profile/deep',
+              },
+              {
+                icon: <CrownOutlined />,
                 title: '会员中心',
                 action: openMembershipModal,
               },

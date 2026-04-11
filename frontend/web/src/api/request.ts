@@ -242,4 +242,27 @@ export const api = {
   diary: {
     privacyPolicy: (): Promise<any> => request.get('/diary/privacy-policy'),
   },
+
+  // SBTI
+  sbti: {
+    questions: (): Promise<any> => request.get('/sbti/questions'),
+    submit: (answers: Array<{ question_id: number; answer: string }>): Promise<any> =>
+      request.post('/sbti/submit', { answers }),
+    result: (): Promise<any> => request.get('/sbti/result'),
+    themeDetail: (theme: string): Promise<any> => request.get(`/sbti/themes/${theme}`),
+  },
+
+  // 依恋风格
+  attachment: {
+    questions: (): Promise<any> => request.get('/attachment/questions'),
+    submit: (answers: Array<{ question_id: number; score: number }>): Promise<any> =>
+      request.post('/attachment/submit', { answers }),
+    result: (): Promise<any> => request.get('/attachment/result'),
+  },
+
+  // 深度画像
+  profile: {
+    deep: (): Promise<any> => request.get('/profile/deep'),
+    aiPartners: (): Promise<any> => request.get('/profile/ai-partners'),
+  },
 }
