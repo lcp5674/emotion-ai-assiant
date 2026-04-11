@@ -77,6 +77,13 @@ try:
 except ImportError:
     loguru.logger.warning("请求大小限制中间件加载失败")
 
+# 性能监控中间件
+try:
+    from app.middleware.performance import performance_middleware
+    app.middleware("http")(performance_middleware)
+except ImportError:
+    loguru.logger.warning("性能监控中间件加载失败")
+
 # 注册路由
 app.include_router(api_router, prefix="/api/v1")
 

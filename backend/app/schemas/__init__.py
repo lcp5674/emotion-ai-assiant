@@ -86,6 +86,18 @@ from app.schemas.growth import (
     GrowthTaskResponse,
     SetBadgeDisplayRequest,
 )
+from app.schemas.analytics import (
+    UserActivityCreate, UserActivityResponse,
+    AnalyticsMetricCreate, AnalyticsMetricResponse,
+    UserBehaviorResponse, UserBehaviorUpdate,
+    AnalyticsSummaryResponse, EventStatsResponse
+)
+from app.schemas.support import (
+    SupportTicketCreate, SupportTicketResponse, SupportTicketUpdate,
+    TicketMessageCreate, TicketMessageResponse,
+    ChatbotMessageCreate, ChatbotMessageResponse,
+    ChatbotConversationResponse
+)
 
 __all__ = [
     # user
@@ -166,4 +178,14 @@ __all__ = [
     "ExpRecordResponse",
     "GrowthTaskResponse",
     "SetBadgeDisplayRequest",
+    # analytics
+    "UserActivityCreate", "UserActivityResponse",
+    "AnalyticsMetricCreate", "AnalyticsMetricResponse",
+    "UserBehaviorResponse", "UserBehaviorUpdate",
+    "AnalyticsSummaryResponse", "EventStatsResponse",
+    # support
+    "SupportTicketCreate", "SupportTicketResponse", "SupportTicketUpdate",
+    "TicketMessageCreate", "TicketMessageResponse",
+    "ChatbotMessageCreate", "ChatbotMessageResponse",
+    "ChatbotConversationResponse",
 ]

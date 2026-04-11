@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Card, Tabs, Form, Input, Select, Button, Table, Tag, Modal, Switch, Space, Popconfirm, Spin, App } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, ReloadOutlined, ArrowLeftOutlined, ApiOutlined } from '@ant-design/icons'
+import { Card, Tabs, Form, Input, Select, Button, Table, Tag, Modal, Switch, Space, Popconfirm, Spin, App, Statistic, Row, Col, Descriptions, DatePicker, Badge, Tooltip, Pagination, InputNumber, Divider, Progress } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, ReloadOutlined, ArrowLeftOutlined, ApiOutlined, UserOutlined, MessageOutlined, CalendarOutlined, LineChartOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/request'
+import dayjs from 'dayjs'
 
 interface ConfigData {
   llm_provider: string
@@ -62,6 +63,58 @@ interface Assistant {
   is_active: boolean
   is_recommended?: boolean
   created_at: string
+}
+
+interface DashboardStats {
+  user_count: number
+  user_today: number
+  active_users: number
+  paid_users: number
+  conversation_count: number
+  conversation_today: number
+  message_count: number
+  message_today: number
+  mbti_tested: number
+  mbti_today: number
+  diary_count: number
+  diary_today: number
+}
+
+interface User {
+  id: number
+  phone: string
+  nickname: string
+  mbti_type: string
+  level: string
+  is_active: boolean
+  is_verified: boolean
+  is_admin: boolean
+  created_at: string
+  last_login_at: string
+}
+
+interface AuditItem {
+  id: number
+  user_id: number
+  content_type: string
+  content_id: number
+  content_text: string
+  risk_level: string
+  categories: string
+  detected_keywords: string
+  confidence: number
+  status: string
+  reviewed_by: number
+  reviewed_at: string
+  review_note: string
+  created_at: string
+}
+
+interface DailyStats {
+  dates: string[]
+  user_counts: number[]
+  message_counts: number[]
+  conversation_counts: number[]
 }
 
 const PROVIDERS = [
@@ -144,7 +197,7 @@ const MODELS: Record<string, { value: string; label: string }[]> = {
 export default function Admin() {
   const navigate = useNavigate()
   const { message } = App.useApp()
-  const [activeTab, setActiveTab] = useState('config')
+  const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -156,10 +209,38 @@ export default function Admin() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null)
   const [form] = Form.useForm()
+  
+  // 仪表盘数据
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
+  const [dashboardLoading, setDashboardLoading] = useState(false)
+  
+  // 用户列表
+  const [users, setUsers] = useState<User[]>([])
+  const [userLoading, setUserLoading] = useState(false)
+  const [userTotal, setUserTotal] = useState(0)
+  const [userPage, setUserPage] = useState(1)
+  const [userPageSize, setUserPageSize] = useState(20)
+  const [userKeyword, setUserKeyword] = useState('')
+  const [userLevel, setUserLevel] = useState('')
+  
+  // 审核队列
+  const [auditItems, setAuditItems] = useState<AuditItem[]>([])
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditTotal, setAuditTotal] = useState(0)
+  const [auditPage, setAuditPage] = useState(1)
+  const [auditPageSize, setAuditPageSize] = useState(20)
+  const [auditStatus, setAuditStatus] = useState('pending')
+  const [auditRiskLevel, setAuditRiskLevel] = useState('')
+  
+  // 数据统计
+  const [dailyStats, setDailyStats] = useState<DailyStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+  const [statsDays, setStatsDays] = useState(30)
 
   useEffect(() => {
     loadConfig()
     loadAssistants()
+    loadDashboardStats()
   }, [])
 
   const loadConfig = async () => {
@@ -185,6 +266,78 @@ export default function Admin() {
       setAssistantLoading(false)
     }
   }
+
+  const loadDashboardStats = async () => {
+    try {
+      setDashboardLoading(true)
+      const res = await api.admin.dashboard()
+      setDashboardStats(res)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setDashboardLoading(false)
+    }
+  }
+
+  const loadUsers = async () => {
+    try {
+      setUserLoading(true)
+      const res = await api.admin.users({
+        page: userPage,
+        page_size: userPageSize,
+        keyword: userKeyword,
+        level: userLevel
+      })
+      setUsers(res?.data || res?.list || [])
+      setUserTotal(res?.total || 0)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setUserLoading(false)
+    }
+  }
+
+  const loadAuditQueue = async () => {
+    try {
+      setAuditLoading(true)
+      const res = await api.admin.auditQueue({
+        status: auditStatus,
+        risk_level: auditRiskLevel,
+        page: auditPage,
+        page_size: auditPageSize
+      })
+      setAuditItems(res?.list || [])
+      setAuditTotal(res?.total || 0)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setAuditLoading(false)
+    }
+  }
+
+  const loadDailyStats = async () => {
+    try {
+      setStatsLoading(true)
+      const res = await api.admin.dailyStats({ days: statsDays })
+      setDailyStats(res)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadUsers()
+  }, [userPage, userPageSize, userKeyword, userLevel])
+
+  useEffect(() => {
+    loadAuditQueue()
+  }, [auditPage, auditPageSize, auditStatus, auditRiskLevel])
+
+  useEffect(() => {
+    loadDailyStats()
+  }, [statsDays])
 
   const handleSaveConfig = async () => {
     try {
@@ -720,6 +873,395 @@ export default function Admin() {
     )
   }
 
+  const renderDashboard = () => {
+    if (dashboardLoading) {
+      return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', padding: '40px' }} />
+    }
+
+    return (
+      <div>
+        <Row gutter={[16, 16]}>
+          <Col span={6}>
+            <Card>
+              <Statistic title="总用户数" value={dashboardStats?.user_count || 0} />
+              <div style={{ marginTop: 8, color: '#888' }}>今日新增: {dashboardStats?.user_today || 0}</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="活跃用户" value={dashboardStats?.active_users || 0} />
+              <div style={{ marginTop: 8, color: '#888' }}>付费用户: {dashboardStats?.paid_users || 0}</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="总对话数" value={dashboardStats?.conversation_count || 0} />
+              <div style={{ marginTop: 8, color: '#888' }}>今日对话: {dashboardStats?.conversation_today || 0}</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="总消息数" value={dashboardStats?.message_count || 0} />
+              <div style={{ marginTop: 8, color: '#888' }}>今日消息: {dashboardStats?.message_today || 0}</div>
+            </Card>
+          </Col>
+        </Row>
+        
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col span={6}>
+            <Card>
+              <Statistic title="MBTI测试" value={dashboardStats?.mbti_tested || 0} />
+              <div style={{ marginTop: 8, color: '#888' }}>今日测试: {dashboardStats?.mbti_today || 0}</div>
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="情感日记" value={dashboardStats?.diary_count || 0} />
+              <div style={{ marginTop: 8, color: '#888' }}>今日日记: {dashboardStats?.diary_today || 0}</div>
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+
+  const renderUserManagement = () => {
+    const userColumns = [
+      {
+        title: 'ID',
+        dataIndex: 'id',
+        width: 80,
+      },
+      {
+        title: '手机号',
+        dataIndex: 'phone',
+        width: 150,
+      },
+      {
+        title: '昵称',
+        dataIndex: 'nickname',
+        width: 120,
+      },
+      {
+        title: 'MBTI',
+        dataIndex: 'mbti_type',
+        width: 80,
+        render: (mbti: string) => <Tag color="purple">{mbti || '-'}</Tag>,
+      },
+      {
+        title: '会员等级',
+        dataIndex: 'level',
+        width: 100,
+        render: (level: string) => (
+          <Tag color={level === 'PREMIUM' ? 'red' : level === 'PRO' ? 'orange' : 'default'}>
+            {level || 'FREE'}
+          </Tag>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'is_active',
+        width: 80,
+        render: (active: boolean) => (
+          <Tag color={active ? 'green' : 'default'}>{active ? '活跃' : '禁用'}</Tag>
+        ),
+      },
+      {
+        title: '管理员',
+        dataIndex: 'is_admin',
+        width: 80,
+        render: (admin: boolean) => (
+          <Tag color={admin ? 'blue' : 'default'}>{admin ? '是' : '否'}</Tag>
+        ),
+      },
+      {
+        title: '注册时间',
+        dataIndex: 'created_at',
+        width: 180,
+        render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm'),
+      },
+      {
+        title: '最后登录',
+        dataIndex: 'last_login_at',
+        width: 180,
+        render: (time: string) => time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-',
+      },
+    ]
+
+    return (
+      <div>
+        <Card style={{ marginBottom: 16 }}>
+          <Row gutter={16} align="middle">
+            <Col flex="auto">
+              <Input
+                placeholder="搜索手机号或昵称"
+                value={userKeyword}
+                onChange={(e) => setUserKeyword(e.target.value)}
+                prefix={<SearchOutlined />}
+                style={{ width: 250, marginRight: 16 }}
+              />
+              <Select
+                placeholder="会员等级"
+                value={userLevel}
+                onChange={setUserLevel}
+                style={{ width: 150 }}
+                options={[
+                  { value: '', label: '全部' },
+                  { value: 'FREE', label: '免费' },
+                  { value: 'PRO', label: '专业' },
+                  { value: 'PREMIUM', label: '高级' },
+                ]}
+              />
+            </Col>
+            <Col>
+              <Button type="primary" onClick={loadUsers}>
+                搜索
+              </Button>
+            </Col>
+          </Row>
+        </Card>
+        
+        <Table
+          columns={userColumns}
+          dataSource={users}
+          rowKey="id"
+          loading={userLoading}
+          pagination={{
+            current: userPage,
+            pageSize: userPageSize,
+            total: userTotal,
+            onChange: (page, pageSize) => {
+              setUserPage(page)
+              setUserPageSize(pageSize)
+            },
+          }}
+        />
+      </div>
+    )
+  }
+
+  const renderContentManagement = () => {
+    const auditColumns = [
+      {
+        title: 'ID',
+        dataIndex: 'id',
+        width: 80,
+      },
+      {
+        title: '用户ID',
+        dataIndex: 'user_id',
+        width: 100,
+      },
+      {
+        title: '内容类型',
+        dataIndex: 'content_type',
+        width: 120,
+      },
+      {
+        title: '内容',
+        dataIndex: 'content_text',
+        ellipsis: true,
+      },
+      {
+        title: '风险等级',
+        dataIndex: 'risk_level',
+        width: 100,
+        render: (level: string) => (
+          <Tag color={level === 'high' ? 'red' : level === 'medium' ? 'orange' : 'green'}>
+            {level}
+          </Tag>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        width: 100,
+        render: (status: string) => {
+          let color = 'default'
+          let text = status
+          switch (status) {
+            case 'pending':
+              color = 'blue'
+              text = '待审核'
+              break
+            case 'approved':
+              color = 'green'
+              text = '已通过'
+              break
+            case 'rejected':
+              color = 'red'
+              text = '已拒绝'
+              break
+          }
+          return <Tag color={color}>{text}</Tag>
+        },
+      },
+      {
+        title: '创建时间',
+        dataIndex: 'created_at',
+        width: 180,
+        render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm'),
+      },
+      {
+        title: '操作',
+        width: 120,
+        render: (_: any, record: AuditItem) => {
+          if (record.status === 'pending') {
+            return (
+              <Space>
+                <Button size="small" type="primary" onClick={() => handleAuditReview(record.id, 'approved')}>
+                  通过
+                </Button>
+                <Button size="small" danger onClick={() => handleAuditReview(record.id, 'rejected')}>
+                  拒绝
+                </Button>
+              </Space>
+            )
+          }
+          return null
+        },
+      },
+    ]
+
+    return (
+      <div>
+        <Card style={{ marginBottom: 16 }}>
+          <Row gutter={16} align="middle">
+            <Col flex="auto">
+              <Select
+                placeholder="审核状态"
+                value={auditStatus}
+                onChange={setAuditStatus}
+                style={{ width: 150, marginRight: 16 }}
+                options={[
+                  { value: 'pending', label: '待审核' },
+                  { value: 'approved', label: '已通过' },
+                  { value: 'rejected', label: '已拒绝' },
+                ]}
+              />
+              <Select
+                placeholder="风险等级"
+                value={auditRiskLevel}
+                onChange={setAuditRiskLevel}
+                style={{ width: 150 }}
+                options={[
+                  { value: '', label: '全部' },
+                  { value: 'high', label: '高' },
+                  { value: 'medium', label: '中' },
+                  { value: 'low', label: '低' },
+                ]}
+              />
+            </Col>
+            <Col>
+              <Button type="primary" onClick={loadAuditQueue}>
+                筛选
+              </Button>
+            </Col>
+          </Row>
+        </Card>
+        
+        <Table
+          columns={auditColumns}
+          dataSource={auditItems}
+          rowKey="id"
+          loading={auditLoading}
+          pagination={{
+            current: auditPage,
+            pageSize: auditPageSize,
+            total: auditTotal,
+            onChange: (page, pageSize) => {
+              setAuditPage(page)
+              setAuditPageSize(pageSize)
+            },
+          }}
+        />
+      </div>
+    )
+  }
+
+  const renderDataStatistics = () => {
+    if (statsLoading) {
+      return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', padding: '40px' }} />
+    }
+
+    return (
+      <div>
+        <Card style={{ marginBottom: 16 }}>
+          <Row gutter={16} align="middle">
+            <Col flex="auto">
+              <span style={{ marginRight: 16 }}>统计天数:</span>
+              <InputNumber
+                min={1}
+                max={90}
+                value={statsDays}
+                onChange={setStatsDays}
+                style={{ width: 100 }}
+              />
+              <span style={{ marginLeft: 8 }}>天</span>
+            </Col>
+            <Col>
+              <Button type="primary" onClick={loadDailyStats}>
+                刷新数据
+              </Button>
+            </Col>
+          </Row>
+        </Card>
+        
+        <Card title="每日数据统计">
+          {dailyStats && (
+            <div>
+              <Descriptions column={3}>
+                <Descriptions.Item label="总用户增长">
+                  {dailyStats.user_counts.reduce((sum, count) => sum + count, 0)}
+                </Descriptions.Item>
+                <Descriptions.Item label="总消息数">
+                  {dailyStats.message_counts.reduce((sum, count) => sum + count, 0)}
+                </Descriptions.Item>
+                <Descriptions.Item label="总对话数">
+                  {dailyStats.conversation_counts.reduce((sum, count) => sum + count, 0)}
+                </Descriptions.Item>
+              </Descriptions>
+              <Divider />
+              <div style={{ height: 400, overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #e8e8e8' }}>
+                      <th style={{ padding: '12px', textAlign: 'left' }}>日期</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>新增用户</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>消息数</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>对话数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyStats.dates.map((date, index) => (
+                      <tr key={date} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '12px' }}>{date}</td>
+                        <td style={{ padding: '12px', textAlign: 'right' }}>{dailyStats.user_counts[index]}</td>
+                        <td style={{ padding: '12px', textAlign: 'right' }}>{dailyStats.message_counts[index]}</td>
+                        <td style={{ padding: '12px', textAlign: 'right' }}>{dailyStats.conversation_counts[index]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  const handleAuditReview = async (id: number, status: string) => {
+    try {
+      await api.admin.reviewAudit(id, { status })
+      message.success(`已${status === 'approved' ? '通过' : '拒绝'}审核`)
+      loadAuditQueue()
+    } catch (error) {
+      console.error(error)
+      message.error('操作失败')
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5', padding: '24px' }}>
       <div style={{ marginBottom: 16 }}>
@@ -733,9 +1275,24 @@ export default function Admin() {
           onChange={setActiveTab}
           items={[
             {
-              key: 'config',
-              label: 'LLM 配置',
-              children: renderConfigForm(),
+              key: 'dashboard',
+              label: '仪表盘',
+              children: renderDashboard(),
+            },
+            {
+              key: 'users',
+              label: '用户管理',
+              children: renderUserManagement(),
+            },
+            {
+              key: 'content',
+              label: '内容管理',
+              children: renderContentManagement(),
+            },
+            {
+              key: 'stats',
+              label: '数据统计',
+              children: renderDataStatistics(),
             },
             {
               key: 'assistants',
@@ -756,6 +1313,11 @@ export default function Admin() {
                   />
                 </div>
               ),
+            },
+            {
+              key: 'config',
+              label: '系统配置',
+              children: renderConfigForm(),
             },
           ]}
         />

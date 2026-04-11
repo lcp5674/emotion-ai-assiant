@@ -124,7 +124,7 @@ export default function PaymentPage() {
                 </div>
                 <div className="duration">
                   {plan.duration_days >= 365 ? '全年' :
-                   plan.duration_days >= 30 ? `${Math.round(plan.duration_days / 30)}月 : `${plan.duration_days}天`}
+                   plan.duration_days >= 30 ? `${Math.round(plan.duration_days / 30)}月` : `${plan.duration_days}天`}
                 </div>
               </div>
 

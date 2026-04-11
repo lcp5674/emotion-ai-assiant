@@ -29,6 +29,9 @@ from app.models.personality import (
     DeepPersonaProfile,
     PersonaInsight,
 )
+from app.models.permission import Role, Permission, PermissionAction, ResourceType
+from app.models.analytics import UserActivity, AnalyticsMetric, UserBehavior, EventType
+from app.models.support import SupportTicket, TicketMessage, ChatbotConversation, ChatbotMessage, TicketStatus, TicketPriority
 
 __all__ = [
     "User",
@@ -79,4 +82,21 @@ __all__ = [
     "AttachmentResult",
     "DeepPersonaProfile",
     "PersonaInsight",
+    # 权限管理模型
+    "Role",
+    "Permission",
+    "PermissionAction",
+    "ResourceType",
+    # 数据分析模型
+    "UserActivity",
+    "AnalyticsMetric",
+    "UserBehavior",
+    "EventType",
+    # 客服系统模型
+    "SupportTicket",
+    "TicketMessage",
+    "ChatbotConversation",
+    "ChatbotMessage",
+    "TicketStatus",
+    "TicketPriority",
 ]

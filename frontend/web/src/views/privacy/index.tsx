@@ -47,7 +47,7 @@ export default function PrivacyPage() {
         {privacy && (
           <>
             <div className="privacy-header">
-              <Title level={2}>{privacy.title}</title>
+              <Title level={2}>{privacy.title}</Title>
               <div className="privacy-meta">
                 <Tag color="blue">版本 {privacy.version}</Tag>
                 <Text type="secondary">最后更新：{privacy.last_updated}</Text>
