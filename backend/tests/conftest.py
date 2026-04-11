@@ -102,3 +102,31 @@ def mock_sms_service():
     with patch("app.services.sms_service.send_verification_code") as mock:
         mock.return_value = True
         yield mock
+
+
+@pytest.fixture(scope="function")
+def admin_user(db_session):
+    """管理员用户fixture"""
+    from app.models.user import User
+    from app.services.auth_service import get_password_hash
+    
+    user = User(
+        phone="13800138001",
+        email="admin@example.com",
+        nickname="管理员",
+        password_hash=get_password_hash("Admin@123456"),
+        is_active=True,
+        is_admin=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture(scope="function")
+def authorized_admin_client(client, admin_user):
+    """带管理员认证的测试客户端fixture"""
+    access_token = create_access_token(data={"sub": str(admin_user.id)})
+    client.headers["Authorization"] = f"Bearer {access_token}"
+    return client

@@ -23,6 +23,7 @@ class WechatPayService:
         self.apiv3_key = settings.WECHAT_APIV3_KEY
         self.appid = settings.WECHAT_APPID
         self.notify_url = settings.WECHAT_NOTIFY_URL
+        self.sandbox_mode = settings.WECHAT_SANDBOX_MODE
 
     def is_enabled(self) -> bool:
         return self.enabled and bool(self.mchid and self.apiv3_key)
@@ -54,7 +55,8 @@ class WechatPayService:
         try:
             import httpx
 
-            url = "https://api.mch.weixin.qq.com/v3/pay/transactions/native"
+            base_url = "https://api.mch.weixin.qq.com/sandboxnew" if self.sandbox_mode else "https://api.mch.weixin.qq.com"
+            url = f"{base_url}/v3/pay/transactions/native"
 
             time_str = datetime.now().strftime("%Y%m-%d%H:%M:%S")
             nonce_str = self._generate_nonce()

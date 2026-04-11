@@ -44,6 +44,11 @@ async def get_current_user(
             detail="用户已被禁用",
         )
 
+    # 检查并更新会员状态
+    from app.services.member_service import get_member_service
+    member_service = get_member_service()
+    await member_service.check_and_update_member_status(user.id, db)
+
     return user
 
 

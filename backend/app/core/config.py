@@ -120,6 +120,7 @@ class Settings(BaseSettings):
     WECHAT_APIV3_KEY: str = ""
     WECHAT_APPID: str = ""
     WECHAT_NOTIFY_URL: str = ""
+    WECHAT_SANDBOX_MODE: bool = False
 
     # Stripe支付配置
     STRIPE_API_KEY: Optional[str] = None

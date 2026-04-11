@@ -155,6 +155,43 @@ async def wechat_notify(
     return {"code": "SUCCESS", "message": "OK"}
 
 
+@router.post("/wechat/test-notify", summary="微信支付回调测试（仅开发测试用）")
+async def test_wechat_notify(
+    order_no: str,
+    db: Session = Depends(get_db),
+):
+    """测试微信支付回调处理逻辑"""
+    from app.core.config import settings
+    if not settings.DEBUG:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅开发环境可用")
+
+    order = db.query(MemberOrder).filter(MemberOrder.order_no == order_no).first()
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
+
+    if order.status == "paid":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="订单已支付")
+
+    # 模拟支付成功逻辑
+    order.status = "paid"
+    order.paid_at = datetime.now()
+
+    user = db.query(User).filter(User.id == order.user_id).first()
+    if user:
+        user.member_level = MemberLevel[order.level.upper()]
+
+        from datetime import timedelta
+        if user.member_expire_at and user.member_expire_at > datetime.now():
+            user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
+        else:
+            user.member_expire_at = datetime.now() + timedelta(days=order.duration)
+
+    db.commit()
+    loguru.logger.info(f"测试订单 {order_no} 支付成功")
+
+    return {"message": "测试支付回调成功", "order_no": order_no, "level": order.level}
+
+
 @router.get("/wechat/query/{order_no}", summary="查询支付状态")
 async def query_wechat_order(
     order_no: str,

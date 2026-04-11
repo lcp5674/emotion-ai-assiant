@@ -4,8 +4,10 @@
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 import loguru
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.user import User, MemberLevel
 
 
 class MemberService:
@@ -84,32 +86,53 @@ class MemberService:
         if member_level == "free":
             return True
         if member_expire_at is None:
-            return member_level != "free"
+            return True
         return member_expire_at < datetime.now()
 
-    def can_access_feature(self, member_level: str, feature: str, member_expire_at: Optional[datetime] = None) -> bool:
-        level = member_level if member_level else "free"
-        if level == "free" and member_expire_at and member_expire_at > datetime.now():
-            level = "vip"
+    def get_effective_member_level(self, member_level: str, member_expire_at: Optional[datetime]) -> str:
+        """获取有效的会员等级"""
+        if self.is_vip_expired(member_level, member_expire_at):
+            return "free"
+        return member_level
 
+    async def check_and_update_member_status(self, user_id: int, db: Session) -> bool:
+        """检查并更新会员状态
+        
+        Args:
+            user_id: 用户ID
+            db: 数据库会话
+            
+        Returns:
+            bool: 是否更新了状态
+        """
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return False
+        
+        if user.member_level != MemberLevel.FREE and user.member_expire_at:
+            if user.member_expire_at < datetime.now():
+                user.member_level = MemberLevel.FREE
+                db.commit()
+                loguru.logger.info(f"用户 {user_id} 会员已过期，已降级为免费用户")
+                return True
+        return False
+
+    def can_access_feature(self, member_level: str, feature: str, member_expire_at: Optional[datetime] = None) -> bool:
+        level = self.get_effective_member_level(member_level, member_expire_at)
         allowed_features = self.FEATURES.get(level, self.FEATURES["free"])
         return feature in allowed_features
 
     def get_user_features(self, member_level: str, member_expire_at: Optional[datetime]) -> dict:
         """获取用户可用的功能列表"""
-        level = member_level if member_level else "free"
-        if level == "free":
-            if member_expire_at and member_expire_at > datetime.now():
-                level = "vip"
-
-        features = self.FEATURES.get(level, self.FEATURES["free"])
+        effective_level = self.get_effective_member_level(member_level, member_expire_at)
+        features = self.FEATURES.get(effective_level, self.FEATURES["free"])
         is_expired = self.is_vip_expired(member_level, member_expire_at)
 
         return {
-            "level": level,
+            "level": effective_level,
             "is_expired": is_expired,
             "features": features,
-            "daily_limit": None if level != "free" else self.FREE_DAILY_LIMIT,
+            "daily_limit": None if effective_level != "free" else self.FREE_DAILY_LIMIT,
         }
 
 
