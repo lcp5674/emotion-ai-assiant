@@ -10,7 +10,7 @@ import i18n from './i18n'
 import './index.css'
 
 function ThemedApp() {
-  const { theme: currentTheme } = useTheme()
+  const { theme: currentTheme, getThemeColor } = useTheme()
   const locale = i18n.language === 'zh-CN' ? zhCN : enUS
   return (
     <ConfigProvider
@@ -18,7 +18,7 @@ function ThemedApp() {
       theme={{
         algorithm: currentTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#722ed1',
+          colorPrimary: getThemeColor(),
         },
       }}
     >

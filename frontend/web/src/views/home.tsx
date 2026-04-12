@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Card, Row, Col, Tag, Alert } from 'antd'
-import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ShakeOutlined, BankOutlined, ToolOutlined } from '@ant-design/icons'
+import { Button, Card, Row, Col, Tag, Alert, Dropdown, Space } from 'antd'
+import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ShakeOutlined, BankOutlined, ToolOutlined, SettingOutlined, ColorPickerOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
+import { useTheme } from '../hooks/useTheme'
 
 const { Meta } = Card
 
 export default function Home() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
+  const { themeColor, changeThemeColor, themeColors, toggleTheme, theme } = useTheme()
   const [banners, setBanners] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -95,12 +97,12 @@ export default function Home() {
                 width: 40,
                 height: 40,
                 borderRadius: '12px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fff',
-                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
+                boxShadow: `0 4px 15px ${themeColors[themeColor]}40`,
               }}>
                 <HeartOutlined style={{ fontSize: 20 }} />
               </div>
@@ -109,47 +111,113 @@ export default function Home() {
               </h1>
             </div>
           </Link>
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* 主题设置 */}
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'themeMode',
+                    label: (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '120px' }}>
+                        <span>明暗模式</span>
+                        <Button
+                          type="text"
+                          onClick={toggleTheme}
+                          style={{ minWidth: 'auto' }}
+                        >
+                          {theme === 'light' ? '🌙' : '☀️'}
+                        </Button>
+                      </div>
+                    ),
+                  },
+                  {
+                    type: 'divider',
+                  },
+                  {
+                    key: 'themeColor',
+                    label: (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <span>主题颜色</span>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {Object.entries(themeColors).map(([key, color]) => (
+                            <div
+                              key={key}
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: '50%',
+                                background: color,
+                                cursor: 'pointer',
+                                border: themeColor === key ? '2px solid #1f2937' : '2px solid transparent',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onClick={() => changeThemeColor(key as any)}
+                              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ),
+                  },
+                ],
+              }}
+              trigger={['click']}
+            >
+              <Button
+                type="text"
+                icon={<SettingOutlined />}
+                style={{
+                  color: '#1f2937',
+                  fontSize: 18,
+                  padding: 8,
+                  borderRadius: '50%',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              />
+            </Dropdown>
+
             {isAuthenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <Link to="/profile">
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    transition: 'all 0.2s ease',
-                    cursor: 'pointer',
-                  }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                    <UserOutlined style={{ color: '#6366f1' }} />
-                    <span style={{ color: '#1f2937', fontWeight: 500 }}>
-                      {user?.nickname || '个人中心'}
-                    </span>
-                  </div>
-                </Link>
-              </div>
+              <Link to="/profile">
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <UserOutlined style={{ color: themeColors[themeColor] }} />
+                  <span style={{ color: '#1f2937', fontWeight: 500 }}>
+                    {user?.nickname || '个人中心'}
+                  </span>
+                </div>
+              </Link>
             ) : (
               <div style={{ display: 'flex', gap: 12 }}>
                 <Link to="/login">
                   <Button
                     style={{
                       background: 'transparent',
-                      color: '#6366f1',
-                      border: '1px solid #e0e7ff',
+                      color: themeColors[themeColor],
+                      border: `1px solid ${themeColors[themeColor]}20`,
                       borderRadius: '20px',
                       padding: '8px 24px',
                       fontWeight: 500,
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#f3f4ff';
-                      e.currentTarget.style.borderColor = '#c7d2fe';
+                      e.currentTarget.style.background = `${themeColors[themeColor]}10`;
+                      e.currentTarget.style.borderColor = `${themeColors[themeColor]}40`;
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.borderColor = '#e0e7ff';
+                      e.currentTarget.style.borderColor = `${themeColors[themeColor]}20`;
                     }}
                   >
                     登录
@@ -158,22 +226,22 @@ export default function Home() {
                 <Link to="/register">
                   <Button
                     style={{
-                      background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                      background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
                       color: '#fff',
                       border: 'none',
                       borderRadius: '20px',
                       padding: '8px 24px',
                       fontWeight: 500,
-                      boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
+                      boxShadow: `0 4px 15px ${themeColors[themeColor]}40`,
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.4)';
+                      e.currentTarget.style.boxShadow = `0 6px 20px ${themeColors[themeColor]}60`;
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(99, 102, 241, 0.3)';
+                      e.currentTarget.style.boxShadow = `0 4px 15px ${themeColors[themeColor]}40`;
                     }}
                   >
                     注册
@@ -187,7 +255,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section style={{
-        background: 'linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%)',
+        background: `linear-gradient(135deg, ${themeColors[themeColor]}05 0%, ${themeColors[themeColor]}10 100%)`,
         padding: '80px 0 120px',
         position: 'relative',
         overflow: 'hidden',
@@ -199,7 +267,7 @@ export default function Home() {
           right: '-20%',
           width: '60%',
           height: '200%',
-          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%)',
+          background: `radial-gradient(circle, ${themeColors[themeColor]}10 0%, transparent 70%)`,
           borderRadius: '50%',
           zIndex: 0,
         }} />
@@ -209,7 +277,7 @@ export default function Home() {
           left: '-10%',
           width: '40%',
           height: '150%',
-          background: 'radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 70%)',
+          background: `radial-gradient(circle, ${themeColors[themeColor]}10 0%, transparent 70%)`,
           borderRadius: '50%',
           zIndex: 0,
         }} />
@@ -229,13 +297,13 @@ export default function Home() {
             <div style={{ marginBottom: 24 }}>
               <Tag
                 style={{
-                  background: 'rgba(99, 102, 241, 0.1)',
-                  color: '#6366f1',
+                  background: `${themeColors[themeColor]}10`,
+                  color: themeColors[themeColor],
                   padding: '6px 16px',
                   borderRadius: '20px',
                   fontSize: '14px',
                   fontWeight: 500,
-                  border: '1px solid rgba(99, 102, 241, 0.2)',
+                  border: `1px solid ${themeColors[themeColor]}20`,
                 }}
               >
                 <ShakeOutlined style={{ marginRight: 6 }} />
@@ -251,7 +319,7 @@ export default function Home() {
               fontFamily: 'Inter, sans-serif',
             }}>
               与懂你的AI助手<br />
-              <span style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span style={{ background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 开启心灵之旅
               </span>
             </h2>
@@ -269,23 +337,23 @@ export default function Home() {
                 <Button
                   size="large"
                   style={{
-                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
                     color: '#fff',
                     border: 'none',
                     borderRadius: '28px',
                     padding: '12px 40px',
                     fontSize: '16px',
                     fontWeight: 600,
-                    boxShadow: '0 6px 20px rgba(99, 102, 241, 0.4)',
+                    boxShadow: `0 6px 20px ${themeColors[themeColor]}40`,
                     transition: 'all 0.3s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(99, 102, 241, 0.5)';
+                    e.currentTarget.style.boxShadow = `0 8px 25px ${themeColors[themeColor]}50`;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.4)';
+                    e.currentTarget.style.boxShadow = `0 6px 20px ${themeColors[themeColor]}40`;
                   }}
                 >
                   开始测试
@@ -297,7 +365,7 @@ export default function Home() {
                   style={{
                     background: '#fff',
                     color: '#1f2937',
-                    border: '1px solid #e5e7eb',
+                    border: `1px solid ${themeColors[themeColor]}20`,
                     borderRadius: '28px',
                     padding: '12px 40px',
                     fontSize: '16px',
@@ -307,7 +375,7 @@ export default function Home() {
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.boxShadow = `0 4px 15px ${themeColors[themeColor]}20`;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
@@ -432,13 +500,13 @@ export default function Home() {
                       display: 'inline-block',
                       padding: '6px 16px',
                       borderRadius: '16px',
-                      background: 'rgba(99, 102, 241, 0.05)',
-                      color: '#6366f1',
+                      background: `${themeColors[themeColor]}05`,
+                      color: themeColors[themeColor],
                       fontSize: '12px',
                       fontWeight: 500,
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                    }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)'}>
+                    }} onMouseEnter={(e) => e.currentTarget.style.background = `${themeColors[themeColor]}10`}>
                       了解更多 →
                     </div>
                   </div>
@@ -473,7 +541,7 @@ export default function Home() {
               right: 0,
               width: '50%',
               height: '100%',
-              background: 'radial-gradient(circle at top right, rgba(99, 102, 241, 0.05) 0%, transparent 70%)',
+              background: `radial-gradient(circle at top right, ${themeColors[themeColor]}10 0%, transparent 70%)`,
               zIndex: 0,
             }} />
             <Row align="middle" gutter={[48, 24]} style={{ position: 'relative', zIndex: 1 }}>
@@ -499,30 +567,30 @@ export default function Home() {
                   </p>
                   <Link to="/mbti">
                     <Button
-                      type="primary"
-                      size="large"
-                      style={{
-                        background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '24px',
-                        padding: '12px 32px',
-                        fontSize: '16px',
-                        fontWeight: 600,
-                        boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)',
-                        transition: 'all 0.3s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(99, 102, 241, 0.3)';
-                      }}
-                    >
-                      立即测试
-                    </Button>
+                    type="primary"
+                    size="large"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '24px',
+                      padding: '12px 32px',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      boxShadow: `0 4px 15px ${themeColors[themeColor]}40`,
+                      transition: 'all 0.3s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = `0 6px 20px ${themeColors[themeColor]}60`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = `0 4px 15px ${themeColors[themeColor]}40`;
+                    }}
+                  >
+                    立即测试
+                  </Button>
                   </Link>
                 </div>
               </Col>
@@ -532,13 +600,13 @@ export default function Home() {
                     width: 160,
                     height: 160,
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#fff',
                     fontSize: 64,
-                    boxShadow: '0 10px 30px rgba(99, 102, 241, 0.4)',
+                    boxShadow: `0 10px 30px ${themeColors[themeColor]}40`,
                     position: 'relative',
                     overflow: 'hidden',
                   }}>
@@ -617,7 +685,7 @@ export default function Home() {
                 width: 48,
                 height: 48,
                 borderRadius: '12px',
-                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
