@@ -10,7 +10,7 @@ from app.models import (
     User,
     KnowledgeArticle,
     UserContentInteraction,
-    UserPreference,
+    UserContentPreference,
     ContentTag,
     ContentTagRelation,
     RecommendationHistory,
@@ -325,12 +325,12 @@ class RecommendationService:
         """
         更新用户偏好
         """
-        preference = db.query(UserPreference).filter(
-            UserPreference.user_id == user_id
+        preference = db.query(UserContentPreference).filter(
+            UserContentPreference.user_id == user_id
         ).first()
         
         if not preference:
-            preference = UserPreference(user_id=user_id)
+            preference = UserContentPreference(user_id=user_id)
             db.add(preference)
         
         if preferred_content_types is not None:

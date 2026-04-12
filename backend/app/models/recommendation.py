@@ -44,9 +44,9 @@ class UserContentInteraction(Base):
     user = relationship("User")
 
 
-class UserPreference(Base):
-    """用户偏好"""
-    __tablename__ = "user_preferences"
+class UserContentPreference(Base):
+    """用户内容偏好"""
+    __tablename__ = "user_content_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
@@ -57,7 +57,7 @@ class UserPreference(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    user = relationship("User", back_populates="preference")
+    user = relationship("User")
 
 
 class ContentTag(Base):

@@ -67,7 +67,7 @@ class AppFeedback(Base):
     content = Column(Text, nullable=False)
     status = Column(SQLEnum(FeedbackStatus), default=FeedbackStatus.PENDING)
     priority = Column(Integer, default=3)  # 1-5优先级
-    metadata = Column(JSON, nullable=True)
+    extra_data = Column(JSON, nullable=True)  # 使用extra_data代替metadata
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

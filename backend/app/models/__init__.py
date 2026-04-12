@@ -41,7 +41,7 @@ from app.models.recommendation import (
     ContentType,
     RecommendationReason,
     UserContentInteraction,
-    UserPreference,
+    UserContentPreference,
     ContentTag,
     ContentTagRelation,
     RecommendationHistory,
@@ -118,7 +118,7 @@ __all__ = [
     "ContentType",
     "RecommendationReason",
     "UserContentInteraction",
-    "UserPreference",
+    "UserContentPreference",
     "ContentTag",
     "ContentTagRelation",
     "RecommendationHistory",
@@ -132,4 +132,4 @@ __all__ = [
     "GrowthMilestone",
     "AIAdviceHistory",
     "UserReflection",
-)]
+]

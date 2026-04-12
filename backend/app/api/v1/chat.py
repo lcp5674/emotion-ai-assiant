@@ -93,7 +93,7 @@ async def stream_message(
     if not passed:
         raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=_"内容包含不当信息，请修改后再试。",
+                detail=_("内容包含不当信息，请修改后再试。"),
             )
 
     conversation = None
