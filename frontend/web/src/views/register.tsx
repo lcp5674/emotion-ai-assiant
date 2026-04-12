@@ -4,11 +4,13 @@ import { Form, Input, Button, Card, App } from 'antd'
 import { UserOutlined, LockOutlined, PhoneOutlined, MailOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
+import { useTheme } from '../hooks/useTheme'
 
 export default function Register() {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const { setAuth } = useAuthStore()
+  const { themeColors, themeColor } = useTheme()
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [countdown, setCountdown] = useState(0)
@@ -55,11 +57,16 @@ export default function Register() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #722ed1 0%, #b37feb 100%)',
+      background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
     }}>
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+      <Card style={{ 
+        width: 400, 
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        borderRadius: '12px',
+        border: 'none'
+      }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h1 style={{ fontSize: 28, color: '#722ed1', marginBottom: 8 }}>注册</h1>
+          <h1 style={{ fontSize: 28, color: themeColors[themeColor], marginBottom: 8, fontWeight: 700 }}>注册</h1>
           <p style={{ color: '#8c8c8c' }}>加入心灵伴侣AI</p>
         </div>
 
@@ -77,7 +84,7 @@ export default function Register() {
             ]}
           >
             <Input
-              prefix={<PhoneOutlined />}
+              prefix={<PhoneOutlined style={{ color: themeColors[themeColor] }} />}
               placeholder="手机号"
             />
           </Form.Item>
@@ -90,12 +97,13 @@ export default function Register() {
             ]}
           >
             <Input
-              prefix={<LockOutlined />}
+              prefix={<LockOutlined style={{ color: themeColors[themeColor] }} />}
               placeholder="验证码"
               suffix={
                 <Button
                   type="link"
                   size="small"
+                  style={{ color: themeColors[themeColor] }}
                   onClick={() => {
                     const phone = document.querySelector('input[name="phone"]')?.getAttribute('value')
                     if (phone && /^1[3-9]\d{9}$/.test(phone)) {
@@ -120,7 +128,7 @@ export default function Register() {
             ]}
           >
             <Input.Password
-              prefix={<LockOutlined />}
+              prefix={<LockOutlined style={{ color: themeColors[themeColor] }} />}
               placeholder="密码"
             />
           </Form.Item>
@@ -129,7 +137,7 @@ export default function Register() {
             name="nickname"
           >
             <Input
-              prefix={<UserOutlined />}
+              prefix={<UserOutlined style={{ color: themeColors[themeColor] }} />}
               placeholder="昵称（可选）"
             />
           </Form.Item>
@@ -140,7 +148,14 @@ export default function Register() {
               htmlType="submit"
               loading={loading}
               block
-              style={{ background: '#722ed1' }}
+              style={{ 
+                background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
+                border: 'none',
+                borderRadius: '8px',
+                height: 48,
+                fontSize: 16,
+                fontWeight: 600
+              }}
             >
               注册
             </Button>

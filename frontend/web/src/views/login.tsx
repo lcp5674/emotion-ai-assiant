@@ -4,11 +4,13 @@ import { Form, Input, Button, Card, App } from 'antd'
 import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
+import { useTheme } from '../hooks/useTheme'
 
 export default function Login() {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const { setAuth } = useAuthStore()
+  const { themeColors, themeColor } = useTheme()
   const [loading, setLoading] = useState(false)
 
   const onFinish = async (values: { phone: string; password: string }) => {
@@ -31,11 +33,16 @@ export default function Login() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #722ed1 0%, #b37feb 100%)',
+      background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
     }}>
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+      <Card style={{ 
+        width: 400, 
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        borderRadius: '12px',
+        border: 'none'
+      }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h1 style={{ fontSize: 28, color: '#722ed1', marginBottom: 8 }}>登录</h1>
+          <h1 style={{ fontSize: 28, color: themeColors[themeColor], marginBottom: 8, fontWeight: 700 }}>登录</h1>
           <p style={{ color: '#8c8c8c' }}>欢迎回到心灵伴侣AI</p>
         </div>
 
@@ -53,7 +60,7 @@ export default function Login() {
             ]}
           >
             <Input
-              prefix={<PhoneOutlined />}
+              prefix={<PhoneOutlined style={{ color: themeColors[themeColor] }} />}
               placeholder="手机号"
             />
           </Form.Item>
@@ -66,7 +73,7 @@ export default function Login() {
             ]}
           >
             <Input.Password
-              prefix={<LockOutlined />}
+              prefix={<LockOutlined style={{ color: themeColors[themeColor] }} />}
               placeholder="密码"
             />
           </Form.Item>
@@ -77,7 +84,14 @@ export default function Login() {
               htmlType="submit"
               loading={loading}
               block
-              style={{ background: '#722ed1' }}
+              style={{ 
+                background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
+                border: 'none',
+                borderRadius: '8px',
+                height: 48,
+                fontSize: 16,
+                fontWeight: 600
+              }}
             >
               登录
             </Button>

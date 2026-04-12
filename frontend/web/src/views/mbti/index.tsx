@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Radio, Progress, Spin, App } from 'antd'
 import { api } from '../../api/request'
 import { useMbtiStore } from '../../stores'
+import { useTheme } from '../../hooks/useTheme'
 
 export default function MbtiTest() {
   const navigate = useNavigate()
@@ -19,6 +20,7 @@ export default function MbtiTest() {
     setLoading,
     reset,
   } = useMbtiStore()
+  const { themeColors, themeColor } = useTheme()
 
   const [submitting, setSubmitting] = useState(false)
 
@@ -106,7 +108,7 @@ export default function MbtiTest() {
         zIndex: 100,
       }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/" style={{ fontSize: 20, color: '#722ed1', fontWeight: 'bold' }}>
+          <Link to="/" style={{ fontSize: 20, color: themeColors[themeColor], fontWeight: 'bold' }}>
             心灵伴侣AI
           </Link>
           <div>
@@ -118,12 +120,18 @@ export default function MbtiTest() {
       </header>
 
       <div className="container" style={{ padding: '40px 16px' }}>
-        <Card style={{ maxWidth: 600, margin: '0 auto' }}>
+        <Card style={{ 
+          maxWidth: 600, 
+          margin: '0 auto',
+          borderRadius: '12px',
+          border: 'none',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+        }}>
           {/* Progress */}
           <Progress
             percent={progress}
             showInfo={false}
-            strokeColor="#722ed1"
+            strokeColor={themeColors[themeColor]}
             trailColor="#f0f0f0"
             style={{ marginBottom: 32 }}
           />
@@ -141,8 +149,10 @@ export default function MbtiTest() {
                   style={{
                     height: 60,
                     fontSize: 16,
-                    borderColor: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'A' ? '#722ed1' : '#d9d9d9',
-                    background: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'A' ? '#f0f5ff' : '#fff',
+                    borderColor: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'A' ? themeColors[themeColor] : '#d9d9d9',
+                    background: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'A' ? `${themeColors[themeColor]}10` : '#fff',
+                    borderRadius: '8px',
+                    transition: 'all 0.3s ease'
                   }}
                   onClick={() => handleAnswer('A')}
                 >
@@ -153,8 +163,10 @@ export default function MbtiTest() {
                   style={{
                     height: 60,
                     fontSize: 16,
-                    borderColor: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'B' ? '#722ed1' : '#d9d9d9',
-                    background: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'B' ? '#f0f5ff' : '#fff',
+                    borderColor: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'B' ? themeColors[themeColor] : '#d9d9d9',
+                    background: answers.find(a => a.question_id === currentQuestion.id)?.answer === 'B' ? `${themeColors[themeColor]}10` : '#fff',
+                    borderRadius: '8px',
+                    transition: 'all 0.3s ease'
                   }}
                   onClick={() => handleAnswer('B')}
                 >
@@ -172,6 +184,7 @@ export default function MbtiTest() {
                 const store = useMbtiStore.getState()
                 store.setCurrentIndex(currentQuestionIndex - 1)
               }}
+              style={{ borderRadius: '8px' }}
             >
               上一题
             </Button>
@@ -180,7 +193,12 @@ export default function MbtiTest() {
                 type="primary"
                 loading={submitting}
                 onClick={() => handleSubmit()}
-                style={{ background: '#722ed1' }}
+                style={{ 
+                  background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0 24px'
+                }}
               >
                 提交结果
               </Button>

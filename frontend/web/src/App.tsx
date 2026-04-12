@@ -38,22 +38,8 @@ const AttachmentResult = lazy(() => import('./views/attachment/result'))
 const DeepProfile = lazy(() => import('./views/profile/deep'))
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const { theme, toggleTheme } = useTheme()
-
   return (
     <>
-      <div style={{
-        position: 'fixed',
-        top: 12,
-        right: 16,
-        zIndex: 1000,
-      }}>
-        <Button
-          type="text"
-          icon={theme === 'light' ? <MoonOutlined /> : <SunOutlined />}
-          onClick={toggleTheme}
-        />
-      </div>
       {children}
     </>
   )
