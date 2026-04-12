@@ -25,13 +25,9 @@ class AuthService:
             raise ValueError("手机号已被注册")
         
         # 验证验证码
-        if settings.DEBUG:
-            # 开发环境跳过验证码验证
-            pass
-        else:
-            sms_service = get_sms_service()
-            if not await sms_service.verify_code(user_create.phone, user_create.code):
-                raise ValueError("验证码错误或已过期")
+        sms_service = get_sms_service()
+        if not await sms_service.verify_code(user_create.phone, user_create.code):
+            raise ValueError("验证码错误或已过期")
         
         # 创建用户
         hashed_password = get_password_hash(user_create.password)

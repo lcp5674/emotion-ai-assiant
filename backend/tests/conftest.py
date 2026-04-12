@@ -1,74 +1,47 @@
 """
-测试配置
+测试配置文件
 """
 import pytest
-import asyncio
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from unittest.mock import Mock, patch
-
-from app.main import app
-from app.core.config import settings
-from app.core.database import Base, get_db
-from app.services.auth_service import create_access_token
-
-# 使用SQLite内存数据库进行测试
-TEST_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    TEST_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
-    """测试用数据库依赖"""
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
+from app.core.database import Base
+from app.models import user, mbti, chat, knowledge, diary, system
 
 
 @pytest.fixture(scope="session")
-def event_loop():
-    """创建会话级别的事件循环"""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="function")
-def db_session():
-    """数据库会话fixture"""
-    # 创建表
+def test_db():
+    """测试数据库"""
+    # 使用SQLite内存数据库
+    engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
-    yield db
-    # 回滚并删除表
-    db.rollback()
-    Base.metadata.drop_all(bind=engine)
-    db.close()
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
-def client(db_session):
-    """测试客户端fixture"""
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
+def db_session(test_db):
+    """数据库会话"""
+    try:
+        yield test_db
+        test_db.commit()
+    except Exception:
+        test_db.rollback()
+        raise
 
 
 @pytest.fixture(scope="function")
 def test_user(db_session):
-    """测试用户fixture"""
+    """测试用户"""
     from app.models.user import User
     from app.services.auth_service import get_password_hash
-    
+
     user = User(
-        phone="13800138000",
+        phone="13800138001",  # 不同的手机号避免冲突
         email="test@example.com",
         nickname="测试用户",
         password_hash=get_password_hash("Test@123456"),
@@ -81,24 +54,64 @@ def test_user(db_session):
 
 
 @pytest.fixture(scope="function")
-def authorized_client(client, test_user):
-    """带认证的测试客户端fixture"""
-    access_token = create_access_token(data={"sub": str(test_user.id)})
-    client.headers["Authorization"] = f"Bearer {access_token}"
+def admin_user(db_session):
+    """管理员用户"""
+    from app.models.user import User
+    from app.services.auth_service import get_password_hash
+
+    user = User(
+        phone="13800138002",
+        email="admin@example.com",
+        nickname="管理员",
+        password_hash=get_password_hash("Admin@123456"),
+        is_active=True,
+        is_admin=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture(scope="function")
+def authorized_client(db_session, test_user):
+    """授权客户端"""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.core.security import create_access_token
+
+    client = TestClient(app)
+    token = create_access_token(data={"sub": str(test_user.id)})
+    client.headers.update({"Authorization": f"Bearer {token}"})
+    return client
+
+
+@pytest.fixture(scope="function")
+def authorized_admin_client(db_session, admin_user):
+    """管理员授权客户端"""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.core.security import create_access_token
+
+    client = TestClient(app)
+    token = create_access_token(data={"sub": str(admin_user.id)})
+    client.headers.update({"Authorization": f"Bearer {token}"})
     return client
 
 
 @pytest.fixture(scope="function")
 def mock_llm_service():
-    """Mock LLM服务fixture"""
-    with patch("app.services.llm_service.get_llm_response") as mock:
-        mock.return_value = "这是一个测试回复"
-        yield mock
+    """模拟LLM服务"""
+    from unittest.mock import Mock
+    mock = Mock()
+    mock.generate.return_value = {"answer": "测试回复", "references": []}
+    return mock
 
 
 @pytest.fixture(scope="function")
 def mock_sms_service():
-    """Mock SMS服务fixture"""
-    with patch("app.services.sms_service.send_verification_code") as mock:
-        mock.return_value = True
-        yield mock
+    """模拟短信服务"""
+    from unittest.mock import Mock
+    mock = Mock()
+    mock.send_verify_code.return_value = True
+    return mock

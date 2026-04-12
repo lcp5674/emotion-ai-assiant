@@ -79,6 +79,10 @@ export const api = {
     refresh: (refresh_token: string): Promise<any> =>
       request.post('/auth/refresh', { refresh_token }),
     me: (): Promise<any> => request.get('/auth/me'),
+    logout: (): Promise<any> => request.post('/auth/logout'),
+    resetPassword: (data: { phone: string; code: string; new_password: string }): Promise<any> =>
+      request.post('/auth/reset_password', data),
+    crisisResources: (): Promise<any> => request.get('/auth/crisis-resources'),
   },
 
   // 用户
@@ -89,6 +93,13 @@ export const api = {
     changePassword: (data: { old_password: string; new_password: string }): Promise<any> =>
       request.post('/user/password', data),
     stats: (): Promise<any> => request.get('/user/stats'),
+    onboardingStatus: (): Promise<any> => request.get('/user/onboarding-status'),
+    markOnboardingStep: (data: { step: string }): Promise<any> => 
+      request.post('/user/mark-onboarding-step', data),
+    privacyInfo: (): Promise<any> => request.get('/user/privacy-info'),
+    exportData: (): Promise<any> => request.get('/user/export-data'),
+    deleteAccount: (password: string): Promise<any> => 
+      request.post('/user/delete-account', { password }),
   },
 
   // MBTI
@@ -192,7 +203,8 @@ export const api = {
       if (token) params.append('token', token)
       if (sessionId) params.append('session_id', sessionId)
       if (assistantId) params.append('assistant_id', assistantId.toString())
-      return `ws://localhost:8000/ws/chat?${params.toString()}`
+      const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000'
+      return `${wsBaseUrl}/ws/chat?${params.toString()}`
     },
   },
 
@@ -229,19 +241,22 @@ export const api = {
 
   // 危机资源
   auth: {
+    sendCode: (phone: string): Promise<any> =>
+      request.post('/auth/send_code', { phone }),
+    register: (data: { phone: string; password: string; code: string; nickname?: string }): Promise<any> =>
+      request.post('/auth/register', data),
+    login: (data: { phone: string; password: string }): Promise<any> =>
+      request.post('/auth/login', data),
+    refresh: (refresh_token: string): Promise<any> =>
+      request.post('/auth/refresh', { refresh_token }),
+    me: (): Promise<any> => request.get('/auth/me'),
+    logout: (): Promise<any> => request.post('/auth/logout'),
+    resetPassword: (data: { phone: string; code: string; new_password: string }): Promise<any> =>
+      request.post('/auth/reset_password', data),
     crisisResources: (): Promise<any> => request.get('/auth/crisis-resources'),
   },
 
-  // 日记分享
-  diary: {
-    shareImage: (time_range: string = 'week'): Promise<any> => 
-      request.get('/diary/trend/share-image', { params: { time_range } }),
-  },
 
-  // 隐私政策
-  diary: {
-    privacyPolicy: (): Promise<any> => request.get('/diary/privacy-policy'),
-  },
 
   // SBTI
   sbti: {

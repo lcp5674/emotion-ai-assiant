@@ -58,17 +58,15 @@ async def register(
     db: Session = Depends(get_db),
 ):
     """用户注册"""
-    from app.core.config import settings
-    if not settings.DEBUG:
-        redis_client = await get_redis()
-        key = f"sms:code:{request.phone}"
-        stored_code = await redis_client.get(key)
-        if not stored_code or stored_code != request.code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="验证码错误或已过期",
-            )
-        await redis_client.delete(key)
+    redis_client = await get_redis()
+    key = f"sms:code:{request.phone}"
+    stored_code = await redis_client.get(key)
+    if not stored_code or stored_code != request.code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="验证码错误或已过期",
+        )
+    await redis_client.delete(key)
 
     # 检查用户是否已存在
     existing_user = db.query(User).filter(User.phone == request.phone).first()
