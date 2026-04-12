@@ -1,0 +1,98 @@
+msgid "Hello"
+msgstr "Hello"
+
+msgid "Welcome to Emotion AI"
+msgstr "Welcome to Emotion AI"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Register"
+msgstr "Register"
+
+msgid "Logout"
+msgstr "Logout"
+
+msgid "Home"
+msgstr "Home"
+
+msgid "Profile"
+msgstr "Profile"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Chat"
+msgstr "Chat"
+
+msgid "Diary"
+msgstr "Diary"
+
+msgid "Knowledge"
+msgstr "Knowledge"
+
+msgid "MBTI Test"
+msgstr "MBTI Test"
+
+msgid "Payment"
+msgstr "Payment"
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Submit"
+msgstr "Submit"
+
+msgid "Back"
+msgstr "Back"
+
+msgid "Next"
+msgstr "Next"
+
+msgid "Previous"
+msgstr "Previous"
+
+msgid "Confirm"
+msgstr "Confirm"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Add"
+msgstr "Add"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Loading..."
+msgstr "Loading..."
+
+msgid "Success"
+msgstr "Success"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Warning"
+msgstr "Warning"
+
+msgid "Info"
+msgstr "Info"
+
+msgid "Required"
+msgstr "Required"
+
+msgid "Please input"
+msgstr "Please input"
+
+msgid "Please select"
+msgstr "Please select"

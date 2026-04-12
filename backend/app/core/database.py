@@ -25,6 +25,8 @@ else:
         settings.database_url,
         pool_pre_ping=True,
         pool_recycle=3600,
+        pool_size=10,
+        max_overflow=20,
         echo=settings.DEBUG,
     )
 
@@ -58,6 +60,7 @@ async def get_redis() -> redis.Redis:
             password=settings.REDIS_PASSWORD,
             db=settings.REDIS_DB,
             decode_responses=True,
+            max_connections=50,
         )
     return redis.Redis(connection_pool=_redis_pool)
 

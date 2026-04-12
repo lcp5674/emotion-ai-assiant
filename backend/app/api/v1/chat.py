@@ -22,6 +22,7 @@ from app.services.member_service import get_member_service
 from app.services.content_filter import get_content_filter
 from app.services.crisis_service import get_crisis_detector, CrisisLevel
 from app.api.deps import get_current_user
+from app.core.i18n import _
 
 router = APIRouter(prefix="/chat", tags=["对话"])
 
@@ -91,9 +92,9 @@ async def stream_message(
     passed, _ = await content_filter.check_text(request.content)
     if not passed:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="内容包含不当信息，请修改后再试。",
-        )
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_"内容包含不当信息，请修改后再试。",
+            )
 
     conversation = None
     if request.session_id:
@@ -104,7 +105,7 @@ async def stream_message(
 
     if not conversation:
         if not request.assistant_id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="需要指定助手ID")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_("需要指定助手ID"))
         chat_svc = get_chat_service()
         conversation = await chat_svc.create_conversation(
             db=db, user_id=current_user.id, assistant_id=request.assistant_id
@@ -216,7 +217,7 @@ async def get_conversation_history(
     if not conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="对话不存在",
+            detail=_("对话不存在"),
         )
 
     messages = chat_service.get_messages(db, conversation.id, limit, before_id)
@@ -265,7 +266,7 @@ async def close_conversation(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="对话不存在",
+            detail=_("对话不存在"),
         )
 
     return {"message": "对话已关闭"}
@@ -286,7 +287,7 @@ async def update_conversation_title(
     if not conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="对话不存在",
+            detail=_("对话不存在"),
         )
 
     conversation.title = request.title
@@ -314,7 +315,7 @@ async def delete_message(
     if not message:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="消息不存在",
+            detail=_("消息不存在"),
         )
 
     # 验证对话属于当前用户
@@ -326,7 +327,7 @@ async def delete_message(
     if not conversation:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="你没有权限操作此消息",
+            detail=_("你没有权限操作此消息"),
         )
 
     # 检查是否是最后一条消息
@@ -337,7 +338,7 @@ async def delete_message(
     if not last_message or last_message.id != message_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="只能撤回对话中的最后一条消息",
+            detail=_("只能撤回对话中的最后一条消息"),
         )
 
     # 删除消息
@@ -347,7 +348,7 @@ async def delete_message(
     db.commit()
 
     return {
-        "message": "消息已撤回",
+        "message": _("消息已撤回"),
         "conversation_id": conversation.id,
         "message_count": conversation.message_count,
     }
@@ -372,7 +373,7 @@ async def regenerate_response(
     if not conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="对话不存在",
+            detail=_("对话不存在"),
         )
 
     # 找到最后一条AI回复
@@ -384,7 +385,7 @@ async def regenerate_response(
     if not last_assistant_message:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="没有可重新生成的AI回复",
+            detail=_("没有可重新生成的AI回复"),
         )
 
     # 找到对应用户消息
@@ -397,7 +398,7 @@ async def regenerate_response(
     if not previous_user_message:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="找不到对应的用户消息",
+            detail=_("找不到对应的用户消息"),
         )
 
     # 删除旧的AI回复

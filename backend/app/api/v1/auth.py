@@ -2,7 +2,7 @@
 认证接口
 """
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 import redis.asyncio as redis
 import loguru
@@ -28,6 +28,7 @@ from app.schemas.user import (
 )
 from app.api.deps import get_current_user
 from app.services.sms_service import get_sms_service
+from app.core.i18n import _
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
@@ -49,7 +50,7 @@ async def send_verify_code(
     if not success:
         loguru.logger.error(f"短信发送失败: {request.phone}")
 
-    return {"message": "验证码已发送"}
+    return {"message": _("验证码已发送")}
 
 
 @router.post("/register", summary="用户注册")
@@ -62,17 +63,17 @@ async def register(
     if not request.phone or len(request.phone) != 11:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="手机号格式错误",
+            detail=_("手机号格式错误"),
         )
     if not request.password or len(request.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="密码长度至少6位",
+            detail=_("密码长度至少6位"),
         )
     if not request.code or len(request.code) != 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="验证码格式错误",
+            detail=_("验证码格式错误"),
         )
 
     redis_client = await get_redis()
@@ -81,7 +82,7 @@ async def register(
     if not stored_code or stored_code != request.code:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="验证码错误或已过期",
+            detail=_("验证码错误或已过期"),
         )
     await redis_client.delete(key)
 
@@ -90,7 +91,7 @@ async def register(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该手机号已注册",
+            detail=_("该手机号已注册"),
         )
 
     # 创建用户
@@ -123,19 +124,19 @@ async def login(
     if not user or not user.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="手机号或密码错误",
+            detail=_("手机号或密码错误"),
         )
 
     if not verify_password(request.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="手机号或密码错误",
+            detail=_("手机号或密码错误"),
         )
 
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="账号已被禁用",
+            detail=_("账号已被禁用"),
         )
 
     from datetime import datetime

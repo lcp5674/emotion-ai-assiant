@@ -24,3 +24,6 @@ export { ImageLazyLoader, ImageSkeleton } from './ImageLazyLoader';
 
 // 错误边界组件
 export { ErrorBoundary } from './ErrorBoundary';
+
+// 国际化组件
+export { default as LanguageSelector } from './LanguageSelector';

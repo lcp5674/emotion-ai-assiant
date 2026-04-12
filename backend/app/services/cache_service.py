@@ -3,91 +3,217 @@ Redis缓存服务
 """
 import json
 import loguru
-from typing import Optional, Any
+from typing import Optional, Any, Dict, List
 from datetime import timedelta
+import asyncio
 
 from app.core.config import settings
+from app.core.database import get_redis
 
 
 class RedisCacheService:
     """Redis缓存服务"""
 
     def __init__(self):
-        self.enabled = False
+        self.enabled = True
         self._client = None
-        self._init_client()
+        self._memory_cache = {}
+        self._memory_cache_expiry = {}
 
-    def _init_client(self):
-        """初始化Redis客户端"""
-        try:
-            import redis
-            self._client = redis.Redis(
-                host=settings.REDIS_HOST,
-                port=settings.REDIS_PORT,
-                password=settings.REDIS_PASSWORD,
-                db=settings.REDIS_DB,
-                decode_responses=True,
-                socket_connect_timeout=3,
-                socket_timeout=3,
-            )
-            self._client.ping()
-            self.enabled = True
-            loguru.logger.info("Redis缓存服务已启用")
-        except Exception as e:
-            loguru.logger.warning(f"Redis连接失败，使用内存缓存: {e}")
-            self.enabled = False
-            self._memory_cache = {}
+    async def _get_client(self):
+        """获取Redis客户端"""
+        if self._client is None:
+            try:
+                self._client = await get_redis()
+                await self._client.ping()
+                self.enabled = True
+                loguru.logger.info("Redis缓存服务已启用")
+            except Exception as e:
+                loguru.logger.warning(f"Redis连接失败，使用内存缓存: {e}")
+                self.enabled = False
+        return self._client
 
-    def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Optional[Any]:
         """获取缓存"""
-        if not self.enabled:
-            return self._memory_cache.get(key)
+        # 检查内存缓存
+        if key in self._memory_cache:
+            # 检查是否过期
+            if key in self._memory_cache_expiry:
+                import time
+                if time.time() > self._memory_cache_expiry[key]:
+                    del self._memory_cache[key]
+                    del self._memory_cache_expiry[key]
+                    return None
+            return self._memory_cache[key]
         
-        try:
-            value = self._client.get(key)
-            if value:
-                return json.loads(value)
-        except Exception as e:
-            loguru.logger.error(f"Redis获取缓存失败: {e}")
+        # 检查Redis
+        if self.enabled:
+            try:
+                client = await self._get_client()
+                if client:
+                    value = await client.get(key)
+                    if value:
+                        return json.loads(value)
+            except Exception as e:
+                loguru.logger.error(f"Redis获取缓存失败: {e}")
         
         return None
 
-    def set(self, key: str, value: Any, expire: int = 3600) -> bool:
+    async def set(self, key: str, value: Any, expire: int = 3600) -> bool:
         """设置缓存"""
-        if not self.enabled:
-            self._memory_cache[key] = value
-            return True
+        # 设置内存缓存
+        self._memory_cache[key] = value
+        import time
+        self._memory_cache_expiry[key] = time.time() + expire
         
-        try:
-            self._client.setex(key, expire, json.dumps(value, ensure_ascii=False))
-            return True
-        except Exception as e:
-            loguru.logger.error(f"Redis设置缓存失败: {e}")
-            return False
+        # 设置Redis缓存
+        if self.enabled:
+            try:
+                client = await self._get_client()
+                if client:
+                    await client.setex(key, expire, json.dumps(value, ensure_ascii=False))
+                return True
+            except Exception as e:
+                loguru.logger.error(f"Redis设置缓存失败: {e}")
+                return False
+        
+        return True
 
-    def delete(self, key: str) -> bool:
+    async def delete(self, key: str) -> bool:
         """删除缓存"""
-        if not self.enabled:
-            self._memory_cache.pop(key, None)
-            return True
+        # 删除内存缓存
+        if key in self._memory_cache:
+            del self._memory_cache[key]
+        if key in self._memory_cache_expiry:
+            del self._memory_cache_expiry[key]
         
-        try:
-            self._client.delete(key)
-            return True
-        except Exception as e:
-            loguru.logger.error(f"Redis删除缓存失败: {e}")
-            return False
+        # 删除Redis缓存
+        if self.enabled:
+            try:
+                client = await self._get_client()
+                if client:
+                    await client.delete(key)
+                return True
+            except Exception as e:
+                loguru.logger.error(f"Redis删除缓存失败: {e}")
+                return False
+        
+        return True
 
-    def exists(self, key: str) -> bool:
+    async def exists(self, key: str) -> bool:
         """检查key是否存在"""
-        if not self.enabled:
-            return key in self._memory_cache
+        # 检查内存缓存
+        if key in self._memory_cache:
+            # 检查是否过期
+            if key in self._memory_cache_expiry:
+                import time
+                if time.time() > self._memory_cache_expiry[key]:
+                    del self._memory_cache[key]
+                    del self._memory_cache_expiry[key]
+                    return False
+            return True
         
-        try:
-            return self._client.exists(key) > 0
-        except Exception as e:
-            loguru.logger.error(f"Redis检查key失败: {e}")
-            return False
+        # 检查Redis
+        if self.enabled:
+            try:
+                client = await self._get_client()
+                if client:
+                    return await client.exists(key) > 0
+            except Exception as e:
+                loguru.logger.error(f"Redis检查key失败: {e}")
+                return False
+        
+        return False
+
+    async def get_many(self, keys: List[str]) -> Dict[str, Any]:
+        """批量获取缓存"""
+        result = {}
+        
+        # 先检查内存缓存
+        for key in keys:
+            if key in self._memory_cache:
+                # 检查是否过期
+                if key in self._memory_cache_expiry:
+                    import time
+                    if time.time() > self._memory_cache_expiry[key]:
+                        del self._memory_cache[key]
+                        del self._memory_cache_expiry[key]
+                    else:
+                        result[key] = self._memory_cache[key]
+        
+        # 检查Redis
+        if self.enabled and len(result) < len(keys):
+            remaining_keys = [key for key in keys if key not in result]
+            try:
+                client = await self._get_client()
+                if client and remaining_keys:
+                    values = await client.mget(remaining_keys)
+                    for key, value in zip(remaining_keys, values):
+                        if value:
+                            result[key] = json.loads(value)
+            except Exception as e:
+                loguru.logger.error(f"Redis批量获取缓存失败: {e}")
+        
+        return result
+
+    async def set_many(self, items: Dict[str, Any], expire: int = 3600) -> bool:
+        """批量设置缓存"""
+        # 设置内存缓存
+        import time
+        expiry_time = time.time() + expire
+        for key, value in items.items():
+            self._memory_cache[key] = value
+            self._memory_cache_expiry[key] = expiry_time
+        
+        # 设置Redis缓存
+        if self.enabled:
+            try:
+                client = await self._get_client()
+                if client:
+                    pipe = client.pipeline()
+                    for key, value in items.items():
+                        pipe.setex(key, expire, json.dumps(value, ensure_ascii=False))
+                    await pipe.execute()
+                return True
+            except Exception as e:
+                loguru.logger.error(f"Redis批量设置缓存失败: {e}")
+                return False
+        
+        return True
+
+    async def delete_many(self, keys: List[str]) -> bool:
+        """批量删除缓存"""
+        # 删除内存缓存
+        for key in keys:
+            if key in self._memory_cache:
+                del self._memory_cache[key]
+            if key in self._memory_cache_expiry:
+                del self._memory_cache_expiry[key]
+        
+        # 删除Redis缓存
+        if self.enabled and keys:
+            try:
+                client = await self._get_client()
+                if client:
+                    await client.delete(*keys)
+                return True
+            except Exception as e:
+                loguru.logger.error(f"Redis批量删除缓存失败: {e}")
+                return False
+        
+        return True
+
+    async def ping(self) -> bool:
+        """Ping Redis"""
+        if self.enabled:
+            try:
+                client = await self._get_client()
+                if client:
+                    await client.ping()
+                    return True
+            except Exception as e:
+                loguru.logger.error(f"Redis ping失败: {e}")
+        return False
 
 
 _cache_service: Optional[RedisCacheService] = None
@@ -112,7 +238,7 @@ CACHE_KEYS = {
 }
 
 
-def cache_mbti_questions(questions: list, dimension: Optional[str] = None):
+async def cache_mbti_questions(questions: list, dimension: Optional[str] = None):
     """缓存MBTI题目"""
     service = get_cache_service()
     if dimension:
@@ -120,10 +246,10 @@ def cache_mbti_questions(questions: list, dimension: Optional[str] = None):
     else:
         key = CACHE_KEYS["MBTI_QUESTIONS"]
     
-    service.set(key, questions, expire=86400 * 7)
+    await service.set(key, questions, expire=86400 * 7)
 
 
-def get_cached_mbti_questions(dimension: Optional[str] = None) -> Optional[list]:
+async def get_cached_mbti_questions(dimension: Optional[str] = None) -> Optional[list]:
     """获取缓存的MBTI题目"""
     service = get_cache_service()
     if dimension:
@@ -131,10 +257,10 @@ def get_cached_mbti_questions(dimension: Optional[str] = None) -> Optional[list]
     else:
         key = CACHE_KEYS["MBTI_QUESTIONS"]
     
-    return service.get(key)
+    return await service.get(key)
 
 
-def cache_assistants(assistants: list, mbti_type: Optional[str] = None):
+async def cache_assistants(assistants: list, mbti_type: Optional[str] = None):
     """缓存AI助手"""
     service = get_cache_service()
     if mbti_type:
@@ -142,10 +268,10 @@ def cache_assistants(assistants: list, mbti_type: Optional[str] = None):
     else:
         key = CACHE_KEYS["AI_ASSISTANTS"]
     
-    service.set(key, assistants, expire=86400 * 7)
+    await service.set(key, assistants, expire=86400 * 7)
 
 
-def get_cached_assistants(mbti_type: Optional[str] = None) -> Optional[list]:
+async def get_cached_assistants(mbti_type: Optional[str] = None) -> Optional[list]:
     """获取缓存的AI助手"""
     service = get_cache_service()
     if mbti_type:
@@ -153,4 +279,4 @@ def get_cached_assistants(mbti_type: Optional[str] = None) -> Optional[list]:
     else:
         key = CACHE_KEYS["AI_ASSISTANTS"]
     
-    return service.get(key)
+    return await service.get(key)

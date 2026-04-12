@@ -48,49 +48,65 @@ class DiaryService:
 
     async def create_diary(self, db: Session, user_id: int, request: DiaryCreate) -> EmotionDiary:
         """创建日记"""
-        from datetime import datetime
-        # 转换日期字符串为date对象
-        diary_date = datetime.strptime(request.date, "%Y-%m-%d").date()
-        
-        # 检查该日期是否已有日记
-        existing = db.query(EmotionDiary).filter(
-            and_(
-                EmotionDiary.user_id == user_id,
-                EmotionDiary.date == diary_date,
-                EmotionDiary.is_deleted == False,
+        try:
+            db.begin()
+            
+            from datetime import datetime
+            # 输入验证
+            if not request.date:
+                raise ValueError("日期不能为空")
+            if request.mood_score < 1 or request.mood_score > 10:
+                raise ValueError("心情评分必须在1-10之间")
+            if not request.content or len(request.content.strip()) < 10:
+                raise ValueError("日记内容至少10个字符")
+            if request.primary_emotion and request.primary_emotion not in [e.value for e in EmotionType]:
+                raise ValueError("无效的情绪类型")
+
+            # 转换日期字符串为date对象
+            diary_date = datetime.strptime(request.date, "%Y-%m-%d").date()
+            
+            # 检查该日期是否已有日记
+            existing = db.query(EmotionDiary).filter(
+                and_(
+                    EmotionDiary.user_id == user_id,
+                    EmotionDiary.date == diary_date,
+                    EmotionDiary.is_deleted == False,
+                )
+            ).first()
+
+            if existing:
+                raise ValueError(f"{request.date} 已经有日记记录了")
+
+            mood_level = request.mood_level or self._get_mood_level(request.mood_score)
+
+            diary = EmotionDiary(
+                user_id=user_id,
+                date=diary_date,
+                mood_score=request.mood_score,
+                mood_level=MoodLevel(mood_level) if mood_level else None,
+                primary_emotion=EmotionType(request.primary_emotion) if request.primary_emotion else None,
+                secondary_emotions=request.secondary_emotions,
+                emotion_tags=request.emotion_tags,
+                content=request.content,
+                category=request.category,
+                tags=request.tags,
+                is_shared=request.is_shared,
+                share_public=request.share_public,
+                analysis_status="pending",
             )
-        ).first()
 
-        if existing:
-            raise ValueError(f"{request.date} 已经有日记记录了")
+            db.add(diary)
+            db.commit()
+            db.refresh(diary)
 
-        mood_level = request.mood_level or self._get_mood_level(request.mood_score)
+            # 更新标签使用计数
+            if request.tags:
+                self._update_tag_usage(db, user_id, request.tags, 1)
 
-        diary = EmotionDiary(
-            user_id=user_id,
-            date=diary_date,
-            mood_score=request.mood_score,
-            mood_level=MoodLevel(mood_level) if mood_level else None,
-            primary_emotion=EmotionType(request.primary_emotion) if request.primary_emotion else None,
-            secondary_emotions=request.secondary_emotions,
-            emotion_tags=request.emotion_tags,
-            content=request.content,
-            category=request.category,
-            tags=request.tags,
-            is_shared=request.is_shared,
-            share_public=request.share_public,
-            analysis_status="pending",
-        )
-
-        db.add(diary)
-        db.commit()
-        db.refresh(diary)
-
-        # 更新标签使用计数
-        if request.tags:
-            self._update_tag_usage(db, user_id, request.tags, 1)
-
-        return diary
+            return diary
+        except Exception as e:
+            db.rollback()
+            raise
 
     def get_diary(self, db: Session, user_id: int, diary_id: int) -> Optional[EmotionDiary]:
         """获取日记详情"""

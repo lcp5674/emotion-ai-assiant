@@ -29,6 +29,14 @@ from app.models.personality import (
     DeepPersonaProfile,
     PersonaInsight,
 )
+from app.models.enterprise import (
+    Enterprise,
+    EnterpriseUser,
+    EnterpriseCompliance,
+    EnterpriseAuditLog,
+    EnterpriseStatus,
+    EnterpriseUserRole,
+)
 
 __all__ = [
     "User",
@@ -79,4 +87,11 @@ __all__ = [
     "AttachmentResult",
     "DeepPersonaProfile",
     "PersonaInsight",
+    # 企业级模型
+    "Enterprise",
+    "EnterpriseUser",
+    "EnterpriseCompliance",
+    "EnterpriseAuditLog",
+    "EnterpriseStatus",
+    "EnterpriseUserRole",
 ]

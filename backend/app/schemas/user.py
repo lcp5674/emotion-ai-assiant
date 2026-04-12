@@ -150,7 +150,7 @@ class MemberPrice(BaseModel):
 
 class MemberOrderCreate(BaseModel):
     """创建会员订单"""
-    level: str
+    level: MemberLevelEnum
 
 
 class MemberOrderResponse(BaseModel):

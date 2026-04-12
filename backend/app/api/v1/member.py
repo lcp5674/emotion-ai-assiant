@@ -51,7 +51,7 @@ async def create_order(
     db: Session = Depends(get_db),
 ):
     # 获取价格
-    price_info = next((p for p in MEMBER_PRICES if p.level == request.level), None)
+    price_info = next((p for p in MEMBER_PRICES if p.level == request.level.value), None)
     if not price_info:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -65,7 +65,7 @@ async def create_order(
     order = MemberOrder(
         user_id=current_user.id,
         order_no=order_no,
-        level=request.level,
+        level=request.level.value,
         amount=price_info.price,
         duration=price_info.duration,
         status="pending",
@@ -135,10 +135,17 @@ async def get_member_status(
 
     level = current_user.member_level.value if hasattr(current_user.member_level, 'value') else current_user.member_level
 
+    # 获取会员权益
+    from app.services.member_service import get_member_service
+    member_service = get_member_service()
+    features = member_service.get_user_features(level, current_user.member_expire_at)
+
     return {
         "level": level,
         "expire_at": current_user.member_expire_at,
         "is_expired": is_expired,
+        "features": features["features"],
+        "daily_limit": features["daily_limit"],
     }
 
 

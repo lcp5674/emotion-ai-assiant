@@ -57,3 +57,7 @@ freezegun==1.4.0
 
 # Payment
 stripe==7.14.0
+
+# Monitoring
+prometheus-client==0.19.0
+fastapi-metrics==0.3.13

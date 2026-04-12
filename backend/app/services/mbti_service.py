@@ -455,9 +455,10 @@ AI_ASSISTANTS_DATA = [
 ]
 
 
-def seed_assistants(db: Session) -> None:
+async def seed_assistants(db: Session) -> None:
     """初始化AI助手数据"""
     from app.models import AiAssistant
+    from app.services.cache_service import cache_assistants
 
     # 检查是否已有助手
     if db.query(AiAssistant).first():
@@ -478,4 +479,31 @@ def seed_assistants(db: Session) -> None:
         db.add(assistant)
 
     db.commit()
+    
+    # 缓存助手数据
+    assistants = db.query(AiAssistant).all()
+    assistants_data = [
+        {
+            "id": assistant.id,
+            "name": assistant.name,
+            "mbti_type": assistant.mbti_type.value,
+            "personality": assistant.personality,
+            "speaking_style": assistant.speaking_style,
+            "expertise": assistant.expertise,
+            "greeting": assistant.greeting,
+            "tags": assistant.tags,
+            "is_recommended": assistant.is_recommended
+        }
+        for assistant in assistants
+    ]
+    
+    # 缓存所有助手
+    await cache_assistants(assistants_data)
+    
+    # 按MBTI类型缓存
+    for mbti_type in ["ISTJ", "ISFJ", "INFJ", "INTJ", "ISTP", "ISFP", "INFP", "INTP", "ESTP", "ESFP", "ENFP", "ENTP", "ESTJ", "ESFJ", "ENFJ", "ENTJ"]:
+        type_assistants = [a for a in assistants_data if a["mbti_type"] == mbti_type]
+        if type_assistants:
+            await cache_assistants(type_assistants, mbti_type)
+    
     print(f"已初始化 {len(AI_ASSISTANTS_DATA)} 个AI助手")

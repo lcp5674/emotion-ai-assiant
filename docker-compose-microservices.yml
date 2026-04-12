@@ -1,0 +1,191 @@
+version: '3.8'
+
+networks:
+  emotion-ai-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+
+services:
+  # API网关
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=False
+      - DATABASE_URL=mysql+pymysql://emotion_ai:emotion_ai@mysql:3306/emotion_ai
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./backend:/app
+    networks:
+      - emotion-ai-network
+    depends_on:
+      - mysql
+      - redis
+    restart: always
+
+  # 认证服务
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8001:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=False
+      - DATABASE_URL=mysql+pymysql://emotion_ai:emotion_ai@mysql:3306/emotion_ai
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./backend:/app
+    networks:
+      - emotion-ai-network
+    depends_on:
+      - mysql
+      - redis
+    restart: always
+
+  # 聊天服务
+  chat-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chat-service
+    ports:
+      - "8002:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=False
+      - DATABASE_URL=mysql+pymysql://emotion_ai:emotion_ai@mysql:3306/emotion_ai
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./backend:/app
+    networks:
+      - emotion-ai-network
+    depends_on:
+      - mysql
+      - redis
+    restart: always
+
+  # 会员服务
+  member-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: member-service
+    ports:
+      - "8003:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=False
+      - DATABASE_URL=mysql+pymysql://emotion_ai:emotion_ai@mysql:3306/emotion_ai
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY}
+      - WECHAT_PAY_ENABLED=${WECHAT_PAY_ENABLED}
+      - WECHAT_MCHID=${WECHAT_MCHID}
+      - WECHAT_SERIAL_NO=${WECHAT_SERIAL_NO}
+      - WECHAT_PRIVATE_KEY_PATH=${WECHAT_PRIVATE_KEY_PATH}
+      - WECHAT_APIV3_KEY=${WECHAT_APIV3_KEY}
+      - WECHAT_APPID=${WECHAT_APPID}
+      - WECHAT_NOTIFY_URL=${WECHAT_NOTIFY_URL}
+    volumes:
+      - ./backend:/app
+    networks:
+      - emotion-ai-network
+    depends_on:
+      - mysql
+      - redis
+    restart: always
+
+  # 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=emotion_ai
+      - MYSQL_USER=emotion_ai
+      - MYSQL_PASSWORD=emotion_ai
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - emotion-ai-network
+    restart: always
+
+  # Redis
+  redis:
+    image: redis:7.0
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - emotion-ai-network
+    restart: always
+
+  # Prometheus监控
+  prometheus:
+    image: prom/prometheus:v2.40.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - emotion-ai-network
+    restart: always
+
+  # Grafana可视化
+  grafana:
+    image: grafana/grafana:9.0.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - emotion-ai-network
+    restart: always
+
+  # 前端
+  frontend:
+    build:
+      context: ./frontend/web
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    environment:
+      - API_BASE_URL=http://localhost:8000
+    volumes:
+      - ./frontend/web:/app
+    networks:
+      - emotion-ai-network
+    restart: always

@@ -1,0 +1,98 @@
+msgid "Hello"
+msgstr "你好"
+
+msgid "Welcome to Emotion AI"
+msgstr "欢迎来到心灵伴侣AI"
+
+msgid "Login"
+msgstr "登录"
+
+msgid "Register"
+msgstr "注册"
+
+msgid "Logout"
+msgstr "退出登录"
+
+msgid "Home"
+msgstr "首页"
+
+msgid "Profile"
+msgstr "个人中心"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Chat"
+msgstr "聊天"
+
+msgid "Diary"
+msgstr "日记"
+
+msgid "Knowledge"
+msgstr "知识库"
+
+msgid "MBTI Test"
+msgstr "MBTI测试"
+
+msgid "Payment"
+msgstr "支付"
+
+msgid "Admin"
+msgstr "管理后台"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Submit"
+msgstr "提交"
+
+msgid "Back"
+msgstr "返回"
+
+msgid "Next"
+msgstr "下一步"
+
+msgid "Previous"
+msgstr "上一步"
+
+msgid "Confirm"
+msgstr "确认"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Edit"
+msgstr "编辑"
+
+msgid "Add"
+msgstr "添加"
+
+msgid "Search"
+msgstr "搜索"
+
+msgid "Loading..."
+msgstr "加载中..."
+
+msgid "Success"
+msgstr "操作成功"
+
+msgid "Error"
+msgstr "操作失败"
+
+msgid "Warning"
+msgstr "警告"
+
+msgid "Info"
+msgstr "提示"
+
+msgid "Required"
+msgstr "必填项"
+
+msgid "Please input"
+msgstr "请输入"
+
+msgid "Please select"
+msgstr "请选择"
