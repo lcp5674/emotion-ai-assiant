@@ -58,6 +58,23 @@ async def register(
     db: Session = Depends(get_db),
 ):
     """用户注册"""
+    # 输入验证
+    if not request.phone or len(request.phone) != 11:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="手机号格式错误",
+        )
+    if not request.password or len(request.password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="密码长度至少6位",
+        )
+    if not request.code or len(request.code) != 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="验证码格式错误",
+        )
+
     redis_client = await get_redis()
     key = f"sms:code:{request.phone}"
     stored_code = await redis_client.get(key)
@@ -79,7 +96,7 @@ async def register(
     # 创建用户
     user = User(
         phone=request.phone,
-        nickname=request.nickname or f"用户{request.phone[-4:]}",
+        nickname=request.nickname or f"用户{request.phone[-4:]}" if request.phone else "用户",
         password_hash=get_password_hash(request.password),
     )
     db.add(user)
