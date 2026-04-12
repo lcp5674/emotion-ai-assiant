@@ -40,13 +40,24 @@ export default function AttachmentTest() {
   const handleScoreChange = (score: number) => {
     const currentQuestion = questions[currentQuestionIndex]
     if (currentQuestion) {
+      const isLastQuestion = currentQuestionIndex === questions.length - 1
+      
+      // 先添加答案到store
       addAnswer({ question_id: currentQuestion.id, score })
+      
+      if (isLastQuestion) {
+        // 从store获取最新的answers
+        const store = useAttachmentStore.getState()
+        handleSubmit(store.answers)
+      }
     }
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (_event?: any, submitAnswers?: typeof answers) => {
+    const answersToSubmit = submitAnswers || answers
+    
     // 去重，确保每个题目只有一个答案
-    const uniqueAnswers = answers.reduce((acc: typeof answers, answer) => {
+    const uniqueAnswers = answersToSubmit.reduce((acc: typeof answers, answer) => {
       if (!acc.some(a => a.question_id === answer.question_id)) {
         acc.push(answer)
       }

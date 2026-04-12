@@ -43,11 +43,13 @@ export default function MbtiTest() {
     if (currentQuestion) {
       const isLastQuestion = currentQuestionIndex === questions.length - 1
       
+      // 先添加答案到store
+      addAnswer({ question_id: currentQuestion.id, answer })
+      
       if (isLastQuestion) {
-        const finalAnswers = [...answers, { question_id: currentQuestion.id, answer }]
-        handleSubmit(finalAnswers)
-      } else {
-        addAnswer({ question_id: currentQuestion.id, answer })
+        // 从store获取最新的answers
+        const store = useMbtiStore.getState()
+        handleSubmit(store.answers)
       }
     }
   }
