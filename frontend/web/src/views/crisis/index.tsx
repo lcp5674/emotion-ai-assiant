@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Card, List, Button, Tag, Typography, Space, Alert, Divider } from 'antd'
 import { PhoneOutlined, GlobalOutlined, WarningOutlined, HeartOutlined } from '@ant-design/icons'
-import { apiClient } from '../../api/request'
+import { api } from '../../api/request'
 import './index.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -20,8 +20,8 @@ export default function CrisisPage() {
 
   const fetchResources = async () => {
     try {
-      const res = await apiClient.get('/auth/crisis-resources')
-      setResources(res.data)
+      const res = await api.auth.crisisResources()
+      setResources(res)
     } catch (error) {
       console.error('获取危机资源失败', error)
     } finally {
@@ -105,38 +105,38 @@ export default function CrisisPage() {
                           访问网站
                         </Button>
                       )}
-      </div>
-                </List.Item>
-              )}
-            />
-          </div>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </div>
 
-          <Divider />
+            <Divider />
 
-          <div className="crisis-section">
-            <Title level={4}>💡 自助建议</Title>
-            <List
-              dataSource={resources.self_help_tips}
-              renderItem={(tip: string) => (
-                <List.Item>
-                  <div className="tip-item">
-                    <Text>{tip}</Text>
-                  </div>
-                </List.Item>
-              )}
-            />
-          </div>
+            <div className="crisis-section">
+              <Title level={4}>💡 自助建议</Title>
+              <List
+                dataSource={resources.self_help_tips}
+                renderItem={(tip: string) => (
+                  <List.Item>
+                    <div className="tip-item">
+                      <Text>{tip}</Text>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </div>
 
-          <Divider />
+            <Divider />
 
-          <div className="crisis-footer">
-            <Text type="secondary">
-              记住：你不需要独自承受。寻求帮助不是软弱，而是勇敢的表现。很多人都经历过困难时期，专业的帮助能让你更快走出来。
-            </Text>
-          </div>
-        </>
-      )}
-    </Card>
-  </div>
+            <div className="crisis-footer">
+              <Text type="secondary">
+                记住：你不需要独自承受。寻求帮助不是软弱，而是勇敢的表现。很多人都经历过困难时期，专业的帮助能让你更快走出来。
+              </Text>
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
 )
 }
