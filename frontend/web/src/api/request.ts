@@ -228,33 +228,7 @@ export const api = {
     },
   },
 
-  // 新增的API
-  user: {
-    onboardingStatus: (): Promise<any> => request.get('/user/onboarding-status'),
-    markOnboardingStep: (data: { step: string }): Promise<any> => 
-      request.post('/user/mark-onboarding-step', data),
-    privacyInfo: (): Promise<any> => request.get('/user/privacy-info'),
-    exportData: (): Promise<any> => request.get('/user/export-data'),
-    deleteAccount: (password: string): Promise<any> => 
-      request.post('/user/delete-account', { password }),
-  },
 
-  // 危机资源
-  auth: {
-    sendCode: (phone: string): Promise<any> =>
-      request.post('/auth/send_code', { phone }),
-    register: (data: { phone: string; password: string; code: string; nickname?: string }): Promise<any> =>
-      request.post('/auth/register', data),
-    login: (data: { phone: string; password: string }): Promise<any> =>
-      request.post('/auth/login', data),
-    refresh: (refresh_token: string): Promise<any> =>
-      request.post('/auth/refresh', { refresh_token }),
-    me: (): Promise<any> => request.get('/auth/me'),
-    logout: (): Promise<any> => request.post('/auth/logout'),
-    resetPassword: (data: { phone: string; code: string; new_password: string }): Promise<any> =>
-      request.post('/auth/reset_password', data),
-    crisisResources: (): Promise<any> => request.get('/auth/crisis-resources'),
-  },
 
 
 
@@ -280,4 +254,14 @@ export const api = {
     deep: (): Promise<any> => request.get('/profile/deep'),
     aiPartners: (): Promise<any> => request.get('/profile/ai-partners'),
   },
+}
+
+// 导出apiClient，同时包含axios实例的方法和api对象的方法
+export const apiClient = {
+  ...api,
+  get: request.get.bind(request),
+  post: request.post.bind(request),
+  put: request.put.bind(request),
+  delete: request.delete.bind(request),
+  patch: request.patch.bind(request),
 }

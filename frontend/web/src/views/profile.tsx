@@ -25,7 +25,7 @@ export default function Profile() {
 
   const loadStats = async () => {
     try {
-      const res = await api.user.stats()
+      const res = await api.user.profile()
       setStats(res)
     } catch (error) {
       console.error(error)
@@ -36,7 +36,7 @@ export default function Profile() {
 
   const loadCurrentMembership = async () => {
     try {
-      const res = await api.payment.getCurrentMembership()
+      const res = await api.payment.currentMembership()
       setCurrentMembership(res)
     } catch (error) {
       console.error('获取会员信息失败', error)

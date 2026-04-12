@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Card, Button, List, Tag, Radio, Space, message, Spin } from 'antd'
 import { CheckOutlined, CrownOutlined } from '@ant-design/icons'
-import { apiClient } from '../utils/api'
+import { apiClient } from '../api/request'
 import './payment.css'
 
 interface Plan {
@@ -124,7 +124,7 @@ export default function PaymentPage() {
                 </div>
                 <div className="duration">
                   {plan.duration_days >= 365 ? '全年' :
-                   plan.duration_days >= 30 ? `${Math.round(plan.duration_days / 30)}月 : `${plan.duration_days}天`}
+                   plan.duration_days >= 30 ? `${Math.round(plan.duration_days / 30)}月` : `${plan.duration_days}天`}
                 </div>
               </div>
 

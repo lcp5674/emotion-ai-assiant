@@ -1,15 +1,31 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 // 类型定义
-declare global {
-  interface Window {
-    SpeechRecognition: SpeechRecognitionConstructor;
-    webkitSpeechRecognition: SpeechRecognitionConstructor;
-  }
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
 }
 
-interface SpeechRecognitionConstructor {
-  new(): SpeechRecognition;
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
 }
 
 interface SpeechRecognition extends EventTarget {
@@ -18,20 +34,13 @@ interface SpeechRecognition extends EventTarget {
   lang: string;
   start(): void;
   stop(): void;
-  onstart: (() => void) | null;
+  onstart: ((event: Event) => void) | null;
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
   onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
+  onend: ((event: Event) => void) | null;
 }
 
-interface SpeechRecognitionEvent {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
+type SpeechRecognitionConstructor = new () => SpeechRecognition;
 
 interface VoiceRecognitionHook {
   isListening: boolean;
@@ -49,12 +58,13 @@ export function useVoiceRecognition(): VoiceRecognitionHook {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const startListening = useCallback(() => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    const windowWithSpeech = window as any;
+    if (!windowWithSpeech.webkitSpeechRecognition && !windowWithSpeech.SpeechRecognition) {
       setError('浏览器不支持语音识别');
       return;
     }
 
-    const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognitionConstructor = windowWithSpeech.SpeechRecognition || windowWithSpeech.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognitionConstructor();
     
     const recognition = recognitionRef.current;
@@ -62,7 +72,7 @@ export function useVoiceRecognition(): VoiceRecognitionHook {
     recognition.interimResults = true;
     recognition.lang = 'zh-CN';
 
-    recognition.onstart = () => {
+    recognition.onstart = (event: Event) => {
       setIsListening(true);
       setError(null);
     };
@@ -90,7 +100,7 @@ export function useVoiceRecognition(): VoiceRecognitionHook {
       setIsListening(false);
     };
 
-    recognition.onend = () => {
+    recognition.onend = (event: Event) => {
       setIsListening(false);
     };
 

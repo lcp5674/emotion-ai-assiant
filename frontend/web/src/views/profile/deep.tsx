@@ -322,7 +322,7 @@ export default function DeepProfile() {
                         <div key={i} style={{ marginBottom: 16 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                             <span>{dim.dimension === 'EI' ? '外向-内向' : dim.dimension === 'SN' ? '感觉-直觉' : dim.dimension === 'TF' ? '思维-情感' : '判断-知觉'}</span>
-                            <Tag size="small">{dim.tendency}</Tag>
+                            <Tag>{dim.tendency}</Tag>
                           </div>
                           <Progress
                             percent={Math.min(Math.abs(dim.score) * 5 + 50, 100)}

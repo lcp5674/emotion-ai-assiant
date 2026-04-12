@@ -15,7 +15,7 @@ import {
   ArrowLeftOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '../../stores'
-import { apiClient } from '../../utils/api'
+import { apiClient } from '../../api/request'
 import './index.css'
 
 const { Title, Text, Paragraph } = Typography

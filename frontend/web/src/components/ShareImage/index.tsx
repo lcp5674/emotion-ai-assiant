@@ -3,9 +3,9 @@
  * 生成可分享的情绪趋势图片，用户可以保存到相册分享
  */
 import { useEffect, useRef, useState } from 'react'
-import { Button, Card, Spin, message } from 'antd'
+import { Button, Card, Spin, message, Space } from 'antd'
 import { DownloadOutlined, ShareAltOutlined } from '@ant-design/icons'
-import { apiClient } from '../../utils/api'
+import { apiClient } from '../../api/request'
 import './index.css'
 
 interface ShareImageProps {

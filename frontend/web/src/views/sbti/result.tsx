@@ -187,7 +187,7 @@ export default function SbtiResult() {
 
   const loadAssistants = async () => {
     try {
-      const res = await api.sbti.assistants({ recommended: true })
+      const res = await api.mbti.assistants({ recommended: true })
       setAssistants(res.list?.slice(0, 3) || [])
     } catch (error) {
       console.error(error)

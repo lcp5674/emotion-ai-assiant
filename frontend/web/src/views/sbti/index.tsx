@@ -160,8 +160,7 @@ export default function SbtiIndex() {
                   <p style={{ margin: 0 }}>{item.text}</p>
                   {index < process.length - 1 && (
                     <div style={{
-                      display: 'none',
-                      '@media (min-width: 576px)': { display: 'block' },
+                      display: 'block',
                       position: 'absolute',
                       top: 20,
                       left: '50%',

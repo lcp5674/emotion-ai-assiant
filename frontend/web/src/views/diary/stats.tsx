@@ -44,7 +44,7 @@ export default function DiaryStats() {
     setTrend,
   } = useDiaryStore()
 
-  const [timeRange, setTimeRange] = useState('month') // week/month/quarter/year
+  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month')
   const [loading, setLoading] = useState(true)
   const [shareModalVisible, setShareModalVisible] = useState(false)
   const moodTrendRef = useRef<HTMLDivElement>(null)
