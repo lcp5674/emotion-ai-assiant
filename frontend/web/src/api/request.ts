@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
-import { message } from 'antd'
 
 // 创建axios实例
 const request: AxiosInstance = axios.create({
@@ -34,7 +33,7 @@ request.interceptors.response.use(
     const { response } = error
 
     if (response) {
-      const { status, data } = response
+      const { status } = response
 
       switch (status) {
         case 401:
@@ -42,22 +41,8 @@ request.interceptors.response.use(
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           window.location.href = '/login'
-          message.error('登录已过期，请重新登录')
           break
-        case 403:
-          message.error('没有权限')
-          break
-        case 404:
-          message.error('请求的资源不存在')
-          break
-        case 500:
-          message.error('服务器错误')
-          break
-        default:
-          message.error(data?.detail || '请求失败')
       }
-    } else {
-      message.error('网络错误，请检查网络连接')
     }
 
     return Promise.reject(error)
