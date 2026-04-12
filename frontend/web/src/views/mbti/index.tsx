@@ -54,14 +54,23 @@ export default function MbtiTest() {
 
   const handleSubmit = async (_event?: any, submitAnswers?: typeof answers) => {
     const answersToSubmit = submitAnswers || answers
-    if (answersToSubmit.length < questions.length) {
+    
+    // 去重，确保每个题目只有一个答案
+    const uniqueAnswers = answersToSubmit.reduce((acc: typeof answers, answer) => {
+      if (!acc.some(a => a.question_id === answer.question_id)) {
+        acc.push(answer)
+      }
+      return acc
+    }, [])
+    
+    if (uniqueAnswers.length < questions.length) {
       message.warning('请完成所有题目')
       return
     }
 
     setSubmitting(true)
     try {
-      const res = await api.mbti.submit(answersToSubmit)
+      const res = await api.mbti.submit(uniqueAnswers)
       setResult(res)
       message.success('测试完成！')
       navigate('/mbti/result')

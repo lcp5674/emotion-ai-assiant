@@ -45,14 +45,22 @@ export default function AttachmentTest() {
   }
 
   const handleSubmit = async () => {
-    if (answers.length < questions.length) {
+    // 去重，确保每个题目只有一个答案
+    const uniqueAnswers = answers.reduce((acc: typeof answers, answer) => {
+      if (!acc.some(a => a.question_id === answer.question_id)) {
+        acc.push(answer)
+      }
+      return acc
+    }, [])
+    
+    if (uniqueAnswers.length < questions.length) {
       message.warning('请完成所有题目')
       return
     }
 
     setSubmitting(true)
     try {
-      const res = await api.attachment.submit(answers)
+      const res = await api.attachment.submit(uniqueAnswers)
       setResult(res)
       message.success('测评完成！')
       navigate('/attachment/result')

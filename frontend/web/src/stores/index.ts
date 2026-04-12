@@ -158,8 +158,19 @@ export const useMbtiStore = create<MbtiState>((set) => ({
   addAnswer: (answer) =>
     set((state) => {
       const isLastQuestion = state.currentQuestionIndex === state.questions.length - 1
+      // 检查是否已经存在该题目的答案
+      const existingIndex = state.answers.findIndex(a => a.question_id === answer.question_id)
+      let newAnswers
+      if (existingIndex !== -1) {
+        // 更新已有的答案
+        newAnswers = [...state.answers]
+        newAnswers[existingIndex] = answer
+      } else {
+        // 添加新的答案
+        newAnswers = [...state.answers, answer]
+      }
       return {
-        answers: [...state.answers, answer],
+        answers: newAnswers,
         currentQuestionIndex: isLastQuestion ? state.currentQuestionIndex : state.currentQuestionIndex + 1,
       }
     }),
