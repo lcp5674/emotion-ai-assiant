@@ -37,6 +37,26 @@ from app.models.enterprise import (
     EnterpriseStatus,
     EnterpriseUserRole,
 )
+from app.models.recommendation import (
+    ContentType,
+    RecommendationReason,
+    UserContentInteraction,
+    UserPreference,
+    ContentTag,
+    ContentTagRelation,
+    RecommendationHistory,
+)
+from app.models.feedback import (
+    FeedbackType,
+    FeedbackStatus,
+    MessageFeedback,
+    AssistantFeedback,
+    AppFeedback,
+    UserGrowthGoal,
+    GrowthMilestone,
+    AIAdviceHistory,
+    UserReflection,
+)
 
 __all__ = [
     "User",
@@ -87,11 +107,29 @@ __all__ = [
     "AttachmentResult",
     "DeepPersonaProfile",
     "PersonaInsight",
-    # 企业级模型
+    # enterprise
     "Enterprise",
     "EnterpriseUser",
     "EnterpriseCompliance",
     "EnterpriseAuditLog",
     "EnterpriseStatus",
     "EnterpriseUserRole",
-]
+    # recommendation
+    "ContentType",
+    "RecommendationReason",
+    "UserContentInteraction",
+    "UserPreference",
+    "ContentTag",
+    "ContentTagRelation",
+    "RecommendationHistory",
+    # feedback
+    "FeedbackType",
+    "FeedbackStatus",
+    "MessageFeedback",
+    "AssistantFeedback",
+    "AppFeedback",
+    "UserGrowthGoal",
+    "GrowthMilestone",
+    "AIAdviceHistory",
+    "UserReflection",
+)]
