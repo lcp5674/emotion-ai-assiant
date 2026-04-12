@@ -319,7 +319,10 @@ export default function Home() {
               fontFamily: 'Inter, sans-serif',
             }}>
               与懂你的AI助手<br />
-              <span style={{ background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span style={{ 
+                color: themeColors[themeColor],
+                fontWeight: 800
+              }}>
                 开启心灵之旅
               </span>
             </h2>
