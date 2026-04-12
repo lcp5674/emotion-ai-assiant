@@ -372,3 +372,254 @@ class PersonaInsight(Base):
     
     def __repr__(self):
         return f"<PersonaInsight(user_id={self.user_id}, type={self.insight_type})>"
+
+
+class PersonaTrend(Base):
+    """
+    人格变化趋势追踪 - 记录人格画像的历史变化
+    """
+    __tablename__ = "persona_trends"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    
+    # 趋势类型
+    trend_type = Column(String(50), nullable=False, comment="趋势类型(mbti/sbti/attachment/behavior)")
+    
+    # 时间点
+    snapshot_date = Column(DateTime, server_default=func.now(), comment="快照日期")
+    
+    # 变化数据
+    previous_value = Column(JSON, nullable=True, comment="之前的值")
+    current_value = Column(JSON, nullable=True, comment="当前的值")
+    change_magnitude = Column(Float, nullable=True, comment="变化幅度")
+    
+    # 趋势方向
+    trend_direction = Column(String(20), nullable=True, comment="趋势方向(increase/decrease/stable)")
+    
+    # 相关因素
+    contributing_factors = Column(JSON, nullable=True, comment="影响因素列表")
+    
+    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+    
+    # 关系
+    user = relationship("User", backref="persona_trends")
+    
+    # 索引
+    __table_args__ = (
+        Index('ix_persona_trends_user_id', 'user_id'),
+        Index('ix_persona_trends_trend_type', 'trend_type'),
+        Index('ix_persona_trends_snapshot_date', 'snapshot_date'),
+    )
+    
+    def __repr__(self):
+        return f"<PersonaTrend(user_id={self.user_id}, type={self.trend_type})>"
+
+
+class DynamicPersonaTag(Base):
+    """
+    多维度画像标签体系 - 动态标签系统
+    """
+    __tablename__ = "dynamic_persona_tags"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    
+    # 标签基本信息
+    tag_name = Column(String(100), nullable=False, comment="标签名称")
+    tag_category = Column(String(50), nullable=False, comment="标签类别(behavior/emotion/interest/skill/value/need)")
+    tag_source = Column(String(50), nullable=False, comment="标签来源(assessment/behavior/chat/diary/manual)")
+    
+    # 标签权重和置信度
+    confidence_score = Column(Float, default=0.0, comment="置信度分数(0-1)")
+    relevance_score = Column(Float, default=0.0, comment="相关性分数(0-1)")
+    decay_rate = Column(Float, default=0.01, comment="衰减率(每天)")
+    
+    # 时间信息
+    first_observed_at = Column(DateTime, server_default=func.now(), comment="首次观察到的时间")
+    last_observed_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="最后观察到的时间")
+    observation_count = Column(Integer, default=1, comment="观察次数")
+    
+    # 状态
+    is_active = Column(Boolean, default=True, comment="是否活跃")
+    is_temporary = Column(Boolean, default=False, comment="是否临时标签")
+    
+    # 元数据
+    metadata = Column(JSON, nullable=True, comment="标签元数据")
+    
+    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    
+    # 关系
+    user = relationship("User", backref="dynamic_tags")
+    
+    # 索引
+    __table_args__ = (
+        Index('ix_dynamic_persona_tags_user_id', 'user_id'),
+        Index('ix_dynamic_persona_tags_category', 'tag_category'),
+        Index('ix_dynamic_persona_tags_active', 'is_active'),
+    )
+    
+    def __repr__(self):
+        return f"<DynamicPersonaTag(user_id={self.user_id}, tag={self.tag_name})>"
+
+
+class PersonaBehaviorPattern(Base):
+    """
+    人格特质与行为模式关联分析
+    """
+    __tablename__ = "persona_behavior_patterns"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    
+    # 关联的人格特质
+    personality_trait = Column(String(100), nullable=False, comment="人格特质")
+    trait_source = Column(String(50), nullable=False, comment="特质来源(mbti/sbti/attachment)")
+    
+    # 行为模式
+    behavior_pattern = Column(String(200), nullable=False, comment="行为模式描述")
+    behavior_category = Column(String(50), nullable=False, comment="行为类别(communication/decision/work/social/emotion)")
+    
+    # 关联强度
+    correlation_strength = Column(Float, default=0.0, comment="关联强度(0-1)")
+    
+    # 观察数据
+    observation_count = Column(Integer, default=0, comment="观察次数")
+    sample_size = Column(Integer, default=0, comment="样本大小")
+    
+    # 时间信息
+    first_detected_at = Column(DateTime, server_default=func.now(), comment="首次检测时间")
+    last_validated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="最后验证时间")
+    
+    # 验证状态
+    is_validated = Column(Boolean, default=False, comment="是否已验证")
+    validation_confidence = Column(Float, default=0.0, comment="验证置信度")
+    
+    # 元数据
+    metadata = Column(JSON, nullable=True, comment="模式元数据")
+    
+    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    
+    # 关系
+    user = relationship("User", backref="behavior_patterns")
+    
+    # 索引
+    __table_args__ = (
+        Index('ix_persona_behavior_patterns_user_id', 'user_id'),
+        Index('ix_persona_behavior_patterns_trait', 'personality_trait'),
+        Index('ix_persona_behavior_patterns_validated', 'is_validated'),
+    )
+    
+    def __repr__(self):
+        return f"<PersonaBehaviorPattern(user_id={self.user_id}, trait={self.personality_trait})>"
+
+
+class PsychologicalNeed(Base):
+    """
+    潜在心理需求挖掘
+    """
+    __tablename__ = "psychological_needs"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    
+    # 需求基本信息
+    need_name = Column(String(100), nullable=False, comment="需求名称")
+    need_category = Column(String(50), nullable=False, comment="需求类别(autonomy/competence/relatedness/security/growth/recognition)")
+    need_level = Column(String(20), nullable=False, comment="需求强度(low/medium/high/critical)")
+    
+    # 需求评分
+    intensity_score = Column(Float, default=0.0, comment="强度分数(0-1)")
+    satisfaction_score = Column(Float, default=0.0, comment="满足度分数(0-1)")
+    priority_score = Column(Float, default=0.0, comment="优先级分数(0-1)")
+    
+    # 来源和证据
+    evidence_sources = Column(JSON, nullable=True, comment="证据来源列表")
+    supporting_behavior = Column(JSON, nullable=True, comment="支持性行为列表")
+    contradiction_behavior = Column(JSON, nullable=True, comment="矛盾性行为列表")
+    
+    # 时间信息
+    first_identified_at = Column(DateTime, server_default=func.now(), comment="首次识别时间")
+    last_updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="最后更新时间")
+    
+    # 状态
+    is_active = Column(Boolean, default=True, comment="是否活跃")
+    is_explicit = Column(Boolean, default=False, comment="是否显式需求")
+    
+    # 元数据
+    metadata = Column(JSON, nullable=True, comment="需求元数据")
+    
+    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    
+    # 关系
+    user = relationship("User", backref="psychological_needs")
+    
+    # 索引
+    __table_args__ = (
+        Index('ix_psychological_needs_user_id', 'user_id'),
+        Index('ix_psychological_needs_category', 'need_category'),
+        Index('ix_psychological_needs_level', 'need_level'),
+    )
+    
+    def __repr__(self):
+        return f"<PsychologicalNeed(user_id={self.user_id}, need={self.need_name})>"
+
+
+class IntegratedPersonaStrategy(Base):
+    """
+    三位一体融合策略 - MBTI + SBTI + 依恋风格综合分析
+    """
+    __tablename__ = "integrated_persona_strategies"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, comment="用户ID")
+    
+    # 三个测评结果的外键
+    mbti_result_id = Column(Integer, ForeignKey("mbti_results.id"), nullable=True, comment="MBTI结果ID")
+    sbti_result_id = Column(Integer, ForeignKey("sbti_results.id"), nullable=True, comment="SBTI结果ID")
+    attachment_result_id = Column(Integer, ForeignKey("attachment_results.id"), nullable=True, comment="依恋风格结果ID")
+    
+    # 融合分析结果
+    fusion_insights = Column(JSON, nullable=True, comment="融合洞察")
+    synergy_effects = Column(JSON, nullable=True, comment="协同效应")
+    potential_conflicts = Column(JSON, nullable=True, comment="潜在冲突")
+    
+    # 个性化沟通策略
+    communication_strategy = Column(JSON, nullable=True, comment="沟通策略")
+    language_preference = Column(JSON, nullable=True, comment="语言偏好")
+    tone_adjustment = Column(JSON, nullable=True, comment="语气调整")
+    
+    # 交互模式
+    interaction_style = Column(String(100), nullable=True, comment="交互风格")
+    response_preference = Column(String(100), nullable=True, comment="响应偏好")
+    feedback_style = Column(String(100), nullable=True, comment="反馈风格")
+    
+    # 个性化建议
+    personal_advice = Column(JSON, nullable=True, comment="个性化建议")
+    growth_pathways = Column(JSON, nullable=True, comment="成长路径")
+    relationship_guidance = Column(JSON, nullable=True, comment="关系指导")
+    
+    # 策略版本
+    strategy_version = Column(Integer, default=1, comment="策略版本")
+    is_latest = Column(Boolean, default=True, comment="是否为最新策略")
+    
+    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    
+    # 关系
+    user = relationship("User", backref="integrated_strategy")
+    mbti_result = relationship("MbtiResult")
+    sbti_result = relationship("SBTIResult")
+    attachment_result = relationship("AttachmentResult")
+    
+    # 索引
+    __table_args__ = (
+        Index('ix_integrated_persona_strategies_user_id', 'user_id'),
+        Index('ix_integrated_persona_strategies_latest', 'is_latest'),
+    )
+    
+    def __repr__(self):
+        return f"<IntegratedPersonaStrategy(user_id={self.user_id}, version={self.strategy_version})>"

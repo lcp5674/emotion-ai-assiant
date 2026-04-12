@@ -28,6 +28,11 @@ from app.models.personality import (
     AttachmentResult,
     DeepPersonaProfile,
     PersonaInsight,
+    PersonaTrend,
+    DynamicPersonaTag,
+    PersonaBehaviorPattern,
+    PsychologicalNeed,
+    IntegratedPersonaStrategy,
 )
 from app.models.permission import Role, Permission, PermissionAction, ResourceType
 from app.models.analytics import UserActivity, AnalyticsMetric, UserBehavior, EventType
@@ -82,6 +87,11 @@ __all__ = [
     "AttachmentResult",
     "DeepPersonaProfile",
     "PersonaInsight",
+    "PersonaTrend",
+    "DynamicPersonaTag",
+    "PersonaBehaviorPattern",
+    "PsychologicalNeed",
+    "IntegratedPersonaStrategy",
     # 权限管理模型
     "Role",
     "Permission",
