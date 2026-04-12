@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, Row, Col, Tag, Alert } from 'antd'
-import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, SparklesOutlined, BrainOutlined, BookOpenOutlined, PenToolOutlined } from '@ant-design/icons'
+import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ShakeOutlined, BankOutlined, ToolOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
 
@@ -30,7 +30,7 @@ export default function Home() {
 
   const features = [
     {
-      icon: <BrainOutlined />,
+      icon: <BankOutlined />,
       title: 'MBTI人格测试',
       desc: '专业48题MBTI测试，了解真实的自己',
       path: '/mbti',
@@ -38,7 +38,7 @@ export default function Home() {
       gradient: 'from-indigo-500 to-purple-600',
     },
     {
-      icon: <PenToolOutlined />,
+      icon: <ToolOutlined />,
       title: '情感日记',
       desc: '记录心情变化，追踪情绪成长',
       path: '/diary',
@@ -53,7 +53,7 @@ export default function Home() {
       gradient: 'from-blue-400 to-cyan-500',
     },
     {
-      icon: <BookOpenOutlined />,
+      icon: <BookOutlined />,
       title: '心理知识库',
       desc: '海量心理学知识，助你自我成长',
       path: '/knowledge',
@@ -225,7 +225,6 @@ export default function Home() {
             textAlign: 'center',
             maxWidth: '800px',
             margin: '0 auto',
-            animation: 'fadeInUp 1s ease-out',
           }}>
             <div style={{ marginBottom: 24 }}>
               <Tag
@@ -239,7 +238,7 @@ export default function Home() {
                   border: '1px solid rgba(99, 102, 241, 0.2)',
                 }}
               >
-                <SparklesOutlined style={{ marginRight: 6 }} />
+                <ShakeOutlined style={{ marginRight: 6 }} />
                 你的AI情感伴侣
               </Tag>
             </div>
@@ -330,7 +329,7 @@ export default function Home() {
           margin: '0 auto',
           padding: '0 24px',
         }}>
-          <div style={{ textAlign: 'center', marginBottom: 60, animation: 'fadeInUp 1s ease-out 0.2s both' }}>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
             <h2 style={{
               fontSize: 'clamp(28px, 4vw, 36px)',
               fontWeight: 700,
@@ -479,7 +478,7 @@ export default function Home() {
             }} />
             <Row align="middle" gutter={[48, 24]} style={{ position: 'relative', zIndex: 1 }}>
               <Col xs={24} md={16}>
-                <div style={{ animation: 'fadeInLeft 1s ease-out' }}>
+                <div style={{}}>
                   <h3 style={{
                     fontSize: 'clamp(20px, 3vw, 28px)',
                     fontWeight: 700,
@@ -528,9 +527,7 @@ export default function Home() {
                 </div>
               </Col>
               <Col xs={24} md={8} style={{ textAlign: 'center' }}>
-                <div style={{
-                  animation: 'fadeInRight 1s ease-out',
-                }}>
+                <div style={{}}>
                   <div style={{
                     width: 160,
                     height: 160,
@@ -555,7 +552,6 @@ export default function Home() {
                       height: '200%',
                       background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
                       transform: 'rotate(0deg)',
-                      animation: 'shine 3s infinite linear',
                     }} />
                   </div>
                 </div>
@@ -657,64 +653,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Global Styles */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        body {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-        }
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes fadeInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes fadeInRight {
-          from {
-            opacity: 0;
-            transform: translateX(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes shine {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
+
     </div>
   )
 }
