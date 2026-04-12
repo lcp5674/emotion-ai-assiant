@@ -37,7 +37,7 @@ export default function Home() {
       desc: '专业48题MBTI测试，了解真实的自己',
       path: '/mbti',
       tag: '推荐',
-      gradient: 'from-indigo-500 to-purple-600',
+      gradient: ['#6366f1', '#a855f7'],
     },
     {
       icon: <ToolOutlined />,
@@ -45,28 +45,28 @@ export default function Home() {
       desc: '记录心情变化，追踪情绪成长',
       path: '/diary',
       tag: '新功能',
-      gradient: 'from-rose-400 to-pink-600',
+      gradient: ['#f472b6', '#ec4899'],
     },
     {
       icon: <MessageOutlined />,
       title: 'AI情感陪伴',
       desc: '智能AI助手，24小时倾听与陪伴',
       path: '/assistants',
-      gradient: 'from-blue-400 to-cyan-500',
+      gradient: ['#60a5fa', '#22d3ee'],
     },
     {
       icon: <BookOutlined />,
       title: '心理知识库',
       desc: '海量心理学知识，助你自我成长',
       path: '/knowledge',
-      gradient: 'from-amber-400 to-orange-500',
+      gradient: ['#fbbf24', '#f97316'],
     },
     {
       icon: <TeamOutlined />,
       title: '助手广场',
       desc: '选择你喜欢的AI情感助手',
       path: '/assistants',
-      gradient: 'from-emerald-400 to-teal-500',
+      gradient: ['#34d399', '#14b8a6'],
     },
   ]
 
@@ -448,14 +448,14 @@ export default function Home() {
                       width: 80,
                       height: 80,
                       borderRadius: '20px',
-                      background: `linear-gradient(135deg, ${feature.gradient.split(' ')[1]} 0%, ${feature.gradient.split(' ')[3]} 100%)`,
+                      background: `linear-gradient(135deg, ${feature.gradient[0]} 0%, ${feature.gradient[1]} 100%)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#fff',
                       fontSize: 32,
                       margin: '0 auto 16px',
-                      boxShadow: `0 8px 25px ${feature.gradient.split(' ')[1]}40`,
+                      boxShadow: `0 8px 25px ${feature.gradient[0]}40`,
                       transition: 'all 0.3s ease',
                     }}>
                       {feature.icon}
