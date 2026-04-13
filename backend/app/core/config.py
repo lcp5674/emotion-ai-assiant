@@ -92,9 +92,15 @@ class Settings(BaseSettings):
     QDRANT_PORT: int = 6333
     QDRANT_COLLECTION: str = "emotion_knowledge"
 
-    # Embedding配置
-    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
-    EMBEDDING_DIM: int = 384
+    # Embedding配置 - 使用国内主流厂商
+    EMBEDDING_MODEL: str = "BAAI/bge-large-zh-v1.5"  # 默认使用中文优化模型
+    EMBEDDING_DIM: int = 1024  # BAAI/bge-large-zh-v1.5 dimension
+
+    # Neo4j图数据库配置（知识图谱生产级方案）
+    NEO4J_ENABLED: bool = False  # 是否启用Neo4j，默认关闭使用SQLAlchemy回退
+    NEO4J_URI: str = "bolt://localhost:7687"
+    NEO4J_USER: str = "neo4j"
+    NEO4J_PASSWORD: str = "password"
 
     # SMS配置 (支持 mock/alibaba)
     SMS_PROVIDER: str = "mock"

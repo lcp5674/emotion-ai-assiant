@@ -1,5 +1,5 @@
 """
-RAG向量存储服务
+RAG向量存储服务 - 使用真实Embedding模型
 """
 from typing import Optional, List, Dict, Any
 import loguru
@@ -11,7 +11,16 @@ class VectorStore:
     """向量存储基类"""
 
     def __init__(self):
-        self.embedding_dim = settings.EMBEDDING_DIM
+        from app.services.embedding_service import EmbeddingFactory
+        self.embedding_dim = EmbeddingFactory.get_dimension()
+        self._embedding_service = None
+
+    async def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """获取文本embeddings - 使用真实Embedding服务"""
+        if self._embedding_service is None:
+            from app.services.embedding_service import EmbeddingFactory
+            self._embedding_service = EmbeddingFactory.get_embedding()
+        return await self._embedding_service.embed(texts)
 
     async def add_texts(self, texts: List[str], metadatas: Optional[List[Dict]] = None) -> List[str]:
         """添加文本到向量库"""
@@ -74,7 +83,7 @@ class MilvusStore(VectorStore):
             else:
                 collection = Collection(name=collection_name)
 
-            # 生成embedding
+            # 使用真实Embedding服务生成向量
             embeddings = await self._get_embeddings(texts)
 
             # 插入数据
@@ -89,6 +98,7 @@ class MilvusStore(VectorStore):
             ids = collection.insert(data)
             collection.flush()
 
+            loguru.logger.info(f"Milvus: Added {len(texts)} texts, dimension: {self.embedding_dim}")
             return [str(id) for id in ids.primary_keys]
 
         except Exception as e:
@@ -105,7 +115,7 @@ class MilvusStore(VectorStore):
             collection = Collection(name=settings.MILVUS_COLLECTION)
             collection.load()
 
-            # 生成query embedding
+            # 使用真实Embedding服务生成query向量
             query_embedding = (await self._get_embeddings([query]))[0]
 
             # 搜索
@@ -137,23 +147,15 @@ class MilvusStore(VectorStore):
 
     async def delete(self, ids: List[str]) -> None:
         """删除向量"""
-        pass
-
-    async def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """获取文本embeddings - 使用简单的TF-IDF方式"""
-        import hashlib
-        
-        # 使用简单哈希生成伪embedding（用于演示）
-        # 生产环境应使用真实embedding服务
-        embeddings = []
-        for text in texts:
-            # 生成固定维度的哈希向量
-            vector = []
-            for i in range(self.embedding_dim):
-                h = hashlib.md5(f"{text}_{i}".encode()).digest()
-                vector.append(float(h[0] % 100) / 100.0)
-            embeddings.append(vector)
-        return embeddings
+        try:
+            from pymilvus import Collection
+            collection = Collection(name=settings.MILVUS_COLLECTION)
+            # Milvus删除需要使用delete_expr
+            for id_str in ids:
+                collection.delete(f"id == {id_str}")
+            collection.flush()
+        except Exception as e:
+            loguru.logger.error(f"Milvus delete error: {e}")
 
 
 class QdrantStore(VectorStore):
@@ -186,7 +188,7 @@ class QdrantStore(VectorStore):
                     vectors_config=VectorParams(size=self.embedding_dim, distance=Distance.COSINE),
                 )
 
-            # 生成embeddings
+            # 使用真实Embedding服务生成向量
             embeddings = await self._get_embeddings(texts)
 
             # 构建points
@@ -205,6 +207,7 @@ class QdrantStore(VectorStore):
             # 插入
             client.upsert(collection_name=collection_name, points=points)
 
+            loguru.logger.info(f"Qdrant: Added {len(texts)} texts, dimension: {self.embedding_dim}")
             return [str(i) for i in range(len(texts))]
 
         except Exception as e:
@@ -218,7 +221,7 @@ class QdrantStore(VectorStore):
 
             client = await self._get_client()
 
-            # 生成query embedding
+            # 使用真实Embedding服务生成query向量
             query_embedding = (await self._get_embeddings([query]))[0]
 
             # 搜索
@@ -246,76 +249,96 @@ class QdrantStore(VectorStore):
 
     async def delete(self, ids: List[str]) -> None:
         """删除向量"""
-        pass
-
-    async def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """获取文本embeddings - 使用简单的哈希方式"""
-        import hashlib
-        
-        # 使用简单哈希生成伪embedding（用于演示）
-        # 生产环境应使用真实embedding服务
-        embeddings = []
-        for text in texts:
-            vector = []
-            for i in range(self.embedding_dim):
-                h = hashlib.md5(f"{text}_{i}".encode()).digest()
-                vector.append(float(h[0] % 100) / 100.0)
-            embeddings.append(vector)
-        return embeddings
+        try:
+            client = await self._get_client()
+            client.delete(
+                collection_name=settings.QDRANT_COLLECTION,
+                points_selector=[int(i) for i in ids]
+            )
+        except Exception as e:
+            loguru.logger.error(f"Qdrant delete error: {e}")
 
 
 class InMemoryStore(VectorStore):
     """内存向量存储 (开发/测试用)"""
 
     _initialized: bool = False
+    _texts: List[str] = []
+    _embeddings: List[List[float]] = []
+    _metadatas: List[Dict] = []
 
     def __init__(self):
         super().__init__()
-        self.texts: List[str] = []
-        self.metadatas: List[Dict] = []
+        # 延迟初始化知识库
         if not InMemoryStore._initialized:
-            self._init_knowledge_base()
+            import asyncio
+            asyncio.create_task(self._init_knowledge_base())
             InMemoryStore._initialized = True
 
-    def _init_knowledge_base(self) -> None:
+        # 引用类级别的数据
+        self.texts = InMemoryStore._texts
+        self.embeddings = InMemoryStore._embeddings
+        self.metadatas = InMemoryStore._metadatas
+
+    async def _init_knowledge_base(self) -> None:
+        """初始化知识库"""
         try:
             from app.services.rag.knowledge_data import get_knowledge_articles
             articles = get_knowledge_articles()
+
+            texts = []
+            metas = []
             for article in articles:
-                self.texts.append(article["content"])
-                self.metadatas.append({
+                texts.append(article["content"])
+                metas.append({
                     "title": article["title"],
                     "category": article["category"],
                     "tags": article.get("tags", ""),
                     "mbti_types": article.get("mbti_types", ""),
                 })
-            loguru.logger.info(f"知识库已初始化: {len(articles)} 篇文章")
+
+            # 使用真实Embedding服务生成向量
+            embeddings = await self._get_embeddings(texts)
+
+            # 更新类级别数据
+            InMemoryStore._texts = texts
+            InMemoryStore._embeddings = embeddings
+            InMemoryStore._metadatas = metas
+
+            loguru.logger.info(f"知识库已初始化: {len(articles)} 篇文章, embedding维度: {self.embedding_dim}")
         except Exception as e:
+            loguru.logger.warning(f"知识库初始化失败: {e}")
             loguru.logger.warning(f"知识库初始化失败: {e}")
 
     async def add_texts(self, texts: List[str], metadatas: Optional[List[Dict]] = None) -> List[str]:
         """添加文本"""
         start_id = len(self.texts)
+
+        # 使用真实Embedding服务生成向量
+        new_embeddings = await self._get_embeddings(texts)
+
         self.texts.extend(texts)
+        self.embeddings.extend(new_embeddings)
         if metadatas:
             self.metadatas.extend(metadatas)
         else:
             self.metadatas.extend([{} for _ in texts])
+
         return [str(i) for i in range(start_id, start_id + len(texts))]
 
     async def similarity_search(self, query: str, top_k: int = 5, filter: Optional[Dict] = None) -> List[Dict]:
-        """简单关键词匹配 (demo用)"""
+        """余弦相似度搜索"""
         if not self.texts:
             return []
 
-        # 简单的关键词匹配
-        query_keywords = query.lower().split()
+        # 使用真实Embedding服务生成query向量
+        query_embedding = (await self._get_embeddings([query]))[0]
+
+        # 计算余弦相似度
         scores = []
-        for i, text in enumerate(self.texts):
-            text_lower = text.lower()
-            score = sum(1 for kw in query_keywords if kw in text_lower)
-            if score > 0:
-                scores.append((i, score))
+        for i, embedding in enumerate(self.embeddings):
+            score = self._cosine_similarity(query_embedding, embedding)
+            scores.append((i, score))
 
         scores.sort(key=lambda x: x[1], reverse=True)
 
@@ -330,11 +353,29 @@ class InMemoryStore(VectorStore):
 
         return results
 
+    def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
+        """计算余弦相似度"""
+        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        norm1 = sum(a * a for a in vec1) ** 0.5
+        norm2 = sum(b * b for b in vec2) ** 0.5
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+        return dot_product / (norm1 * norm2)
+
     async def delete(self, ids: List[str]) -> None:
         """删除向量"""
         ids_to_delete = set(int(i) for i in ids)
-        self.texts = [t for i, t in enumerate(self.texts) if i not in ids_to_delete]
-        self.metadatas = [m for i, m in enumerate(self.metadatas) if i not in ids_to_delete]
+        new_texts = []
+        new_embeddings = []
+        new_metadatas = []
+        for i, (t, e, m) in enumerate(zip(self.texts, self.embeddings, self.metadatas)):
+            if i not in ids_to_delete:
+                new_texts.append(t)
+                new_embeddings.append(e)
+                new_metadatas.append(m)
+        self.texts = new_texts
+        self.embeddings = new_embeddings
+        self.metadatas = new_metadatas
 
 
 def get_vector_store() -> VectorStore:

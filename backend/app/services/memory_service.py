@@ -259,6 +259,27 @@ class MemoryService:
 
     # ==================== 知识图谱 ====================
 
+    def __init__(self):
+        from app.core.config import settings
+        self.vector_store = get_vector_store()
+        self.session_memory = get_session_memory()
+        # 用户记忆使用单独的 collection
+        self.user_collection = settings.MILVUS_COLLECTION  # 使用主 collection，依赖 metadata 区分
+        # Neo4j图数据库（生产级）
+        self._neo4j_enabled = getattr(settings, 'NEO4J_ENABLED', False)
+        self._neo4j_store = None
+
+    async def _get_neo4j_store(self):
+        """获取Neo4j存储实例（延迟加载）"""
+        if self._neo4j_store is None and self._neo4j_enabled:
+            try:
+                from app.services.neo4j_graph_service import get_neo4j_store
+                self._neo4j_store = get_neo4j_store()
+            except Exception as e:
+                loguru.logger.warning(f"Neo4j不可用，使用SQLAlchemy回退: {e}")
+                self._neo4j_enabled = False
+        return self._neo4j_store
+
     async def add_entity(
         self,
         user_id: int,
@@ -268,8 +289,37 @@ class MemoryService:
     ) -> bool:
         """添加实体到知识图谱"""
         try:
+            # 优先使用Neo4j（生产级）
+            neo4j = await self._get_neo4j_store()
+            if neo4j:
+                entity_id = await neo4j.create_entity(
+                    user_id=user_id,
+                    entity_type=entity_type,
+                    entity_name=entity_name,
+                    properties=properties
+                )
+                loguru.logger.info(f"Neo4j添加实体: user_id={user_id}, entity={entity_name}")
+                return entity_id is not None
+            else:
+                # 回退到SQLAlchemy
+                return await self._add_entity_sqlalchemy(user_id, entity_type, entity_name, properties)
+
+        except Exception as e:
+            loguru.logger.error(f"添加知识图谱实体失败: {e}")
+            # 回退到SQLAlchemy
+            return await self._add_entity_sqlalchemy(user_id, entity_type, entity_name, properties)
+
+    async def _add_entity_sqlalchemy(
+        self,
+        user_id: int,
+        entity_type: str,
+        entity_name: str,
+        properties: Optional[Dict] = None
+    ) -> bool:
+        """使用SQLAlchemy添加实体（回退方案）"""
+        try:
             from app.core.database import SessionLocal
-            from app.models.memory import KnowledgeGraph
+            from app.models.memory_graph import KnowledgeGraph
 
             content = f"实体: {entity_name} (类型: {entity_type})"
             if properties:
@@ -287,12 +337,12 @@ class MemoryService:
                 )
                 db.add(graph)
                 db.commit()
-                loguru.logger.info(f"添加知识图谱实体: user_id={user_id}, entity={entity_name}")
+                loguru.logger.info(f"SQLAlchemy添加实体: user_id={user_id}, entity={entity_name}")
                 return True
             finally:
                 db.close()
         except Exception as e:
-            loguru.logger.error(f"添加知识图谱实体失败: {e}")
+            loguru.logger.error(f"SQLAlchemy添加实体失败: {e}")
             return False
 
     async def add_relation(
@@ -304,8 +354,37 @@ class MemoryService:
     ) -> bool:
         """添加关系到知识图谱"""
         try:
+            # 优先使用Neo4j（生产级）
+            neo4j = await self._get_neo4j_store()
+            if neo4j:
+                success = await neo4j.create_relation(
+                    user_id=user_id,
+                    from_entity=subject,
+                    to_entity=object_,
+                    relation_type=relation
+                )
+                loguru.logger.info(f"Neo4j添加关系: {subject} --[{relation}]--> {object_}")
+                return success
+            else:
+                # 回退到SQLAlchemy
+                return await self._add_relation_sqlalchemy(user_id, subject, relation, object_)
+
+        except Exception as e:
+            loguru.logger.error(f"添加知识图谱关系失败: {e}")
+            # 回退到SQLAlchemy
+            return await self._add_relation_sqlalchemy(user_id, subject, relation, object_)
+
+    async def _add_relation_sqlalchemy(
+        self,
+        user_id: int,
+        subject: str,
+        relation: str,
+        object_: str
+    ) -> bool:
+        """使用SQLAlchemy添加关系（回退方案）"""
+        try:
             from app.core.database import SessionLocal
-            from app.models.memory import KnowledgeGraph
+            from app.models.memory_graph import KnowledgeGraph
 
             content = f"{subject} --[{relation}]--> {object_}"
 
@@ -324,12 +403,12 @@ class MemoryService:
                 )
                 db.add(graph)
                 db.commit()
-                loguru.logger.info(f"添加知识图谱关系: {subject} --[{relation}]--> {object_}")
+                loguru.logger.info(f"SQLAlchemy添加关系: {subject} --[{relation}]--> {object_}")
                 return True
             finally:
                 db.close()
         except Exception as e:
-            loguru.logger.error(f"添加知识图谱关系失败: {e}")
+            loguru.logger.error(f"SQLAlchemy添加关系失败: {e}")
             return False
 
     async def query_graph(
@@ -340,8 +419,31 @@ class MemoryService:
     ) -> List[Dict]:
         """查询知识图谱"""
         try:
+            # 优先使用Neo4j（生产级）
+            neo4j = await self._get_neo4j_store()
+            if neo4j:
+                # 获取子图
+                subgraph = await neo4j.get_subgraph(user_id, entity, depth)
+                if subgraph["nodes"]:
+                    return [{
+                        "source": "neo4j",
+                        "center": entity,
+                        "nodes": subgraph["nodes"],
+                        "edges": subgraph["edges"]
+                    }]
+
+            # 回退到SQLAlchemy
+            return await self._query_graph_sqlalchemy(user_id, entity)
+
+        except Exception as e:
+            loguru.logger.error(f"查询知识图谱失败: {e}")
+            return await self._query_graph_sqlalchemy(user_id, entity)
+
+    async def _query_graph_sqlalchemy(self, user_id: int, entity: str) -> List[Dict]:
+        """使用SQLAlchemy查询知识图谱（回退方案）"""
+        try:
             from app.core.database import SessionLocal
-            from app.models.memory import KnowledgeGraph
+            from app.models.memory_graph import KnowledgeGraph
 
             db = SessionLocal()
             try:
@@ -356,6 +458,7 @@ class MemoryService:
 
                 return [
                     {
+                        "source": "sqlalchemy",
                         "id": g.id,
                         "graph_type": g.graph_type,
                         "entity_name": g.entity_name,
@@ -367,8 +470,43 @@ class MemoryService:
             finally:
                 db.close()
         except Exception as e:
-            loguru.logger.error(f"查询知识图谱失败: {e}")
+            loguru.logger.error(f"SQLAlchemy查询知识图谱失败: {e}")
             return []
+
+    async def get_graph_stats(self, user_id: int) -> Dict:
+        """获取知识图谱统计"""
+        try:
+            neo4j = await self._get_neo4j_store()
+            if neo4j:
+                return await neo4j.get_stats(user_id)
+
+            # 回退到SQLAlchemy
+            from app.core.database import SessionLocal
+            from app.models.memory_graph import KnowledgeGraph
+
+            db = SessionLocal()
+            try:
+                entity_count = db.query(KnowledgeGraph).filter(
+                    KnowledgeGraph.user_id == user_id,
+                    KnowledgeGraph.graph_type == "entity"
+                ).count()
+
+                relation_count = db.query(KnowledgeGraph).filter(
+                    KnowledgeGraph.user_id == user_id,
+                    KnowledgeGraph.graph_type == "relation"
+                ).count()
+
+                return {
+                    "entity_count": entity_count,
+                    "relation_count": relation_count,
+                    "backend": "sqlalchemy"
+                }
+            finally:
+                db.close()
+
+        except Exception as e:
+            loguru.logger.error(f"获取图谱统计失败: {e}")
+            return {"entity_count": 0, "relation_count": 0}
 
     # ==================== 对话摘要 ====================
 
