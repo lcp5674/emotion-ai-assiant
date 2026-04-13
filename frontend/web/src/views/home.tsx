@@ -25,6 +25,8 @@ export default function Home() {
       setBanners(res.list || [])
     } catch (e) {
       console.error(e)
+      // 后端服务不可用时，使用默认横幅数据
+      setBanners([])
     } finally {
       setLoading(false)
     }
