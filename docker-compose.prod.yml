@@ -4,6 +4,11 @@
 
 version: '3.8'
 
+# 环境变量文件 - 自动读取 .env 文件
+env_file:
+  - path: .env
+    required: false
+
 services:
   # ============================================
   # MySQL数据库 - 资源限制 & 安全加固
