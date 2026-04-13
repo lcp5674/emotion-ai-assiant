@@ -341,7 +341,59 @@ create_data_dirs() {
 }
 
 #==============================================================================
-# 步骤 3: 服务启动
+# 步骤 3: 构建前端
+#==============================================================================
+build_frontend() {
+    log_info "========== 构建前端 =========="
+
+    local frontend_dir="$PROJECT_DIR/frontend/web"
+    
+    if [ ! -d "$frontend_dir" ]; then
+        log_warning "前端目录不存在，跳过前端构建"
+        return 0
+    fi
+    
+    # 检查是否需要构建
+    if [ -f "$frontend_dir/dist/index.html" ] && [ "$1" != "--force-rebuild" ]; then
+        log_success "前端已构建，跳过构建步骤"
+        log_info "如需重新构建，请删除 frontend/web/dist 目录后重新部署"
+        return 0
+    fi
+    
+    # 检查 node_modules
+    if [ ! -d "$frontend_dir/node_modules" ]; then
+        log_info "安装前端依赖..."
+        cd "$frontend_dir"
+        if command -v yarn &>/dev/null; then
+            yarn install
+        elif command -v npm &>/dev/null; then
+            npm install
+        else
+            log_error "未找到 yarn 或 npm，无法安装前端依赖"
+            return 1
+        fi
+        cd - > /dev/null
+    fi
+    
+    # 构建前端
+    log_info "构建前端..."
+    cd "$frontend_dir"
+    if [ -f "yarn.lock" ]; then
+        yarn build
+    else
+        npm run build
+    fi
+    
+    if [ $? -eq 0 ]; then
+        log_success "前端构建完成"
+    else
+        log_warning "前端构建失败，请检查前端代码"
+    fi
+    cd - > /dev/null
+}
+
+#==============================================================================
+# 步骤 4: 服务启动
 #==============================================================================
 start_services() {
     log_info "========== 启动服务 =========="
@@ -482,7 +534,7 @@ generate_report() {
 main() {
     echo ""
     echo "╔══════════════════════════════════════════════════════════════════╗"
-    echo "║              AI情感助手 - 一键部署脚本 v2.1                       ║"
+    echo "║              AI情感助手 - 一键部署脚本 v2.2                       ║"
     echo "╚══════════════════════════════════════════════════════════════════╝"
     echo ""
 
@@ -514,23 +566,27 @@ main() {
     fi
 
     # 执行部署步骤
-    log_step "步骤 1/5: 前置检查"
+    log_step "步骤 1/6: 前置检查"
     preflight_check
     echo ""
 
-    log_step "步骤 2/5: 端口检查与修复"
+    log_step "步骤 2/6: 端口检查与修复"
     check_and_fix_ports
     echo ""
 
-    log_step "步骤 3/5: 环境配置"
+    log_step "步骤 3/6: 环境配置"
     generate_config
     echo ""
 
-    log_step "步骤 4/5: 启动服务"
+    log_step "步骤 4/6: 构建前端"
+    build_frontend
+    echo ""
+
+    log_step "步骤 5/6: 启动服务"
     start_services
     echo ""
 
-    log_step "步骤 5/5: 健康检查"
+    log_step "步骤 6/6: 健康检查"
     if health_check; then
         echo ""
         generate_report
