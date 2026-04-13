@@ -25,8 +25,8 @@ class KnowledgeGraph(Base):
     # 内容
     content = Column(Text, nullable=False, comment="内容")
 
-    # 元数据
-    metadata = Column(Text, nullable=True, comment="元数据JSON")
+    # 元数据 (使用 meta_data 避免与 SQLAlchemy 保留字冲突)
+    meta_data = Column(Text, nullable=True, comment="元数据JSON")
 
     # 状态
     is_deleted = Column(Boolean, default=False, comment="是否删除")

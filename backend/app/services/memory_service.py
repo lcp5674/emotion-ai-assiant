@@ -333,7 +333,7 @@ class MemoryService:
                     entity_type=entity_type,
                     entity_name=entity_name,
                     content=content,
-                    metadata=json.dumps(properties) if properties else None,
+                    meta_data=json.dumps(properties) if properties else None,
                 )
                 db.add(graph)
                 db.commit()
@@ -395,7 +395,7 @@ class MemoryService:
                     graph_type="relation",
                     entity_name=f"{subject} -> {object_}",
                     content=content,
-                    metadata=json.dumps({
+                    meta_data=json.dumps({
                         "subject": subject,
                         "relation": relation,
                         "object": object_,
@@ -463,7 +463,7 @@ class MemoryService:
                         "graph_type": g.graph_type,
                         "entity_name": g.entity_name,
                         "content": g.content,
-                        "metadata": json.loads(g.metadata) if g.metadata else {},
+                        "metadata": json.loads(g.meta_data) if g.meta_data else {},
                     }
                     for g in graphs
                 ]
