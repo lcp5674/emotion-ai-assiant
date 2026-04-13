@@ -1,14 +1,25 @@
 """
-监控中间件
+监控中间件 - 集成监控告警服务
 """
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 import time
+import asyncio
 from app.core.database import get_db
-from app.services.cache_service import get_cache_service
 import loguru
 
 from app.main import REQUEST_COUNT, REQUEST_LATENCY, ACTIVE_USERS, ERROR_COUNT
+
+# 延迟导入避免循环依赖
+_monitoring_service = None
+
+
+def _get_monitoring_service():
+    global _monitoring_service
+    if _monitoring_service is None:
+        from app.services.monitoring_service import get_monitoring_service
+        _monitoring_service = get_monitoring_service()
+    return _monitoring_service
 
 
 class MonitoringMiddleware(BaseHTTPMiddleware):
@@ -21,6 +32,14 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
 
         # 记录请求开始时间
         start_time = time.time()
+
+        # 获取用户ID（如果已认证）
+        user_id = None
+        try:
+            if hasattr(request.state, "user"):
+                user_id = request.state.user.id
+        except Exception:
+            pass
 
         try:
             # 处理请求
@@ -41,12 +60,35 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
                 endpoint=endpoint
             ).observe(latency)
 
+            # 异步记录到监控系统
+            asyncio.create_task(
+                _get_monitoring_service().record_request_metric(
+                    endpoint=endpoint,
+                    method=request.method,
+                    status_code=response.status_code,
+                    latency_ms=latency * 1000,
+                    user_id=user_id
+                )
+            )
+
             return response
 
         except Exception as e:
             # 记录错误
             ERROR_COUNT.labels(error_type=type(e).__name__).inc()
             loguru.logger.error(f"Request error: {e}")
+
+            # 发送告警
+            try:
+                asyncio.create_task(
+                    _get_monitoring_service().alert_service_down(
+                        service_name=f"{request.method} {request.url.path}",
+                        error=str(e)
+                    )
+                )
+            except Exception:
+                pass
+
             raise
 
         finally:
@@ -56,29 +98,5 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
 
 async def check_health() -> dict:
     """健康检查"""
-    health_status = {
-        "status": "ok",
-        "components": {
-            "database": "ok",
-            "cache": "ok"
-        }
-    }
-
-    # 检查数据库连接
-    try:
-        db = next(get_db())
-        db.execute("SELECT 1")
-        db.close()
-    except Exception as e:
-        health_status["status"] = "degraded"
-        health_status["components"]["database"] = f"error: {str(e)}"
-
-    # 检查缓存连接
-    try:
-        cache_service = get_cache_service()
-        await cache_service.ping()
-    except Exception as e:
-        health_status["status"] = "degraded"
-        health_status["components"]["cache"] = f"error: {str(e)}"
-
-    return health_status
+    monitoring = _get_monitoring_service()
+    return await monitoring.check_system_health()

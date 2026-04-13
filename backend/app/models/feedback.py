@@ -40,6 +40,32 @@ class MessageFeedback(Base):
     user = relationship("User")
 
 
+class ConversationFeedback(Base):
+    """对话满意度反馈"""
+    __tablename__ = "conversation_feedbacks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    
+    # 多维度评分
+    overall_rating = Column(Integer, nullable=False)  # 整体评分 1-5星
+    empathy_rating = Column(Integer, nullable=False)  # 共情能力 1-5星
+    helpfulness_rating = Column(Integer, nullable=False)  # 帮助程度 1-5星
+    
+    # 标签和建议
+    tags = Column(JSON, nullable=True)  # 标签列表，如：温暖、专业、有用
+    improvement_suggestion = Column(Text, nullable=True)  # 改进建议
+    
+    # 是否满意
+    is_satisfied = Column(Integer, default=1)  # 0-否 1-是
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User")
+    conversation = relationship("Conversation")
+
+
 class AssistantFeedback(Base):
     """助手反馈"""
     __tablename__ = "assistant_feedbacks"

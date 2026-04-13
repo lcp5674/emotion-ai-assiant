@@ -31,6 +31,19 @@ async def lifespan(app: FastAPI):
     # 启动时
     loguru.logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
 
+    # 初始化监控服务
+    try:
+        from app.services.monitoring_service import get_monitoring_service
+        monitoring = get_monitoring_service()
+        # 注册Webhook告警处理器（如果配置了）
+        if hasattr(settings, 'ALERT_WEBHOOK_URL') and settings.ALERT_WEBHOOK_URL:
+            from app.services.monitoring_service import WebhookAlertHandler
+            monitoring.register_alert_handler(WebhookAlertHandler(settings.ALERT_WEBHOOK_URL))
+            loguru.logger.info("监控告警Webhook已配置")
+        loguru.logger.info("监控服务已初始化")
+    except Exception as e:
+        loguru.logger.warning(f"监控服务初始化失败: {e}")
+
     # 初始化数据库
     try:
         await init_db()

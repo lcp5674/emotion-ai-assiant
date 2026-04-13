@@ -157,6 +157,10 @@ class Settings(BaseSettings):
     # CORS配置
     CORS_ORIGINS: list = ["http://localhost:3000", "http://localhost:5173"]
 
+    # 告警配置
+    ALERT_WEBHOOK_URL: Optional[str] = None  # 告警Webhook URL（如飞书、钉钉）
+    ALERT_ENABLED: bool = True  # 是否启用告警
+
     @property
     def database_url(self) -> str:
         """数据库连接URL"""
