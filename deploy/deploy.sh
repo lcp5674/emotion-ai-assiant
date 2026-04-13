@@ -319,59 +319,46 @@ start_services() {
 
     log_info "环境变量验证完成"
 
-    # 检查端口占用情况，移除冲突端口的服务映射
+    # 检查端口占用情况，自动更换冲突端口
     local redis_port=$(grep "^REDIS_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "6379")
     local nginx_port=$(grep "^HTTP_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "80")
-    local use_temp_compose=false
 
-    if lsof -i:${redis_port} &>/dev/null || lsof -i:${nginx_port} &>/dev/null; then
-        log_warning "检测到端口冲突，创建临时配置..."
-
-        # 创建临时配置文件，移除 Redis 和 Nginx 服务
-        local temp_compose_file="${DOCKER_COMPOSE_FILE}.tmp"
-        sed '/redis:/,/^  [a-z]/d' "$DOCKER_COMPOSE_FILE" | sed '/nginx:/,/^  [a-z]/d' > "$temp_compose_file"
-        DOCKER_COMPOSE_FILE="$temp_compose_file"
-        use_temp_compose=true
-
-        if lsof -i:${redis_port} &>/dev/null; then
-            log_warning "Redis 端口 ${redis_port} 已被占用，已移除 Redis 服务"
-        fi
-        if lsof -i:${nginx_port} &>/dev/null; then
-            log_warning "Nginx 端口 ${nginx_port} 已被占用，已移除 Nginx 服务"
-        fi
-        log_info "使用临时配置启动其他服务"
+    # 检查并自动更换 Redis 端口
+    if lsof -i:${redis_port} &>/dev/null; then
+        local new_redis_port=$((redis_port + 10000))
+        while lsof -i:${new_redis_port} &>/dev/null; do
+            new_redis_port=$((new_redis_port + 1))
+        done
+        log_warning "Redis 端口 ${redis_port} 已被占用，自动更换为 ${new_redis_port}"
+        sed -i "s/^REDIS_PORT=.*/REDIS_PORT=${new_redis_port}/" "$ENV_FILE"
+        sed -i "s/\"${redis_port}:6379\"/\"${new_redis_port}:6379\"/" "$DOCKER_COMPOSE_FILE"
+        redis_port=$new_redis_port
     fi
+
+    # 检查并自动更换 Nginx 端口
+    if lsof -i:${nginx_port} &>/dev/null; then
+        local new_nginx_port=$((nginx_port + 8000))
+        while lsof -i:${new_nginx_port} &>/dev/null; do
+            new_nginx_port=$((new_nginx_port + 1))
+        done
+        log_warning "Nginx 端口 ${nginx_port} 已被占用，自动更换为 ${new_nginx_port}"
+        sed -i "s/^HTTP_PORT=.*/HTTP_PORT=${new_nginx_port}/" "$ENV_FILE"
+        sed -i "s/\"${nginx_port}:80\"/\"${new_nginx_port}:80\"/" "$DOCKER_COMPOSE_FILE"
+        nginx_port=$new_nginx_port
+    fi
+
+    # 更新 .env 文件
+    cp -f "$ENV_FILE" "$PROJECT_DIR/.env"
 
     # 先构建镜像
     log_info "构建 Docker 镜像..."
     $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" build --no-cache backend
 
-    # 逐个启动服务（不使用依赖检查），避免一个失败导致全部失败
-    log_info "启动 MySQL..."
-    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d mysql || log_warning "MySQL 启动失败"
+    # 启动所有服务
+    log_info "启动所有服务..."
+    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d
 
-    log_info "启动 MinIO..."
-    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d minio || log_warning "MinIO 启动失败"
-
-    if ! lsof -i:${redis_port} &>/dev/null; then
-        log_info "启动 Redis..."
-        $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d redis || log_warning "Redis 启动失败"
-    fi
-
-    log_info "启动 Backend..."
-    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d backend || log_warning "Backend 启动失败"
-
-    if ! lsof -i:${nginx_port} &>/dev/null; then
-        log_info "启动 Nginx..."
-        $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d nginx || log_warning "Nginx 启动失败"
-    fi
-
-    # 清理临时文件
-    if $use_temp_compose; then
-        rm -f "${DOCKER_COMPOSE_FILE}"
-    fi
-
-    log_success "服务启动命令已执行"
+    log_success "服务启动完成"
 }
 
 #==============================================================================
