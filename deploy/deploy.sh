@@ -319,8 +319,36 @@ start_services() {
 
     log_info "环境变量验证完成"
 
+    # 检查端口占用情况，移除冲突端口的服务映射
+    local redis_port=$(grep "^REDIS_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "6379")
+    local nginx_port=$(grep "^HTTP_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "80")
+    local use_temp_compose=false
+
+    if lsof -i:${redis_port} &>/dev/null || lsof -i:${nginx_port} &>/dev/null; then
+        log_warning "检测到端口冲突，创建临时配置..."
+
+        # 创建临时配置文件，移除 Redis 和 Nginx 服务
+        local temp_compose_file="${DOCKER_COMPOSE_FILE}.tmp"
+        sed '/redis:/,/^  [a-z]/d' "$DOCKER_COMPOSE_FILE" | sed '/nginx:/,/^  [a-z]/d' > "$temp_compose_file"
+        DOCKER_COMPOSE_FILE="$temp_compose_file"
+        use_temp_compose=true
+
+        if lsof -i:${redis_port} &>/dev/null; then
+            log_warning "Redis 端口 ${redis_port} 已被占用，已移除 Redis 服务"
+        fi
+        if lsof -i:${nginx_port} &>/dev/null; then
+            log_warning "Nginx 端口 ${nginx_port} 已被占用，已移除 Nginx 服务"
+        fi
+        log_info "使用临时配置启动其他服务"
+    fi
+
     # 构建并启动服务
     $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d --build
+
+    # 清理临时文件
+    if $use_temp_compose; then
+        rm -f "${DOCKER_COMPOSE_FILE}"
+    fi
 
     log_success "服务启动命令已执行"
 }
