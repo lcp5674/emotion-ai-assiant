@@ -1,7 +1,7 @@
 """
 心理学知识库数据 - 预填充内容
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 # ========== SBTI才干主题知识库 ==========
