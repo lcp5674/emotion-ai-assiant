@@ -94,18 +94,55 @@ check_and_fix_ports() {
     local http_port=$(grep "^HTTP_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
     [ -z "$http_port" ] && http_port="80"
     
-    # 检查并修复函数
+    # HTTPS 端口 443
+    local https_port=$(grep "^HTTPS_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
+    [ -z "$https_port" ] && https_port="443"
+    
+    # 检查并修复函数 - 使用 lsof 或 /proc/net/tcp 检测
     fix_port() {
         local var_name=$1
         local actual_port=$2
         local new_port=""
+        local port_in_use=false
         
-        # 使用 fuser 或直接检查 /proc/net/tcp
-        if fuser "$actual_port/tcp" &>/dev/null 2>&1; then
+        # 尝试使用 lsof 检测
+        if command -v lsof &>/dev/null; then
+            if lsof -i:$actual_port &>/dev/null 2>&1; then
+                port_in_use=true
+            fi
+        elif [ -f /proc/net/tcp ]; then
+            # Linux 使用 /proc/net/tcp 检测
+            if grep -q ":$(printf '%x' $actual_port) " /proc/net/tcp /proc/net/tcp6 2>/dev/null; then
+                port_in_use=true
+            fi
+        fi
+        
+        if [ "$port_in_use" = true ]; then
             new_port=$((actual_port + 10000))
-            while fuser "$new_port/tcp" &>/dev/null 2>&1; do
-                new_port=$((new_port + 1))
-                [ $new_port -gt 65535 ] && new_port=10000
+            local attempts=0
+            local new_port_in_use=true
+            
+            while [ "$new_port_in_use" = true ] && [ $attempts -lt 100 ]; do
+                if command -v lsof &>/dev/null; then
+                    if lsof -i:$new_port &>/dev/null 2>&1; then
+                        new_port=$((new_port + 1))
+                        [ $new_port -gt 65535 ] && new_port=10000
+                        attempts=$((attempts + 1))
+                    else
+                        new_port_in_use=false
+                    fi
+                elif [ -f /proc/net/tcp ]; then
+                    if grep -q ":$(printf '%x' $new_port) " /proc/net/tcp /proc/net/tcp6 2>/dev/null; then
+                        new_port=$((new_port + 1))
+                        [ $new_port -gt 65535 ] && new_port=10000
+                        attempts=$((attempts + 1))
+                    else
+                        new_port_in_use=false
+                    fi
+                else
+                    new_port=$((new_port + 1))
+                    attempts=$((attempts + 1))
+                fi
             done
             
             log_warning "端口 ${actual_port} 被占用，自动更换为 ${new_port}"
@@ -128,6 +165,7 @@ check_and_fix_ports() {
     fix_port "MINIO_PORT" "$minio_port"
     fix_port "MINIO_CONSOLE_PORT" "$minio_console_port"
     fix_port "HTTP_PORT" "$http_port"
+    fix_port "HTTPS_PORT" "$https_port"
     
     if [ ${#port_conflicts[@]} -eq 0 ]; then
         log_success "所有端口可用，无冲突"
