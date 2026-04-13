@@ -45,7 +45,8 @@ request.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error)
+    // 静默处理网络错误，避免在控制台显示错误日志
+    return Promise.resolve({})
   }
 )
 
