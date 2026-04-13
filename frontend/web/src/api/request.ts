@@ -48,13 +48,13 @@ request.interceptors.response.use(
           // 资源不存在，返回空对象
           return Promise.resolve({})
         default:
-          // 其他错误，返回空对象
-          return Promise.resolve({})
+          // 其他错误，返回错误对象
+          return Promise.reject(error)
       }
     }
 
-    // 网络错误，返回空对象
-    return Promise.resolve({})
+    // 网络错误，返回错误对象
+    return Promise.reject(error)
   }
 )
 

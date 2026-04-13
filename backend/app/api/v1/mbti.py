@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import loguru
+from datetime import datetime
 
 from app.core.database import get_db
 from app.models import User, MbtiQuestion, MbtiAnswer, MbtiResult, AiAssistant
@@ -84,6 +85,7 @@ async def submit_test(
         ))
 
     # 保存结果
+    import json
     mbti_result = MbtiResult(
         user_id=current_user.id,
         mbti_type=MbtiType[result["mbti_type"]],
@@ -91,7 +93,7 @@ async def submit_test(
         sn_score=result["sn_score"],
         tf_score=result["tf_score"],
         jp_score=result["jp_score"],
-        report_json=str(result),
+        report_json=json.dumps(result),
     )
     db.add(mbti_result)
     db.flush()

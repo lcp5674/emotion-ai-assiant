@@ -104,11 +104,22 @@ export default function MbtiTest() {
     setSubmitting(true)
     try {
       const res = await api.mbti.submit(uniqueAnswers)
-      if (res && res.id) {
-        setResult(res)
-        navigate('/mbti/result')
+      console.log('提交结果:', res)
+      // 检查响应是否有效
+      if (res && typeof res === 'object') {
+        if (res.id) {
+          setResult(res)
+          navigate('/mbti/result')
+        } else if (res.detail) {
+          // 服务器返回错误信息
+          console.error('提交失败，服务器返回错误:', res.detail)
+          message.error(`提交失败: ${res.detail}`)
+        } else {
+          console.error('提交失败，服务器返回无效结果:', res)
+          message.error('提交失败，请稍后重试')
+        }
       } else {
-        console.error('提交失败，服务器返回无效结果')
+        console.error('提交失败，服务器返回无效响应:', res)
         message.error('提交失败，请稍后重试')
       }
     } catch (error: any) {
@@ -116,6 +127,10 @@ export default function MbtiTest() {
       // 检查是否是网络错误
       if (error.message && error.message.includes('Network Error')) {
         message.error('网络连接失败，请检查网络设置后重试')
+      } else if (error.response) {
+        // 服务器返回错误
+        console.error('服务器错误:', error.response)
+        message.error(`提交失败: ${error.response.data?.detail || '服务器内部错误'}`)
       } else {
         message.error('提交失败，请稍后重试')
       }
