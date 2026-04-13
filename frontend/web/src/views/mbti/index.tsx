@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Radio, Progress, Spin, App } from 'antd'
 import { api } from '../../api/request'
-import { useMbtiStore } from '../../stores'
+import { useMbtiStore, useAuthStore } from '../../stores'
 import { useTheme } from '../../hooks/useTheme'
 
 export default function MbtiTest() {
