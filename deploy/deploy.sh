@@ -83,10 +83,6 @@ check_all_ports() {
         fi
     fi
     
-    # 读取 .env 中的实际端口值，并构建冲突检测列表
-    # 从 docker-compose.yml 中提取端口映射，解析 ${VAR:-default} 格式
-    source "$ENV_FILE" 2>/dev/null
-    
     # 定义要检查的端口及其对应的环境变量名
     declare -A port_vars=(
         ["3306"]="MYSQL_PORT"
@@ -104,17 +100,21 @@ check_all_ports() {
     # 检查每个端口
     for default_port in "${!port_vars[@]}"; do
         local var_name="${port_vars[$default_port]}"
-        # 获取实际端口值（从环境变量或默认值）
-        # 使用 eval 代替 ${!var_name} 以避免 set -u 下的 unbound variable 问题
-        local actual_port
-        actual_port=$(eval echo "\$$var_name" 2>/dev/null)
+        # 从 .env 文件获取实际端口值，避免间接引用变量问题
+        local actual_port=""
+        if [[ -f "$ENV_FILE" ]]; then
+            actual_port=$(grep "^${var_name}=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+        fi
         [[ -z "$actual_port" ]] && actual_port="$default_port"
         
-        # 检查端口是否被占用
-        if lsof -i:${actual_port} &>/dev/null 2>&1; then
+        # 检查端口是否被占用（使用 ss 命令，更可靠）
+        # ss -ltn 检查 TCP 监听端口，-u 检查 UDP
+        if ss -ltn 2>/dev/null | grep -q ":${actual_port} " || \
+           ss -ltun 2>/dev/null | grep -q ":${actual_port} "; then
             # 找到可用端口
             local new_port=$((actual_port + 10000))
-            while lsof -i:${new_port} &>/dev/null 2>&1; do
+            while ss -ltn 2>/dev/null | grep -q ":${new_port} " || \
+                  ss -ltun 2>/dev/null | grep -q ":${new_port} "; do
                 new_port=$((new_port + 1))
                 if [[ $new_port -gt 65535 ]]; then
                     new_port=10000
@@ -127,7 +127,6 @@ check_all_ports() {
             port_changes+=("${actual_port}->${new_port}")
             
             # 更新 .env 文件
-            echo "${var_name}=${new_port}" >> "$ENV_FILE"
             sed -i "s|^${var_name}=.*|${var_name}=${new_port}|" "$ENV_FILE"
         fi
     done
