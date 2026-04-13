@@ -404,7 +404,7 @@ show_help() {
     echo ""
 }
 
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+if [[ $# -gt 0 && ("$1" == "-h" || "$1" == "--help") ]]; then
     show_help
     exit 0
 fi
