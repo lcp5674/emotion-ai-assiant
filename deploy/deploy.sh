@@ -181,36 +181,68 @@ preflight_check() {
 generate_config() {
     log_info "========== 环境配置 =========="
 
-    # 读取或生成密钥
-    if grep -q "SECRET_KEY=your-secret-key-here" "$ENV_FILE" 2>/dev/null || \
-       grep -q "SECRET_KEY=change-me-in-production" "$ENV_FILE" 2>/dev/null; then
-        SECRET_KEY=$(openssl rand -hex 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 64 | head -n 1)
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/SECRET_KEY=.*/SECRET_KEY=${SECRET_KEY}/" "$ENV_FILE"
+    # 生成随机密码的函数
+    generate_password() {
+        openssl rand -hex 16 2>/dev/null || cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1
+    }
+
+    # 更新或追加环境变量的函数
+    update_env_var() {
+        local key="$1"
+        local value="$2"
+        if grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s/^${key}=.*/${key}=${value}/" "$ENV_FILE"
+            else
+                sed -i "s/^${key}=.*/${key}=${value}/" "$ENV_FILE"
+            fi
         else
-            sed -i "s/SECRET_KEY=.*/SECRET_KEY=${SECRET_KEY}/" "$ENV_FILE"
+            echo "${key}=${value}" >> "$ENV_FILE"
         fi
+    }
+
+    # 生成或更新 SECRET_KEY
+    local current_secret=$(grep "^SECRET_KEY=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+    if [[ -z "$current_secret" || "$current_secret" == "your-secret-key-here" || "$current_secret" == "change-me-in-production" ]]; then
+        SECRET_KEY=$(generate_password)
+        update_env_var "SECRET_KEY" "$SECRET_KEY"
         log_success "已生成应用密钥"
     fi
 
-    # 生成 MySQL 密码
-    if grep -q "MYSQL_PASSWORD=.*your.*" "$ENV_FILE" 2>/dev/null || \
-       grep -q "MYSQL_PASSWORD=emotion_ai_password" "$ENV_FILE" 2>/dev/null; then
-        MYSQL_PASSWORD=$(openssl rand -hex 16 2>/dev/null || cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1)
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/MYSQL_PASSWORD=.*/MYSQL_PASSWORD=${MYSQL_PASSWORD}/" "$ENV_FILE"
-        else
-            sed -i "s/MYSQL_PASSWORD=.*/MYSQL_PASSWORD=${MYSQL_PASSWORD}/" "$ENV_FILE"
-        fi
-        log_success "已生成 MySQL 密码"
+    # 生成或更新 MYSQL_ROOT_PASSWORD
+    local current_mysql_root=$(grep "^MYSQL_ROOT_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+    if [[ -z "$current_mysql_root" ]]; then
+        MYSQL_ROOT_PASSWORD=$(generate_password)
+        update_env_var "MYSQL_ROOT_PASSWORD" "$MYSQL_ROOT_PASSWORD"
+        log_success "已生成 MySQL Root 密码"
     fi
 
-    # 生成 Redis 密码
-    if ! grep -q "REDIS_PASSWORD=" "$ENV_FILE" 2>/dev/null; then
-        REDIS_PASSWORD=$(openssl rand -hex 16 2>/dev/null || cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1)
-        echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> "$ENV_FILE"
+    # 生成或更新 MYSQL_PASSWORD
+    local current_mysql=$(grep "^MYSQL_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+    if [[ -z "$current_mysql" || "$current_mysql" == "your_password" || "$current_mysql" == "emotion_ai_password" ]]; then
+        MYSQL_PASSWORD=$(generate_password)
+        update_env_var "MYSQL_PASSWORD" "$MYSQL_PASSWORD"
+        log_success "已生成 MySQL 应用密码"
+    fi
+
+    # 生成或更新 REDIS_PASSWORD
+    local current_redis=$(grep "^REDIS_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+    if [[ -z "$current_redis" || "$current_redis" == "redis" || "$current_redis" == "redis_password" ]]; then
+        REDIS_PASSWORD=$(generate_password)
+        update_env_var "REDIS_PASSWORD" "$REDIS_PASSWORD"
         log_success "已生成 Redis 密码"
     fi
+
+    # 生成或更新 MINIO_ROOT_PASSWORD
+    local current_minio=$(grep "^MINIO_ROOT_PASSWORD=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+    if [[ -z "$current_minio" || "$current_minio" == "minioadmin" || "$current_minio" == "minio_password" ]]; then
+        MINIO_ROOT_PASSWORD=$(generate_password)
+        update_env_var "MINIO_ROOT_PASSWORD" "$MINIO_ROOT_PASSWORD"
+        log_success "已生成 MinIO 密码"
+    fi
+
+    # 确保源文件也有这些变量 (用于 docker-compose)
+    cp -f "$ENV_FILE" "$PROJECT_DIR/.env" 2>/dev/null || true
 
     log_success "环境配置验证完成"
 }
@@ -264,6 +296,28 @@ run_migrations() {
 #==============================================================================
 start_services() {
     log_info "========== 启动服务 =========="
+
+    # 确保 .env 文件存在且包含所有必需变量
+    if [ ! -f "$ENV_FILE" ]; then
+        log_error "环境配置文件不存在: $ENV_FILE"
+        exit 1
+    fi
+
+    # 验证必需变量
+    local required_vars=("MYSQL_ROOT_PASSWORD" "MYSQL_PASSWORD" "REDIS_PASSWORD" "SECRET_KEY")
+    for var in "${required_vars[@]}"; do
+        local value=$(grep "^${var}=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+        if [[ -z "$value" ]]; then
+            log_error "必需变量 ${var} 未设置或为空"
+            log_info "请手动设置或删除 .env.docker 后重新运行"
+            exit 1
+        fi
+    done
+
+    # 同步到项目根目录的 .env
+    cp -f "$ENV_FILE" "$PROJECT_DIR/.env"
+
+    log_info "环境变量验证完成"
 
     # 构建并启动服务
     $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d --build
