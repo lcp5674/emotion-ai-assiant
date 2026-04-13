@@ -160,6 +160,13 @@ class MbtiService:
         # 获取类型描述
         description = self.TYPE_DESCRIPTIONS.get(mbti_type, {})
 
+        # 计算每个维度的百分比（score 范围假设 -20 到 20）
+        def calc_percentage(score: int, max_score: int = 20) -> int:
+            # 将 score 从 [-max, max] 映射到 [5, 95]（留出边界避免 0% 或 100%）
+            normalized = (score + max_score) / (2 * max_score)
+            percentage = int(normalized * 100)
+            return max(5, min(95, percentage))
+
         return {
             "mbti_type": mbti_type,
             "ei_score": scores["EI"],
@@ -167,10 +174,30 @@ class MbtiService:
             "tf_score": scores["TF"],
             "jp_score": scores["JP"],
             "dimensions": [
-                {"dimension": "EI", "score": scores["EI"], "tendency": "外向" if scores["EI"] > 0 else "内向"},
-                {"dimension": "SN", "score": scores["SN"], "tendency": "感觉" if scores["SN"] > 0 else "直觉"},
-                {"dimension": "TF", "score": scores["TF"], "tendency": "思维" if scores["TF"] > 0 else "情感"},
-                {"dimension": "JP", "score": scores["JP"], "tendency": "判断" if scores["JP"] > 0 else "知觉"},
+                {
+                    "dimension": "EI",
+                    "score": scores["EI"],
+                    "percentage": calc_percentage(scores["EI"]),
+                    "tendency": "外向" if scores["EI"] > 0 else "内向"
+                },
+                {
+                    "dimension": "SN",
+                    "score": scores["SN"],
+                    "percentage": calc_percentage(scores["SN"]),
+                    "tendency": "感觉" if scores["SN"] > 0 else "直觉"
+                },
+                {
+                    "dimension": "TF",
+                    "score": scores["TF"],
+                    "percentage": calc_percentage(scores["TF"]),
+                    "tendency": "思维" if scores["TF"] > 0 else "情感"
+                },
+                {
+                    "dimension": "JP",
+                    "score": scores["JP"],
+                    "percentage": calc_percentage(scores["JP"]),
+                    "tendency": "判断" if scores["JP"] > 0 else "知觉"
+                },
             ],
             "personality": description.get("personality", ""),
             "strengths": description.get("strengths", []),
