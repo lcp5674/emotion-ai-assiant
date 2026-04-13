@@ -51,26 +51,8 @@ DEPLOY_MODE="simple"  # 默认简单模式
 DATA_PATH="$PROJECT_DIR/data"
 
 #==============================================================================
-# 跨平台端口检测函数
+# 端口检测函数 - 简单可靠版
 #==============================================================================
-is_port_in_use() {
-    local port=$1
-    # 使用 timeout 防止命令挂起，最多等待2秒
-    if timeout 2 bash -c "cat /proc/net/tcp /proc/net/tcp6 2>/dev/null" | awk '{print $2}' | grep -oE '[0-9]+$' | grep -q "^${port}$"; then
-        return 0
-    fi
-    if command -v ss &>/dev/null; then
-        if timeout 2 ss -tn 2>/dev/null | grep -E ":${port}( |$)" | grep -q LISTEN; then
-            return 0
-        fi
-    elif command -v netstat &>/dev/null; then
-        if timeout 2 netstat -tn 2>/dev/null | grep -E ":${port}( |$)" | grep -q LISTEN; then
-            return 0
-        fi
-    fi
-    return 1
-}
-
 check_and_fix_ports() {
     log_info "========== 端口检查与修复 =========="
     
@@ -83,40 +65,47 @@ check_and_fix_ports() {
     fi
     
     # 定义要检查的端口及其对应的环境变量名
-    declare -A port_vars=(
-        ["3306"]="MYSQL_PORT"
-        ["6379"]="REDIS_PORT"
-        ["8000"]="BACKEND_PORT"
-        ["9000"]="MINIO_PORT"
-        ["9001"]="MINIO_CONSOLE_PORT"
-        ["80"]="HTTP_PORT"
-        ["443"]="HTTPS_PORT"
-    )
-    
+    # 直接使用关联数组，避免间接引用问题
     local port_conflicts=()
     local port_changes=()
     
-    # 检查每个端口
-    for default_port in "${!port_vars[@]}"; do
-        local var_name="${port_vars[$default_port]}"
-        # 从 .env 文件获取实际端口值
-        local actual_port=""
-        if [ -f "$ENV_FILE" ]; then
-            actual_port=$(grep "^${var_name}=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
-        fi
-        [ -z "$actual_port" ] && actual_port="$default_port"
+    # 直接检查并处理每个端口
+    # MySQL 端口 3306
+    local mysql_port=$(grep "^MYSQL_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
+    [ -z "$mysql_port" ] && mysql_port="3306"
+    
+    # Redis 端口 6379
+    local redis_port=$(grep "^REDIS_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
+    [ -z "$redis_port" ] && redis_port="6379"
+    
+    # 后端端口 8000
+    local backend_port=$(grep "^BACKEND_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
+    [ -z "$backend_port" ] && backend_port="8000"
+    
+    # MinIO 端口 9000
+    local minio_port=$(grep "^MINIO_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
+    [ -z "$minio_port" ] && minio_port="9000"
+    
+    # MinIO Console 端口 9001
+    local minio_console_port=$(grep "^MINIO_CONSOLE_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
+    [ -z "$minio_console_port" ] && minio_console_port="9001"
+    
+    # HTTP 端口 80
+    local http_port=$(grep "^HTTP_PORT=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d'=' -f2 | tr -d ' \r\n')
+    [ -z "$http_port" ] && http_port="80"
+    
+    # 检查并修复函数
+    fix_port() {
+        local var_name=$1
+        local actual_port=$2
+        local new_port=""
         
-        # 检查端口是否被占用
-        if is_port_in_use "$actual_port"; then
-            # 找到可用端口
-            local new_port=$((actual_port + 10000))
-            local attempts=0
-            while is_port_in_use "$new_port" && [ $attempts -lt 100 ]; do
+        # 使用 fuser 或直接检查 /proc/net/tcp
+        if fuser "$actual_port/tcp" &>/dev/null 2>&1; then
+            new_port=$((actual_port + 10000))
+            while fuser "$new_port/tcp" &>/dev/null 2>&1; do
                 new_port=$((new_port + 1))
-                if [ $new_port -gt 65535 ]; then
-                    new_port=10000
-                fi
-                attempts=$((attempts + 1))
+                [ $new_port -gt 65535 ] && new_port=10000
             done
             
             log_warning "端口 ${actual_port} 被占用，自动更换为 ${new_port}"
@@ -130,7 +119,15 @@ check_and_fix_ports() {
                 echo "${var_name}=${new_port}" >> "$ENV_FILE"
             fi
         fi
-    done
+    }
+    
+    # 执行检查
+    fix_port "MYSQL_PORT" "$mysql_port"
+    fix_port "REDIS_PORT" "$redis_port"
+    fix_port "BACKEND_PORT" "$backend_port"
+    fix_port "MINIO_PORT" "$minio_port"
+    fix_port "MINIO_CONSOLE_PORT" "$minio_console_port"
+    fix_port "HTTP_PORT" "$http_port"
     
     if [ ${#port_conflicts[@]} -eq 0 ]; then
         log_success "所有端口可用，无冲突"
