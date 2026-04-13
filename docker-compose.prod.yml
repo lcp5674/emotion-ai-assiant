@@ -22,12 +22,6 @@ services:
     # 安全配置
     security_opt:
       - no-new-privileges:true
-    user: "999:999"  # mysql用户ID
-    # 只读文件系统
-    read_only: true
-    tmpfs:
-      - /tmp:mode=1777
-      - /var/run/mysqld:mode=1777
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-emotion_ai}
@@ -39,6 +33,9 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./deploy/config/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+    tmpfs:
+      - /tmp:mode=1777
+      - /var/run/mysqld:mode=1777
     command: >
       --default-authentication-plugin=mysql_native_password
       --character-set-server=utf8mb4
@@ -83,8 +80,6 @@ services:
     # 安全配置
     security_opt:
       - no-new-privileges:true
-    user: "999:999"
-    read_only: true
     tmpfs:
       - /tmp:mode=1777
     ports:
@@ -135,8 +130,6 @@ services:
     # 安全配置
     security_opt:
       - no-new-privileges:true
-    user: "1000:1000"
-    read_only: true
     tmpfs:
       - /tmp:mode=1777
     environment:
@@ -187,8 +180,6 @@ services:
     # 安全配置
     security_opt:
       - no-new-privileges:true
-    user: "1000:1000"
-    read_only: true
     tmpfs:
       - /tmp:mode=1777
     ports:
@@ -255,7 +246,6 @@ services:
     # 安全配置
     security_opt:
       - no-new-privileges:true
-    read_only: true
     tmpfs:
       - /var/cache/nginx:mode=1777
       - /var/run:mode=1777
