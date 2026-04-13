@@ -53,9 +53,8 @@ export default function MbtiTest() {
       addAnswer({ question_id: currentQuestion.id, answer })
       
       if (isLastQuestion) {
-        // 从store获取最新的answers
-        const store = useMbtiStore.getState()
-        handleSubmit(store.answers)
+        // 直接调用handleSubmit，让它从store获取最新的answers
+        handleSubmit()
       }
     }
   }
@@ -63,7 +62,9 @@ export default function MbtiTest() {
   const handleSubmit = async (_event?: any, submitAnswers?: typeof answers) => {
     if (questions.length === 0) return
     
-    const answersToSubmit = submitAnswers || answers
+    // 总是从store获取最新的answers
+    const store = useMbtiStore.getState()
+    const answersToSubmit = submitAnswers || store.answers
     
     // 去重，确保每个题目只有一个答案
     const uniqueAnswers = answersToSubmit.reduce((acc: typeof answers, answer) => {
