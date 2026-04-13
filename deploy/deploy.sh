@@ -319,35 +319,59 @@ start_services() {
 
     log_info "环境变量验证完成"
 
-    # 检查端口占用情况，自动更换冲突端口
-    local redis_port=$(grep "^REDIS_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "6379")
-    local nginx_port=$(grep "^HTTP_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "80")
-
-    # 检查并自动更换 Redis 端口
-    if lsof -i:${redis_port} &>/dev/null; then
-        local new_redis_port=$((redis_port + 10000))
-        while lsof -i:${new_redis_port} &>/dev/null; do
-            new_redis_port=$((new_redis_port + 1))
+    # 检查并修复所有端口冲突
+    log_info "========== 端口检查与修复 =========="
+    
+    # 从 docker-compose.yml 提取所有端口映射
+    local ports_map=$(grep -E '^\s*-\s*".*:[0-9]+"' "$DOCKER_COMPOSE_FILE" 2>/dev/null | \
+                      sed 's/.*"\([0-9]*\):[0-9]*".*/\1/' | sort -u)
+    
+    local port_conflicts=()
+    local port_changes=()
+    
+    for port in $ports_map; do
+        if [[ -n "$port" ]] && lsof -i:${port} &>/dev/null; then
+            # 找到可用端口
+            local new_port=$((port + 10000))
+            while lsof -i:${new_port} &>/dev/null 2>/dev/null; do
+                new_port=$((new_port + 1))
+                # 防止无限循环
+                if [[ $new_port -gt 65535 ]]; then
+                    new_port=10000
+                    break
+                fi
+            done
+            
+            log_warning "端口 ${port} 被占用，自动更换为 ${new_port}"
+            port_conflicts+=("${port}")
+            port_changes+=("${port}->${new_port}")
+            
+            # 替换 docker-compose 中的端口映射
+            sed -i "s/\"${port}:/${new_port}:/g" "$DOCKER_COMPOSE_FILE"
+            
+            # 替换 .env 中的端口变量
+            case $port in
+                3306) sed -i "s/^MYSQL_PORT=.*/MYSQL_PORT=${new_port}/" "$ENV_FILE" ;;
+                6379) sed -i "s/^REDIS_PORT=.*/REDIS_PORT=${new_port}/" "$ENV_FILE" ;;
+                8000) sed -i "s/^BACKEND_PORT=.*/BACKEND_PORT=${new_port}/" "$ENV_FILE" ;;
+                9000) sed -i "s/^MINIO_PORT=.*/MINIO_PORT=${new_port}/" "$ENV_FILE" ;;
+                9001) sed -i "s/^MINIO_CONSOLE_PORT=.*/MINIO_CONSOLE_PORT=${new_port}/" "$ENV_FILE" ;;
+                80)   sed -i "s/^HTTP_PORT=.*/HTTP_PORT=${new_port}/" "$ENV_FILE" ;;
+                443)  sed -i "s/^HTTPS_PORT=.*/HTTPS_PORT=${new_port}/" "$ENV_FILE" ;;
+            esac
+        fi
+    done
+    
+    if [[ ${#port_conflicts[@]} -eq 0 ]]; then
+        log_success "所有端口可用，无冲突"
+    else
+        log_warning "已自动修复 ${#port_conflicts[@]} 个端口冲突"
+        for change in "${port_changes[@]}"; do
+            log_info "  ${change}"
         done
-        log_warning "Redis 端口 ${redis_port} 已被占用，自动更换为 ${new_redis_port}"
-        sed -i "s/^REDIS_PORT=.*/REDIS_PORT=${new_redis_port}/" "$ENV_FILE"
-        sed -i "s/\"${redis_port}:6379\"/\"${new_redis_port}:6379\"/" "$DOCKER_COMPOSE_FILE"
-        redis_port=$new_redis_port
     fi
-
-    # 检查并自动更换 Nginx 端口
-    if lsof -i:${nginx_port} &>/dev/null; then
-        local new_nginx_port=$((nginx_port + 8000))
-        while lsof -i:${new_nginx_port} &>/dev/null; do
-            new_nginx_port=$((new_nginx_port + 1))
-        done
-        log_warning "Nginx 端口 ${nginx_port} 已被占用，自动更换为 ${new_nginx_port}"
-        sed -i "s/^HTTP_PORT=.*/HTTP_PORT=${new_nginx_port}/" "$ENV_FILE"
-        sed -i "s/\"${nginx_port}:80\"/\"${new_nginx_port}:80\"/" "$DOCKER_COMPOSE_FILE"
-        nginx_port=$new_nginx_port
-    fi
-
-    # 更新 .env 文件
+    
+    # 同步 .env 到项目根目录
     cp -f "$ENV_FILE" "$PROJECT_DIR/.env"
 
     # 先构建镜像

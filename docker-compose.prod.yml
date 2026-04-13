@@ -2,8 +2,6 @@
 # 包含完整的安全配置、资源限制和高可用设置
 # 使用方法: docker-compose -f docker-compose.prod.yml up -d
 
-version: '3.8'
-
 services:
   # ============================================
   # MySQL数据库 - 资源限制 & 安全加固
