@@ -118,6 +118,8 @@ services:
     image: minio/minio:latest
     container_name: emotion-ai-minio
     restart: unless-stopped
+    # 以 root 用户运行以创建必要目录（初始化后可切换）
+    user: "0:0"
     # 资源限制
     deploy:
       resources:
@@ -140,7 +142,12 @@ services:
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
-    command: server /data --console-address ":9001"
+      # 确保宿主机目录存在且可写
+      - type: bind
+        source: ${DATA_PATH:-./data}/minio
+        target: /dir-check
+        read_only: false
+    command: sh -c "mkdir -p /data/.minio.sys && chmod -R 777 /data && minio server /data --console-address \":9001\""
     # 健康检查
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]

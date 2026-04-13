@@ -335,7 +335,11 @@ create_data_dirs() {
     log_info "========== 创建数据目录 =========="
 
     mkdir -p "$DATA_PATH"/{mysql,redis,minio,uploads,logs/nginx}
-    chmod -R 755 "$DATA_PATH" 2>/dev/null || true
+    # 设置目录权限 - MySQL 需要 mysql 用户可写，其他目录 777
+    chmod -R 755 "$DATA_PATH"/mysql 2>/dev/null || true
+    chmod -R 777 "$DATA_PATH"/{redis,minio,uploads,logs/nginx} 2>/dev/null || true
+    # 确保 MinIO 目录完全可访问
+    chown -R 0:0 "$DATA_PATH/minio" 2>/dev/null || true
 
     log_success "数据目录已创建: $DATA_PATH"
 }
