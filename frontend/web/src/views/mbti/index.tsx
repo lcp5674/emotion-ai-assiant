@@ -32,15 +32,19 @@ export default function MbtiTest() {
     setLoading(true)
     try {
       const res = await api.mbti.questions()
-      setQuestions(res.questions)
+      setQuestions(res.questions || [])
     } catch (error) {
-      message.error('加载题目失败')
+      console.error('加载题目失败:', error)
+      // 后端服务不可用时，使用空数组作为默认题目数据
+      setQuestions([])
     } finally {
       setLoading(false)
     }
   }
 
   const handleAnswer = (answer: string) => {
+    if (questions.length === 0) return
+    
     const currentQuestion = questions[currentQuestionIndex]
     if (currentQuestion) {
       const isLastQuestion = currentQuestionIndex === questions.length - 1
@@ -57,6 +61,8 @@ export default function MbtiTest() {
   }
 
   const handleSubmit = async (_event?: any, submitAnswers?: typeof answers) => {
+    if (questions.length === 0) return
+    
     const answersToSubmit = submitAnswers || answers
     
     // 去重，确保每个题目只有一个答案
@@ -68,18 +74,19 @@ export default function MbtiTest() {
     }, [])
     
     if (uniqueAnswers.length < questions.length) {
-      message.warning('请完成所有题目')
+      console.warn('请完成所有题目')
       return
     }
 
     setSubmitting(true)
     try {
       const res = await api.mbti.submit(uniqueAnswers)
-      setResult(res)
-      message.success('测试完成！')
-      navigate('/mbti/result')
+      if (res) {
+        setResult(res)
+        navigate('/mbti/result')
+      }
     } catch (error: any) {
-      message.error(error.response?.data?.detail || '提交失败')
+      console.error('提交失败:', error)
     } finally {
       setSubmitting(false)
     }
@@ -89,6 +96,43 @@ export default function MbtiTest() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <Spin size="large" />
+      </div>
+    )
+  }
+
+  // 当题目列表为空时，显示友好提示
+  if (questions.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f5f5f5', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Card style={{ 
+          maxWidth: 600, 
+          margin: '0 auto',
+          borderRadius: '12px',
+          border: 'none',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+          textAlign: 'center',
+          padding: '40px'
+        }}>
+          <h2 style={{ fontSize: 24, marginBottom: 16, color: themeColors[themeColor] }}>
+            服务暂时不可用
+          </h2>
+          <p style={{ fontSize: 16, color: '#6b7280', marginBottom: 32 }}>
+            抱歉，MBTI测试服务暂时无法使用，请稍后再试
+          </p>
+          <Link to="/">
+            <Button
+              type="primary"
+              style={{ 
+                background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0 24px'
+              }}
+            >
+              返回首页
+            </Button>
+          </Link>
+        </Card>
       </div>
     )
   }
