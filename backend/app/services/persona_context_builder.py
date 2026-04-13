@@ -114,9 +114,33 @@ class PersonaContextBuilder:
             "summary": None,
         }
 
-        # TODO: 从数据库获取用户的SBTI才干结果
-        # 目前从用户扩展属性或关联表获取
-        # 暂时返回空，待SBTI模块完成后完善
+        try:
+            from app.models import SbtiResult
+            from app.core.database import SessionLocal
+
+            db = SessionLocal()
+            try:
+                # 从数据库获取用户的SBTI才干结果
+                sbti = db.query(SbtiResult).filter(
+                    SbtiResult.user_id == user.id
+                ).order_by(SbtiResult.created_at.desc()).first()
+
+                if sbti and sbti.top_themes:
+                    # top_themes 应该是逗号分隔的字符串，如 "战略、思维、学习"
+                    themes = [t.strip() for t in sbti.top_themes.split(",") if t.strip()]
+                    sbti_context["top_themes"] = themes[:5]  # 最多取5个
+
+                    # 获取每个才干的详细信息
+                    for theme in themes[:5]:
+                        theme_info = get_sbti_theme(theme)
+                        if theme_info:
+                            sbti_context["themes_detail"][theme] = theme_info
+
+                    sbti_context["summary"] = f"用户的核心才干包括：{', '.join(themes[:3])}"
+            finally:
+                db.close()
+        except Exception as e:
+            self.logger.error(f"获取SBTI上下文失败: {e}")
 
         return sbti_context
 
@@ -129,8 +153,26 @@ class PersonaContextBuilder:
             "communication_tips": None,
         }
 
-        # TODO: 从数据库获取用户的依恋风格评估结果
-        # 暂时返回空，待依恋风格模块完成后完善
+        try:
+            from app.models import AttachmentStyle
+            from app.core.database import SessionLocal
+
+            db = SessionLocal()
+            try:
+                # 从数据库获取用户的依恋风格评估结果
+                attachment = db.query(AttachmentStyle).filter(
+                    AttachmentStyle.user_id == user.id
+                ).order_by(AttachmentStyle.created_at.desc()).first()
+
+                if attachment:
+                    attachment_context["style"] = attachment.style
+                    attachment_context["characteristics"] = attachment.characteristics or []
+                    attachment_context["growth"] = attachment.growth_suggestions or []
+                    attachment_context["communication_tips"] = attachment.communication_tips
+            finally:
+                db.close()
+        except Exception as e:
+            self.logger.error(f"获取依恋风格上下文失败: {e}")
 
         return attachment_context
 

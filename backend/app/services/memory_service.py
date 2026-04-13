@@ -109,8 +109,37 @@ class MemoryService:
         limit: int = 50
     ) -> List[Dict]:
         """获取用户所有记忆（按类型）"""
-        # TODO: 实现从数据库获取用户记忆列表
-        return []
+        try:
+            from app.core.database import SessionLocal
+            from app.models.memory import UserMemory
+
+            db = SessionLocal()
+            try:
+                query = db.query(UserMemory).filter(
+                    UserMemory.user_id == user_id,
+                    UserMemory.is_deleted == False,
+                )
+
+                if memory_type:
+                    query = query.filter(UserMemory.memory_type == memory_type)
+
+                memories = query.order_by(UserMemory.created_at.desc()).limit(limit).all()
+
+                return [
+                    {
+                        "id": str(m.id),
+                        "content": m.content,
+                        "memory_type": m.memory_type,
+                        "created_at": m.created_at.isoformat() if m.created_at else None,
+                        "metadata": m.metadata or {},
+                    }
+                    for m in memories
+                ]
+            finally:
+                db.close()
+        except Exception as e:
+            loguru.logger.error(f"获取用户记忆列表失败: {e}")
+            return []
 
     async def delete_user_memory(self, user_id: int, memory_id: str) -> bool:
         """删除用户记忆"""
@@ -238,24 +267,33 @@ class MemoryService:
         properties: Optional[Dict] = None
     ) -> bool:
         """添加实体到知识图谱"""
-        # TODO: 实现知识图谱存储 (可以使用Neo4j或自定义存储)
-        # 当前简化为存储到向量库
-        content = f"实体: {entity_name} (类型: {entity_type})"
-        if properties:
-            content += f"\n属性: {json.dumps(properties, ensure_ascii=False)}"
+        try:
+            from app.core.database import SessionLocal
+            from app.models.memory import KnowledgeGraph
 
-        metadata = {
-            "entity_type": entity_type,
-            "entity_name": entity_name,
-            "graph_type": "entity",
-        }
+            content = f"实体: {entity_name} (类型: {entity_type})"
+            if properties:
+                content += f"\n属性: {json.dumps(properties, ensure_ascii=False)}"
 
-        return await self.add_user_memory(
-            user_id=user_id,
-            content=content,
-            memory_type=MemoryType.EVENT,
-            metadata=metadata
-        )
+            db = SessionLocal()
+            try:
+                graph = KnowledgeGraph(
+                    user_id=user_id,
+                    graph_type="entity",
+                    entity_type=entity_type,
+                    entity_name=entity_name,
+                    content=content,
+                    metadata=json.dumps(properties) if properties else None,
+                )
+                db.add(graph)
+                db.commit()
+                loguru.logger.info(f"添加知识图谱实体: user_id={user_id}, entity={entity_name}")
+                return True
+            finally:
+                db.close()
+        except Exception as e:
+            loguru.logger.error(f"添加知识图谱实体失败: {e}")
+            return False
 
     async def add_relation(
         self,
@@ -265,21 +303,34 @@ class MemoryService:
         object_: str
     ) -> bool:
         """添加关系到知识图谱"""
-        content = f"{subject} --[{relation}]--> {object_}"
+        try:
+            from app.core.database import SessionLocal
+            from app.models.memory import KnowledgeGraph
 
-        metadata = {
-            "subject": subject,
-            "relation": relation,
-            "object": object_,
-            "graph_type": "relation",
-        }
+            content = f"{subject} --[{relation}]--> {object_}"
 
-        return await self.add_user_memory(
-            user_id=user_id,
-            content=content,
-            memory_type=MemoryType.EVENT,
-            metadata=metadata
-        )
+            db = SessionLocal()
+            try:
+                graph = KnowledgeGraph(
+                    user_id=user_id,
+                    graph_type="relation",
+                    entity_name=f"{subject} -> {object_}",
+                    content=content,
+                    metadata=json.dumps({
+                        "subject": subject,
+                        "relation": relation,
+                        "object": object_,
+                    }),
+                )
+                db.add(graph)
+                db.commit()
+                loguru.logger.info(f"添加知识图谱关系: {subject} --[{relation}]--> {object_}")
+                return True
+            finally:
+                db.close()
+        except Exception as e:
+            loguru.logger.error(f"添加知识图谱关系失败: {e}")
+            return False
 
     async def query_graph(
         self,
@@ -288,13 +339,36 @@ class MemoryService:
         depth: int = 2
     ) -> List[Dict]:
         """查询知识图谱"""
-        # TODO: 实现图谱查询 (简化版本使用向量检索)
-        return await self.search_user_memories(
-            user_id=user_id,
-            query=entity,
-            memory_types=[MemoryType.EVENT, MemoryType.HABIT],
-            top_k=10
-        )
+        try:
+            from app.core.database import SessionLocal
+            from app.models.memory import KnowledgeGraph
+
+            db = SessionLocal()
+            try:
+                # 搜索相关实体和关系
+                graphs = db.query(KnowledgeGraph).filter(
+                    KnowledgeGraph.user_id == user_id,
+                    KnowledgeGraph.is_deleted == False,
+                ).filter(
+                    KnowledgeGraph.entity_name.contains(entity) |
+                    KnowledgeGraph.content.contains(entity)
+                ).limit(10).all()
+
+                return [
+                    {
+                        "id": g.id,
+                        "graph_type": g.graph_type,
+                        "entity_name": g.entity_name,
+                        "content": g.content,
+                        "metadata": json.loads(g.metadata) if g.metadata else {},
+                    }
+                    for g in graphs
+                ]
+            finally:
+                db.close()
+        except Exception as e:
+            loguru.logger.error(f"查询知识图谱失败: {e}")
+            return []
 
     # ==================== 对话摘要 ====================
 

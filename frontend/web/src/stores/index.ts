@@ -21,6 +21,19 @@ interface AuthState {
   logout: () => void
 }
 
+/**
+ * 安全优化说明：
+ * 
+ * ⚠️ 当前使用localStorage存储Token存在XSS攻击风险
+ * 
+ * 最佳实践方案：
+ * 1. 后端设置 httpOnly Cookie（最安全）
+ * 2. 使用 sessionStorage（浏览器关闭即清除，较安全）
+ * 3. 使用 memory-only + 刷新Token机制（中等安全）
+ * 
+ * 当前实现保留了localStorage以支持页面刷新后保持登录状态。
+ * 如需更高安全性，建议后端配合使用 httpOnly Cookie。
+ */
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -30,8 +43,13 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (user, access_token, refresh_token) => {
-        localStorage.setItem('access_token', access_token)
-        localStorage.setItem('refresh_token', refresh_token)
+        // 优化：使用try-catch防止localStorage不可用时出错
+        try {
+          localStorage.setItem('access_token', access_token)
+          localStorage.setItem('refresh_token', refresh_token)
+        } catch (error) {
+          console.warn('localStorage不可用，Token将仅存储在内存中')
+        }
         set({ user, access_token, refresh_token, isAuthenticated: true })
       },
 
@@ -42,8 +60,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
+        // 优化：确保Token清理逻辑完善
+        try {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+        } catch (error) {
+          console.warn('localStorage清理失败')
+        }
         set({ user: null, access_token: null, refresh_token: null, isAuthenticated: false })
       },
     }),
@@ -51,6 +74,8 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
+        // 安全优化：可以只持久化user信息，Token从Cookie读取
+        // 但这需要后端配合设置 httpOnly Cookie
         access_token: state.access_token,
         refresh_token: state.refresh_token,
         isAuthenticated: state.isAuthenticated,

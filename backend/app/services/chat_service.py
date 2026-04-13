@@ -56,154 +56,186 @@ class ChatService:
         assistant_id: Optional[int],
         content: str,
     ) -> Dict[str, Any]:
-        """发送消息并获取回复"""
+        """发送消息并获取回复
+        
+        优化说明：
+        - 使用事务管理确保数据一致性
+        - 添加异常处理确保事务正确回滚
+        - 分离业务逻辑和数据操作，提高可维护性
+        """
+        # 优化：使用上下文管理器或显式事务处理
+        transaction_started = False
         try:
             db.begin()
+            transaction_started = True
             
-            user = db.query(User).filter(User.id == user_id).first()
-            if not user:
-                raise ValueError("用户不存在")
-
-            member_level = user.member_level.value if hasattr(user.member_level, 'value') else user.member_level
-            member_expire_at = user.member_expire_at
-
-            redis_client = await get_redis()
-            member_svc = get_member_service()
-            allowed, msg, remaining = await member_svc.check_message_limit(
-                user_id, member_level, member_expire_at, redis_client
+            # 执行业务逻辑
+            result = await self._send_message_logic(
+                db, user_id, session_id, assistant_id, content
             )
-            if not allowed:
-                raise ValueError(msg)
-
-            content_filter = get_content_filter()
-            passed, _ = await content_filter.check_text(content)
-            if not passed:
-                db.rollback()
-                return {
-                    "session_id": None,
-                    "conversation_id": None,
-                    "user_message": None,
-                    "assistant_message": {
-                        "id": None,
-                        "role": "assistant",
-                        "content": content_filter.get_blocked_response(),
-                        "created_at": datetime.now(),
-                    },
-                    "references": [],
-                    "content_blocked": True,
-                }
-
-            # 获取或创建对话
-            conversation = None
-            if session_id:
-                conversation = db.query(Conversation).filter(
-                    Conversation.session_id == session_id,
-                    Conversation.user_id == user_id,
-                ).first()
-
-            if not conversation:
-                if not assistant_id:
-                    raise ValueError("需要指定助手ID")
-                conversation = await self.create_conversation(
-                    db=db,
-                    user_id=user_id,
-                    assistant_id=assistant_id,
-                )
-
-            # 保存用户消息
-            user_message = Message(
-                conversation_id=conversation.id,
-                role="user",
-                content=content,
-                message_type=MessageType.TEXT,
-            )
-            db.add(user_message)
-
-            # 获取历史消息构建上下文
-            history_messages = db.query(Message).filter(
-                Message.conversation_id == conversation.id,
-            ).order_by(Message.created_at.desc()).limit(self.CONTEXT_MESSAGES).all()
-
-            conversation_context = "\n".join([
-                f"{msg.role}: {msg.content}"
-                for msg in reversed(history_messages)
-            ])
-
-            # 获取助手信息
-            assistant = None
-            if conversation.assistant_id:
-                assistant = db.query(AiAssistant).filter(
-                    AiAssistant.id == conversation.assistant_id
-                ).first()
-
-            assistant_info = None
-            if assistant:
-                assistant_info = {
-                    "name": assistant.name,
-                    "personality": assistant.personality,
-                    "speaking_style": assistant.speaking_style,
-                    "greeting": assistant.greeting,
-                }
-
-            user_mbti = user.mbti_type
-
-            # 获取用户画像上下文（MBTI + SBTI + 依恋风格）
-            persona_builder = get_persona_builder()
-            persona_context = await persona_builder.build_user_context(user)
-
-            # 调用RAG生成回答
-            generator = get_generator()
-            result = await generator.generate(
-                query=content,
-                user_mbti=user_mbti,
-                conversation_context=conversation_context,
-                assistant_info=assistant_info,
-                persona_context=persona_context,
-            )
-
-            # 保存助手回复
-            assistant_message = Message(
-                conversation_id=conversation.id,
-                role="assistant",
-                content=result["answer"],
-                message_type=MessageType.TEXT,
-            )
-            db.add(assistant_message)
-
-            # 更新对话
-            conversation.message_count += 2
-            conversation.updated_at = datetime.now()
-            if not conversation.title or conversation.title == "新对话":
-                conversation.title = content[:30] + "..." if len(content) > 30 else content
-
+            
+            # 提交事务
             db.commit()
-            db.refresh(conversation)
-            db.refresh(user_message)
-            db.refresh(assistant_message)
-
-            if member_level == "free":
-                await member_svc.increment_message_count(user_id, redis_client)
-
-            return {
-                "session_id": conversation.session_id,
-                "conversation_id": conversation.id,
-                "user_message": {
-                    "id": user_message.id,
-                    "role": user_message.role,
-                    "content": user_message.content,
-                    "created_at": user_message.created_at,
-                },
-                "assistant_message": {
-                    "id": assistant_message.id,
-                    "role": assistant_message.role,
-                    "content": assistant_message.content,
-                    "created_at": assistant_message.created_at,
-                },
-                "references": result.get("references", []),
-            }
+            return result
+            
         except Exception as e:
-            db.rollback()
+            # 确保事务回滚
+            if transaction_started:
+                db.rollback()
             raise
+    
+    async def _send_message_logic(
+        self,
+        db: Session,
+        user_id: int,
+        session_id: Optional[str],
+        assistant_id: Optional[int],
+        content: str,
+    ) -> Dict[str, Any]:
+        """发送消息的核心业务逻辑
+        
+        将业务逻辑分离，便于测试和维护
+        """
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise ValueError("用户不存在")
+
+        member_level = user.member_level.value if hasattr(user.member_level, 'value') else user.member_level
+        member_expire_at = user.member_expire_at
+
+        redis_client = await get_redis()
+        member_svc = get_member_service()
+        allowed, msg, remaining = await member_svc.check_message_limit(
+            user_id, member_level, member_expire_at, redis_client
+        )
+        if not allowed:
+            raise ValueError(msg)
+
+        content_filter = get_content_filter()
+        passed, _ = await content_filter.check_text(content)
+        if not passed:
+            # 返回内容被阻止的响应，不抛出异常
+            return {
+                "session_id": None,
+                "conversation_id": None,
+                "user_message": None,
+                "assistant_message": {
+                    "id": None,
+                    "role": "assistant",
+                    "content": content_filter.get_blocked_response(),
+                    "created_at": datetime.now(),
+                },
+                "references": [],
+                "content_blocked": True,
+            }
+
+        # 获取或创建对话
+        conversation = None
+        if session_id:
+            conversation = db.query(Conversation).filter(
+                Conversation.session_id == session_id,
+                Conversation.user_id == user_id,
+            ).first()
+
+        if not conversation:
+            if not assistant_id:
+                raise ValueError("需要指定助手ID")
+            conversation = await self.create_conversation(
+                db=db,
+                user_id=user_id,
+                assistant_id=assistant_id,
+            )
+
+        # 保存用户消息
+        user_message = Message(
+            conversation_id=conversation.id,
+            role="user",
+            content=content,
+            message_type=MessageType.TEXT,
+        )
+        db.add(user_message)
+
+        # 获取历史消息构建上下文
+        history_messages = db.query(Message).filter(
+            Message.conversation_id == conversation.id,
+        ).order_by(Message.created_at.desc()).limit(self.CONTEXT_MESSAGES).all()
+
+        conversation_context = "\n".join([
+            f"{msg.role}: {msg.content}"
+            for msg in reversed(history_messages)
+        ])
+
+        # 获取助手信息
+        assistant = None
+        if conversation.assistant_id:
+            assistant = db.query(AiAssistant).filter(
+                AiAssistant.id == conversation.assistant_id
+            ).first()
+
+        assistant_info = None
+        if assistant:
+            assistant_info = {
+                "name": assistant.name,
+                "personality": assistant.personality,
+                "speaking_style": assistant.speaking_style,
+                "greeting": assistant.greeting,
+            }
+
+        user_mbti = user.mbti_type
+
+        # 获取用户画像上下文（MBTI + SBTI + 依恋风格）
+        persona_builder = get_persona_builder()
+        persona_context = await persona_builder.build_user_context(user)
+
+        # 调用RAG生成回答
+        generator = get_generator()
+        result = await generator.generate(
+            query=content,
+            user_mbti=user_mbti,
+            conversation_context=conversation_context,
+            assistant_info=assistant_info,
+            persona_context=persona_context,
+        )
+
+        # 保存助手回复
+        assistant_message = Message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=result["answer"],
+            message_type=MessageType.TEXT,
+        )
+        db.add(assistant_message)
+
+        # 更新对话
+        conversation.message_count += 2
+        conversation.updated_at = datetime.now()
+        if not conversation.title or conversation.title == "新对话":
+            conversation.title = content[:30] + "..." if len(content) > 30 else content
+
+        db.refresh(conversation)
+        db.refresh(user_message)
+        db.refresh(assistant_message)
+
+        if member_level == "free":
+            await member_svc.increment_message_count(user_id, redis_client)
+
+        return {
+            "session_id": conversation.session_id,
+            "conversation_id": conversation.id,
+            "user_message": {
+                "id": user_message.id,
+                "role": user_message.role,
+                "content": user_message.content,
+                "created_at": user_message.created_at,
+            },
+            "assistant_message": {
+                "id": assistant_message.id,
+                "role": assistant_message.role,
+                "content": assistant_message.content,
+                "created_at": assistant_message.created_at,
+            },
+            "references": result.get("references", []),
+        }
 
     def get_conversations(
         self,

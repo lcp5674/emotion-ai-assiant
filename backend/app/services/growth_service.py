@@ -292,7 +292,44 @@ class GrowthService:
                 return True
             return False
 
-        # TODO: 其他条件后续实现
+        elif condition_type == "login_streak":
+            # 检查连续登录天数
+            from app.models import UserLogin
+            from datetime import timedelta
+            from app.core.database import get_redis
+
+            login_dates = db.query(UserLogin.login_date).filter(
+                UserLogin.user_id == user_id
+            ).order_by(desc(UserLogin.login_date)).limit(target).all()
+
+            if len(login_dates) < target:
+                return False
+
+            # 检查是否连续
+            expected_date = login_dates[0].login_date
+            streak = 1
+            for i in range(1, len(login_dates)):
+                expected_date = expected_date - timedelta(days=1)
+                if login_dates[i].login_date == expected_date:
+                    streak += 1
+                else:
+                    break
+
+            return streak >= target
+
+        elif condition_type == "mbti_complete":
+            # 完成MBTI测试
+            user = db.query(User).filter(User.id == user_id).first()
+            return user and user.mbti_type is not None
+
+        elif condition_type == "profile_complete":
+            # 完成个人资料
+            from app.models import UserProfile
+            profile = db.query(UserProfile).filter(
+                UserProfile.user_id == user_id
+            ).first()
+            return profile is not None
+
         return False
 
     def set_badge_display(

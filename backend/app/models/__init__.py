@@ -16,6 +16,7 @@ from app.models.knowledge import (
 from app.models.system import SystemConfig
 from app.models.diary import EmotionDiary, MoodRecord, DiaryTag, MoodLevel, EmotionType
 from app.models.user_memory import UserLongTermMemory, UserMemoryInsight, UserPreference, MemoryType, MemoryImportance
+from app.models.memory_graph import KnowledgeGraph
 from app.models.content_audit import ContentAuditQueue
 from app.models.growth import Badge, UserBadge, UserLevel, ExpRecord, GrowthTask, BadgeRarity
 from app.models.personality import (
@@ -57,6 +58,8 @@ from app.models.feedback import (
     AIAdviceHistory,
     UserReflection,
 )
+from app.models.user_login import UserLogin
+from app.models.user_profile import UserProfile
 
 __all__ = [
     "User",
@@ -90,6 +93,7 @@ __all__ = [
     "UserPreference",
     "MemoryType",
     "MemoryImportance",
+    "KnowledgeGraph",
     "ContentAuditQueue",
     "Badge",
     "UserBadge",
@@ -132,4 +136,7 @@ __all__ = [
     "GrowthMilestone",
     "AIAdviceHistory",
     "UserReflection",
+    # user
+    "UserLogin",
+    "UserProfile",
 ]

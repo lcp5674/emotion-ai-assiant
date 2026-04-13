@@ -6,7 +6,7 @@ from typing import Optional
 import loguru
 
 from app.core.config import settings
-from app.services.llm.providers import PROVIDER_MAP, LLMProvider, MockProvider
+from app.services.llm.providers import PROVIDER_MAP, LLMProvider
 
 _llm_provider: Optional[LLMProvider] = None
 
@@ -18,8 +18,7 @@ def get_llm_provider() -> LLMProvider:
         provider_name = settings.LLM_PROVIDER.lower()
 
         if provider_name not in PROVIDER_MAP:
-            loguru.logger.warning(f"Unknown LLM provider: {provider_name}, using mock")
-            provider_name = "mock"
+            raise ValueError(f"Unknown LLM provider: {provider_name}. Available providers: {list(PROVIDER_MAP.keys())}")
 
         provider_class = PROVIDER_MAP[provider_name]
 
@@ -83,7 +82,7 @@ def get_llm_provider() -> LLMProvider:
                 model=settings.SILICONFLOW_MODEL,
             )
         else:
-            _llm_provider = provider_class(api_key="mock", model="mock")
+            raise ValueError(f"Unsupported LLM provider: {provider_name}")
 
         loguru.logger.info(f"LLM Provider initialized: {provider_name}")
 
@@ -104,9 +103,7 @@ async def _retry_with_backoff(coro_fn, max_retries: int = 3, base_delay: float =
                     f"Retrying in {delay:.1f}s..."
                 )
                 await asyncio.sleep(delay)
-    loguru.logger.error(f"LLM call failed after {max_retries} attempts: {last_error}")
-    mock_provider = MockProvider(api_key="mock", model="mock")
-    return await mock_provider.chat([], 0.7, 2000)
+    raise RuntimeError(f"LLM call failed after {max_retries} attempts: {last_error}")
 
 
 async def chat(
@@ -123,12 +120,5 @@ async def chat(
 
 async def chat_stream(messages: list, temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
     provider = get_llm_provider()
-    try:
-        async for chunk in provider.chat_stream(messages, temperature, max_tokens, **kwargs):
-            yield chunk
-    except Exception as e:
-        loguru.logger.error(f"LLM chat stream error: {e}")
-        if settings.LLM_PROVIDER != "mock":
-            mock_provider = MockProvider(api_key="mock", model="mock")
-            async for chunk in mock_provider.chat_stream(messages, temperature, max_tokens, **kwargs):
-                yield chunk
+    async for chunk in provider.chat_stream(messages, temperature, max_tokens, **kwargs):
+        yield chunk

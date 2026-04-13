@@ -193,7 +193,7 @@ class DiaryService:
                 update_data["mood_level"] = request.mood_level
             else:
                 mood_level_str = self._get_mood_level(request.mood_score)
-                update_data["mood_level"] = mood_level_str.upper()
+                update_data["mood_level"] = mood_level_str
         if "secondary_emotions" in update_data and request.secondary_emotions:
             update_data["secondary_emotions"] = request.secondary_emotions
 

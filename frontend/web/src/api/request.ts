@@ -9,11 +9,28 @@ const request: AxiosInstance = axios.create({
   },
 })
 
+/**
+ * Token获取优化
+ * 
+ * 当前从localStorage读取Token存在XSS风险。
+ * 建议后续迁移到：
+ * 1. 后端设置 httpOnly Cookie（推荐）
+ * 2. 使用 useAuthStore().access_token（需要zustand支持）
+ * 
+ * 当前保留localStorage以兼容现有架构。
+ */
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
     // 从localStorage获取token
-    const token = localStorage.getItem('access_token')
+    // 优化：添加try-catch防止localStorage不可用
+    let token: string | null = null
+    try {
+      token = localStorage.getItem('access_token')
+    } catch (error) {
+      console.warn('无法从localStorage读取Token')
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -38,8 +55,13 @@ request.interceptors.response.use(
       switch (status) {
         case 401:
           // token过期，清除并跳转登录
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
+          // 优化：使用try-catch确保清理逻辑完善
+          try {
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('refresh_token')
+          } catch (error) {
+            console.warn('Token清理失败')
+          }
           // 只在前端没有检查登录状态时才跳转
           // 不返回Promise.reject，避免错误传播到前端
           window.location.href = '/login'
@@ -198,7 +220,24 @@ export const api = {
       if (token) params.append('token', token)
       if (sessionId) params.append('session_id', sessionId)
       if (assistantId) params.append('assistant_id', assistantId.toString())
-      const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000'
+      
+      // 优化WebSocket URL配置
+      // 1. 优先使用环境变量
+      // 2. 智能检测当前页面协议（http/https）并选择对应WebSocket协议（ws/wss）
+      // 3. 使用当前域名作为默认值
+      let wsBaseUrl = import.meta.env.VITE_WS_BASE_URL
+      
+      if (!wsBaseUrl) {
+        // 检测当前页面协议
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        const host = window.location.host
+        wsBaseUrl = `${protocol}//${host}`
+      } else if (!wsBaseUrl.startsWith('ws')) {
+        // 确保协议正确
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        wsBaseUrl = `${protocol}//${wsBaseUrl.replace(/^(https?:)?\/\//, '')}`
+      }
+      
       return `${wsBaseUrl}/ws/chat?${params.toString()}`
     },
   },

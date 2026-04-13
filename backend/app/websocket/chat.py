@@ -237,7 +237,7 @@ async def handle_websocket_chat(
                 async for chunk in chat_stream(messages, temperature=0.8, max_tokens=1500):
                     full_content += chunk
                     await websocket.send_text(json.dumps({
-                        "type": "content",
+                        "type": "chunk",
                         "content": chunk,
                     }))
                 

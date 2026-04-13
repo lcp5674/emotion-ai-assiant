@@ -36,106 +36,6 @@ class LLMProvider(ABC):
         pass
 
 
-class MockProvider(LLMProvider):
-    """模拟大模型服务 (用于开发测试)"""
-
-    async def chat(
-        self,
-        messages: List[Dict[str, str]],
-        temperature: float = 0.7,
-        max_tokens: int = 2000,
-        **kwargs
-    ) -> str:
-        """模拟回复"""
-        # 获取最后一条用户消息
-        user_message = ""
-        for msg in reversed(messages):
-            if msg.get("role") == "user":
-                user_message = msg.get("content", "")
-                break
-
-        # 根据消息内容返回适当的模拟回复
-        return self._generate_mock_response(user_message)
-
-    async def chat_stream(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
-        """模拟流式回复"""
-        response = await self.chat(messages, temperature, max_tokens, **kwargs)
-        for char in response:
-            yield char
-
-    def _generate_mock_response(self, user_message: str) -> str:
-        """生成模拟回复"""
-        message_lower = user_message.lower()
-
-        # 情绪支持类回复
-        if any(word in message_lower for word in ["难过", "伤心", "哭", "沮丧", "郁闷", "失落"]):
-            return (
-                "我能感受到你现在的难过和沮丧。 "
-                "请记住，经历这些负面情绪是完全正常的。 "
-                "你有没有想过，是什么事情让你感到这样呢？ "
-                "如果愿意的话，可以和我聊聊，我把耳朵借给你。 "
-                "无论发生什么，我都会在这里陪着你。"
-            )
-
-        # 焦虑压力类
-        if any(word in message_lower for word in ["焦虑", "担心", "紧张", "害怕", "压力"]):
-            return (
-                "听起来你正在经历一些焦虑和压力。 "
-                "当感到焦虑时，试着深呼吸几次，"
-                "把你的注意力慢慢转移到当下的感受上。 "
-                "你愿意告诉我是什么让你感到焦虑吗？ "
-                "有时候，把心里的担忧说出来会好受一些。"
-            )
-
-        # 人际关系类
-        if any(word in message_lower for word in ["朋友", "家人", "同事", "对象", "男朋友", "女朋友", "老公", "老婆", "父母"]):
-            return (
-                "人际关系的复杂让我们有时会感到困惑和疲惫。 "
-                "每个人都有自己的想法和感受，"
-                "理解与沟通是建立良好关系的关键。 "
-                "你愿意具体说说发生了什么吗？ "
-                "或许我们可以一起想想办法。"
-            )
-
-        # 恋爱相关
-        if any(word in message_lower for word in ["恋爱", "喜欢", "表白", "追", "分手", "约会", "女朋友", "男朋友"]):
-            return (
-                "恋爱中的喜怒哀乐都是那么真实而美好。 "
-                "在感情中，保持真诚和尊重是最重要的。 "
-                "你愿意分享一些关于这段感情的故事吗？ "
-                "无论结果如何，经历本身就是一种成长。"
-            )
-
-        # 自我成长类
-        if any(word in message_lower for word in ["成长", "改变", "目标", "梦想", "迷茫", "困惑"]):
-            return (
-                "每个人都会在人生的不同阶段感到迷茫，"
-                "这恰恰是自我探索的开始。 "
-                "试着问问自己：什么对你来说真正重要？ "
-                "你希望成为什么样的人？ "
-                "一小步一小步地前行，你会找到属于自己的方向。"
-            )
-
-        # 工作学习类
-        if any(word in message_lower for word in ["工作", "学习", "考试", "上班", "辞职", "创业"]):
-            return (
-                "工作或学习的压力确实让人感到疲惫。 "
-                "记得照顾好自己的身心健康，"
-                "适当休息和放松很重要。 "
-                "你最近怎么样？有什么想吐槽的吗？ "
-                "有时候倾诉也是很好的解压方式。"
-            )
-
-        # 默认温暖回复
-        return (
-            "谢谢你的分享。 "
-            "我在这里用心倾听你的每一句话。 "
-            "你最近生活中有什么开心的事情吗？ "
-            "或者有什么想聊聊的？ "
-            "无论是什么，我都在这里陪着你。"
-        )
-
-
 class OpenAIProvider(LLMProvider):
     """OpenAI GPT Provider"""
 
@@ -635,7 +535,6 @@ class SiliconFlowProvider(LLMProvider):
 
 # Provider映射
 PROVIDER_MAP = {
-    "mock": MockProvider,
     "openai": OpenAIProvider,
     "anthropic": AnthropicProvider,
     "glm": GLMProvider,

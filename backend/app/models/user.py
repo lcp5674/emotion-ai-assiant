@@ -68,5 +68,9 @@ class User(Base):
     deep_persona_profile = relationship("DeepPersonaProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     persona_insights = relationship("PersonaInsight", back_populates="user", cascade="all, delete-orphan")
 
+    # 用户资料和登录关系
+    profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    logins = relationship("UserLogin", back_populates="user", cascade="all, delete-orphan")
+
     def __repr__(self):
         return f"<User(id={self.id}, nickname={self.nickname}, mbti={self.mbti_type})>"
