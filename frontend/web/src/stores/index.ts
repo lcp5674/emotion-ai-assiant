@@ -141,7 +141,7 @@ interface MbtiResult {
   sn_score: number
   tf_score: number
   jp_score: number
-  dimensions: Array<{ dimension: string; score: number; 倾向: string }>
+  dimensions: Array<{ dimension: string; score: number; percentage: number; tendency: string }>
   personality: string
   strengths: string[]
   weaknesses: string[]

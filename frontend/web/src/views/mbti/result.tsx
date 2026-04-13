@@ -102,7 +102,11 @@ export default function MbtiResult() {
                     <Tag color="purple">{dim.tendency}</Tag>
                   </div>
                   <Progress
-                    percent={dim.percentage || Math.min(Math.max((dim.score + 20) / 40 * 100, 5), 95)}
+                    percent={
+                      dim.percentage != null
+                        ? dim.percentage
+                        : Math.min(Math.max(Math.round(((dim.score + 12) / 24) * 90 + 5), 5), 95)
+                    }
                     strokeColor="#722ed1"
                     format={percent => `${percent}%`}
                   />

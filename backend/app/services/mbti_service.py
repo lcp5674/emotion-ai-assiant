@@ -139,7 +139,10 @@ class MbtiService:
     def calculate_result(self, db: Session, user_id: int, answers: List[Dict]) -> Dict[str, Any]:
         """计算MBTI测试结果"""
         # 统计各维度得分
+        # A 选项 = 正向倾向（E/S/T/J），累加正分
+        # B 选项 = 反向倾向（I/N/F/P），累加负分
         scores = {"EI": 0, "SN": 0, "TF": 0, "JP": 0}
+        question_counts = {"EI": 0, "SN": 0, "TF": 0, "JP": 0}
 
         for answer in answers:
             question = db.query(MbtiQuestion).filter(MbtiQuestion.id == answer["question_id"]).first()
@@ -147,8 +150,13 @@ class MbtiService:
                 continue
 
             dimension = question.dimension.value
-            score = question.weight_b if answer["answer"] == "B" else question.weight_a
-            scores[dimension] += score if answer["answer"] == "B" else -score
+            question_counts[dimension] += 1
+            if answer["answer"] == "A":
+                # A 选项：正向（E/S/T/J）
+                scores[dimension] += question.weight_a
+            else:
+                # B 选项：反向（I/N/F/P）
+                scores[dimension] -= question.weight_b
 
         # 计算最终类型
         mbti_type = ""
@@ -160,11 +168,14 @@ class MbtiService:
         # 获取类型描述
         description = self.TYPE_DESCRIPTIONS.get(mbti_type, {})
 
-        # 计算每个维度的百分比（score 范围假设 -20 到 20）
-        def calc_percentage(score: int, max_score: int = 20) -> int:
-            # 将 score 从 [-max, max] 映射到 [5, 95]（留出边界避免 0% 或 100%）
+        # 计算每个维度的百分比
+        # score 范围：[-max_score, +max_score]，其中 max_score = 该维度题目数 × weight（默认1）
+        # 映射到 [5, 95]，避免显示 0% 或 100%
+        def calc_percentage(score: int, dimension_key: str) -> int:
+            max_score = max(question_counts.get(dimension_key, 12), 1)
+            # 将 [-max, +max] 线性映射到 [5, 95]
             normalized = (score + max_score) / (2 * max_score)
-            percentage = int(normalized * 100)
+            percentage = round(normalized * 90 + 5)  # [0,1] → [5, 95]
             return max(5, min(95, percentage))
 
         return {
@@ -177,25 +188,25 @@ class MbtiService:
                 {
                     "dimension": "EI",
                     "score": scores["EI"],
-                    "percentage": calc_percentage(scores["EI"]),
+                    "percentage": calc_percentage(scores["EI"], "EI"),
                     "tendency": "外向" if scores["EI"] > 0 else "内向"
                 },
                 {
                     "dimension": "SN",
                     "score": scores["SN"],
-                    "percentage": calc_percentage(scores["SN"]),
+                    "percentage": calc_percentage(scores["SN"], "SN"),
                     "tendency": "感觉" if scores["SN"] > 0 else "直觉"
                 },
                 {
                     "dimension": "TF",
                     "score": scores["TF"],
-                    "percentage": calc_percentage(scores["TF"]),
+                    "percentage": calc_percentage(scores["TF"], "TF"),
                     "tendency": "思维" if scores["TF"] > 0 else "情感"
                 },
                 {
                     "dimension": "JP",
                     "score": scores["JP"],
-                    "percentage": calc_percentage(scores["JP"]),
+                    "percentage": calc_percentage(scores["JP"], "JP"),
                     "tendency": "判断" if scores["JP"] > 0 else "知觉"
                 },
             ],

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Card, Form, Input, Button, Avatar, App, Spin } from 'antd'
+import { useNavigate, Navigate } from 'react-router-dom'
+import { Card, Form, Input, Button, Avatar, App } from 'antd'
 import { UserOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
@@ -23,13 +23,9 @@ export default function Settings() {
   const phone = getUserValue('phone', '')
   const mbtiType = getUserValue('mbti_type', '未测试')
 
-  // 未登录时显示加载状态
+  // 未登录时重定向到登录页
   if (!isAuthenticated) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <Spin size="large" />
-      </div>
-    )
+    return <Navigate to="/login" replace />
   }
 
   const handleSubmit = async (values: { nickname: string }) => {

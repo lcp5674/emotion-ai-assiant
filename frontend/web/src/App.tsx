@@ -36,6 +36,8 @@ const AttachmentTest = lazy(() => import('./views/attachment/test'))
 const AttachmentResult = lazy(() => import('./views/attachment/result'))
 // 深度画像
 const DeepProfile = lazy(() => import('./views/profile/deep'))
+// 账户设置
+const Settings = lazy(() => import('./views/settings'))
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -83,6 +85,9 @@ function AppRoutes() {
 
       {/* 深度画像 */}
       <Route path="/profile/deep" element={<DeepProfile />} />
+
+      {/* 账户设置 */}
+      <Route path="/settings" element={<Settings />} />
     </Routes>
   )
 }
