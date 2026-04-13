@@ -19,7 +19,10 @@ export default function Login() {
       const res = await api.auth.login(values)
       setAuth(res.user, res.access_token, res.refresh_token)
       message.success('登录成功')
-      navigate('/')
+      // 登录成功后，重定向回之前的页面或首页
+      const redirectPath = localStorage.getItem('redirectPath') || '/'
+      localStorage.removeItem('redirectPath')
+      navigate(redirectPath)
     } catch (error: any) {
       message.error(error.response?.data?.detail || '登录失败')
     } finally {

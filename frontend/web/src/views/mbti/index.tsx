@@ -63,6 +63,8 @@ export default function MbtiTest() {
         // 先检查是否已登录
         if (!isAuthenticated) {
           message.warning('请先登录')
+          // 保存当前路径，登录成功后重定向回来
+          localStorage.setItem('redirectPath', '/mbti')
           navigate('/login')
           return
         }
@@ -80,6 +82,8 @@ export default function MbtiTest() {
     // 先检查是否已登录
     if (!isAuthenticated) {
       message.warning('请先登录')
+      // 保存当前路径，登录成功后重定向回来
+      localStorage.setItem('redirectPath', '/mbti')
       navigate('/login')
       return
     }
