@@ -82,6 +82,36 @@ class Settings(BaseSettings):
     SILICONFLOW_MODEL: str = "Qwen/Qwen2-72B-Instruct"
     SILICONFLOW_BASE_URL: Optional[str] = None
 
+    # ========== 火山引擎配置 ==========
+    VOLCENGINE_API_KEY: Optional[str] = None
+    VOLCENGINE_MODEL: str = "doubao-pro-32k"
+    VOLCENGINE_BASE_URL: str = "https://ark.cn-beijing.volces.com/api/v3"
+    VOLCENGINE_EMBEDDING_MODEL: str = "bge-large-zh-v1.5"
+
+    # ========== 商汤科技配置 ==========
+    SENSETIME_API_KEY: Optional[str] = None
+    SENSETIME_MODEL: str = "embed-v2"
+
+    # ========== 百川智能配置 ==========
+    BAICHUAN_API_KEY: Optional[str] = None
+    BAICHUAN_MODEL: str = "baichuan-embed-text-v2"
+
+    # ========== 华为云配置 ==========
+    HUAWEI_CLOUD_API_KEY: Optional[str] = None
+    HUAWEI_PROJECT_ID: Optional[str] = None
+    HUAWEI_MODEL: str = "bge-m3"
+
+    # ========== 月之暗面配置 ==========
+    MOONSHOT_API_KEY: Optional[str] = None
+    MOONSHOT_MODEL: str = "moonshot-v1-embed"
+
+    # ========== 零一万物配置 ==========
+    LINGYI_API_KEY: Optional[str] = None
+    LINGYI_MODEL: str = "embd-01"
+
+    # ========== 讯飞星火配置 ==========
+    SPARK_APP_ID: Optional[str] = None
+
     # 向量数据库配置
     VECTOR_DB_TYPE: str = "milvus"  # milvus/qdrant/faiss
     MILVUS_HOST: str = "localhost"

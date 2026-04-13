@@ -24,18 +24,11 @@ export default function MbtiTest() {
   const { themeColors, themeColor } = useTheme()
 
   const [submitting, setSubmitting] = useState(false)
+  const [autoSubmitHandled, setAutoSubmitHandled] = useState(false)
 
   useEffect(() => {
     loadQuestions()
   }, [])
-
-  useEffect(() => {
-    // 检查是否已经回答了所有题目，并且用户已登录
-    if (questions.length > 0 && answers.length === questions.length && isAuthenticated) {
-      // 自动提交测试
-      handleSubmit()
-    }
-  }, [questions.length, answers.length, isAuthenticated])
 
   const loadQuestions = async () => {
     setLoading(true)

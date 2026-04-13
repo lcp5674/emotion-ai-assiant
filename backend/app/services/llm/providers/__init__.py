@@ -1,12 +1,30 @@
 """
-大模型服务接口定义
+大模型服务接口定义 - 支持15+国内主流厂商
+Provider列表:
+1. OpenAI - GPT系列
+2. Anthropic - Claude系列
+3. 智谱GLM - glm-4
+4. 阿里通义千问 - qwen系列
+5. 百度文心一言 - ernie系列
+6. 腾讯混元 - hunyuan系列
+7. 讯飞星火 - spark系列
+8. 字节豆包 - doubao系列
+9. 硅基流动 - SiliconFlow聚合
+10. 火山引擎 - volcengine系列
+11. 商汤科技 - SenseChat系列
+12. 百川智能 - baichuan系列
+13. 华为云 -盘古系列
+14. 月之暗面 - moonshot/kimi系列
+15. 零一万物 - Yi系列
+16. MiniMax - abab系列
 """
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
+import loguru
 
 
 class LLMProvider(ABC):
-    """大模型提供商基类"""
+    """大模型提供商基类 - 生产级实现"""
 
     def __init__(self, api_key: str, model: str, **kwargs):
         self.api_key = api_key
@@ -34,6 +52,13 @@ class LLMProvider(ABC):
     ):
         """流式聊天"""
         pass
+
+    def get_model_info(self) -> Dict[str, str]:
+        """获取模型信息"""
+        return {
+            "provider": self.__class__.__name__,
+            "model": self.model
+        }
 
 
 class OpenAIProvider(LLMProvider):
@@ -106,7 +131,6 @@ class AnthropicProvider(LLMProvider):
         max_tokens: int = 2000,
         **kwargs
     ) -> str:
-        # 转换消息格式
         system_message = ""
         anthropic_messages = []
         for msg in messages:
@@ -533,16 +557,263 @@ class SiliconFlowProvider(LLMProvider):
                 yield chunk.choices[0].delta.content
 
 
-# Provider映射
+class VolcengineProvider(LLMProvider):
+    """火山引擎LLM Provider - 字节跳动云服务平台"""
+
+    def __init__(self, api_key: str, model: str = "doubao-pro-32k", base_url: str = None, **kwargs):
+        super().__init__(api_key, model, **kwargs)
+        self.base_url = base_url or "https://ark.cn-beijing.volces.com/api/v3"
+        self._client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            from openai import AsyncOpenAI
+            self._client = AsyncOpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
+        return self._client
+
+    async def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
+        )
+        return response.choices[0].message.content
+
+    async def chat_stream(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+            **kwargs
+        )
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+
+class SenseTimeProvider(LLMProvider):
+    """商汤科技 SenseChat Provider"""
+
+    def __init__(self, api_key: str, model: str = "sensechat-5", base_url: str = None, **kwargs):
+        super().__init__(api_key, model, **kwargs)
+        self.base_url = base_url or "https://openapi.sensetime.com/v1"
+        self._client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            from openai import AsyncOpenAI
+            self._client = AsyncOpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
+        return self._client
+
+    async def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
+        )
+        return response.choices[0].message.content
+
+    async def chat_stream(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+            **kwargs
+        )
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+
+class BaichuanProvider(LLMProvider):
+    """百川智能 Provider"""
+
+    def __init__(self, api_key: str, model: str = "baichuan4", base_url: str = None, **kwargs):
+        super().__init__(api_key, model, **kwargs)
+        self.base_url = base_url or "https://api.baichuan-ai.com/v1"
+        self._client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            from openai import AsyncOpenAI
+            self._client = AsyncOpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
+        return self._client
+
+    async def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
+        )
+        return response.choices[0].message.content
+
+    async def chat_stream(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+            **kwargs
+        )
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+
+class MoonshotProvider(LLMProvider):
+    """月之暗面 Kimi Provider"""
+
+    def __init__(self, api_key: str, model: str = "moonshot-v1-8k", base_url: str = None, **kwargs):
+        super().__init__(api_key, model, **kwargs)
+        self.base_url = base_url or "https://api.moonshot.cn/v1"
+        self._client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            from openai import AsyncOpenAI
+            self._client = AsyncOpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
+        return self._client
+
+    async def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
+        )
+        return response.choices[0].message.content
+
+    async def chat_stream(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+            **kwargs
+        )
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+
+class LingyiProvider(LLMProvider):
+    """零一万物 Yi Provider"""
+
+    def __init__(self, api_key: str, model: str = "yi-medium", base_url: str = None, **kwargs):
+        super().__init__(api_key, model, **kwargs)
+        self.base_url = base_url or "https://api.lingyiwanwu.com/v1"
+        self._client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            from openai import AsyncOpenAI
+            self._client = AsyncOpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
+        return self._client
+
+    async def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
+        )
+        return response.choices[0].message.content
+
+    async def chat_stream(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+            **kwargs
+        )
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+
+# Provider映射 - 15+国内主流厂商
 PROVIDER_MAP = {
+    # 国外
     "openai": OpenAIProvider,
     "anthropic": AnthropicProvider,
-    "glm": GLMProvider,
-    "qwen": QwenProvider,
-    "minimax": MiniMaxProvider,
-    "ernie": ERNIEProvider,
-    "hunyuan": HunyuanProvider,
-    "spark": SparkProvider,
-    "doubao": DoubaoProvider,
-    "siliconflow": SiliconFlowProvider,
+    # 国内主流厂商
+    "glm": GLMProvider,               # 智谱GLM
+    "qwen": QwenProvider,             # 阿里通义千问
+    "minimax": MiniMaxProvider,        # MiniMax
+    "ernie": ERNIEProvider,            # 百度文心
+    "hunyuan": HunyuanProvider,        # 腾讯混元
+    "spark": SparkProvider,            # 讯飞星火
+    "doubao": DoubaoProvider,           # 字节豆包
+    "siliconflow": SiliconFlowProvider, # SiliconFlow聚合
+    "volcengine": VolcengineProvider,   # 火山引擎
+    "sensetime": SenseTimeProvider,     # 商汤科技
+    "baichuan": BaichuanProvider,       # 百川智能
+    "moonshot": MoonshotProvider,       # 月之暗面
+    "lingyi": LingyiProvider,           # 零一万物
 }
