@@ -214,14 +214,14 @@ services:
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin123}
     volumes:
       - uploads_data:/app/uploads
-    # 服务依赖 - 等待健康检查通过
+    # 服务依赖 - 仅等待服务启动，不等待健康检查
     depends_on:
       mysql:
-        condition: service_healthy
+        condition: service_started
       redis:
-        condition: service_healthy
+        condition: service_started
       minio:
-        condition: service_healthy
+        condition: service_started
     # 健康检查
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
@@ -269,10 +269,10 @@ services:
       - ./frontend/web/dist:/usr/share/nginx/html:ro
       - nginx_logs:/var/log/nginx
       - ./deploy/ssl:/etc/nginx/ssl:ro
-    # 服务依赖 - 等待后端健康检查通过
+    # 服务依赖 - 仅等待服务启动
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     # 健康检查
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost/health", "||", "exit", "1"]
