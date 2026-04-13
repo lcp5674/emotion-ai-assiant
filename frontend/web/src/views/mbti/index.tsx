@@ -8,6 +8,7 @@ import { useTheme } from '../../hooks/useTheme'
 export default function MbtiTest() {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { isAuthenticated } = useAuthStore()
   const {
     questions,
     currentQuestionIndex,
@@ -53,6 +54,12 @@ export default function MbtiTest() {
       addAnswer({ question_id: currentQuestion.id, answer })
       
       if (isLastQuestion) {
+        // 先检查是否已登录
+        if (!isAuthenticated) {
+          message.warning('请先登录')
+          navigate('/login')
+          return
+        }
         // 直接调用handleSubmit，让它从store获取最新的answers
         handleSubmit()
       }
@@ -61,6 +68,13 @@ export default function MbtiTest() {
 
   const handleSubmit = async (_event?: any, submitAnswers?: typeof answers) => {
     if (questions.length === 0) return
+    
+    // 先检查是否已登录
+    if (!isAuthenticated) {
+      message.warning('请先登录')
+      navigate('/login')
+      return
+    }
     
     // 总是从store获取最新的answers
     const store = useMbtiStore.getState()
@@ -76,6 +90,7 @@ export default function MbtiTest() {
     
     if (uniqueAnswers.length < questions.length) {
       console.warn('请完成所有题目')
+      message.warning('请完成所有题目')
       return
     }
 
@@ -86,16 +101,12 @@ export default function MbtiTest() {
         setResult(res)
         navigate('/mbti/result')
       } else {
-        // 如果没有返回结果，可能是未登录或其他错误
-        console.warn('提交失败，可能是未登录或服务器错误')
-        // 检查是否已登录
-        const authStore = useAuthStore.getState()
-        if (!authStore.isAuthenticated) {
-          navigate('/login')
-        }
+        console.error('提交失败，服务器返回无效结果')
+        message.error('提交失败，请稍后重试')
       }
     } catch (error: any) {
       console.error('提交失败:', error)
+      message.error('提交失败，请稍后重试')
     } finally {
       setSubmitting(false)
     }

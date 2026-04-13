@@ -40,8 +40,10 @@ request.interceptors.response.use(
           // token过期，清除并跳转登录
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
+          // 只在前端没有检查登录状态时才跳转
+          // 不返回Promise.reject，避免错误传播到前端
           window.location.href = '/login'
-          return Promise.reject(error)
+          return Promise.resolve({})
         case 404:
           // 资源不存在，返回空对象
           return Promise.resolve({})
