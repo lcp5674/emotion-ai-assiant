@@ -172,19 +172,19 @@ export default function DeepProfile() {
   const generateInsights = () => {
     const insights: string[] = []
 
-    if (hasMbti) {
+    if (hasMbti && mbtiResult?.mbti_type) {
       insights.push(`你的人格类型是 ${mbtiResult.mbti_type}，属于${mbtiResult.personality?.split('，')[0] || '独特人格'}`)
     }
-    if (hasSbti && sbtiResult.top5_themes?.length > 0) {
+    if (hasSbti && sbtiResult?.top5_themes?.length > 0 && sbtiResult.top5_themes[0]) {
       insights.push(`你最强的才干主题是「${sbtiResult.top5_themes[0]}」，这是你独特的优势所在`)
       insights.push(`主导领域：${sbtiResult.dominant_domain || '待分析'}`)
     }
-    if (hasAttachment) {
+    if (hasAttachment && attachmentResult?.style) {
       insights.push(`在亲密关系中，你呈现${attachmentResult.style}的特点`)
     }
 
-    if (hasMbti && hasSbti) {
-      insights.push(`${mbtiResult.mbti_type}人格结合「${sbtiResult.top5_themes?.[0]}」才干，你在人际交往中具有独特魅力`)
+    if (hasMbti && hasSbti && mbtiResult?.mbti_type && sbtiResult?.top5_themes?.[0]) {
+      insights.push(`${mbtiResult.mbti_type}人格结合「${sbtiResult.top5_themes[0]}」才干，你在人际交往中具有独特魅力`)
     }
 
     return insights
@@ -192,20 +192,22 @@ export default function DeepProfile() {
 
   const insights = generateInsights()
 
-  // 雷达图数据
-  const radarData = hasMbti ? [
-    { label: '外向', value: Math.abs(mbtiResult.ei_score) * 10 + 50 },
-    { label: '直觉', value: Math.abs(mbtiResult.sn_score) * 10 + 50 },
-    { label: '情感', value: Math.abs(mbtiResult.tf_score) * 10 + 50 },
-    { label: '知觉', value: Math.abs(mbtiResult.jp_score) * 10 + 50 },
+  // 雷达图数据 - 使用后端返回的 percentage 字段
+  const radarData = hasMbti && mbtiResult?.dimensions ? [
+    { label: '外向', value: mbtiResult.dimensions[0]?.percentage || 50 },
+    { label: '直觉', value: mbtiResult.dimensions[1]?.percentage || 50 },
+    { label: '情感', value: mbtiResult.dimensions[2]?.percentage || 50 },
+    { label: '知觉', value: mbtiResult.dimensions[3]?.percentage || 50 },
   ] : []
 
-  // 才干柱状图数据
-  const themeData = sbtiResult?.top5_themes?.map((t: string, i: number) => ({
-    label: t.slice(0, 2),
-    value: sbtiResult.top5_scores?.[i] || 0,
-    color: ['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i],
-  })) || []
+  // 才干柱状图数据 - 添加空值检查
+  const themeData = (sbtiResult?.top5_themes || [])
+    .filter((t: string) => t)  // 过滤空值
+    .map((t: string, i: number) => ({
+      label: t.slice(0, 2) || '未知',
+      value: sbtiResult.top5_scores?.[i] || 0,
+      color: ['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i],
+    }))
 
   // 领域分布数据
   const domainData = hasSbti && sbtiResult.domain_scores ? [
@@ -367,23 +369,23 @@ export default function DeepProfile() {
                   <CrownOutlined /> SBTI才干
                 </span>
               ),
-              children: hasSbti ? (
+              children: hasSbti && sbtiResult?.top5_themes?.length > 0 ? (
                 <Row gutter={[24, 24]}>
                   <Col xs={24}>
                     <Card title="Top 5 才干主题">
                       <Row gutter={[16, 16]}>
-                        {sbtiResult.top5_themes?.map((theme: string, i: number) => (
-                          <Col xs={24} sm={12} md={8} lg={5} key={theme}>
+                        {sbtiResult.top5_themes.filter((theme: string) => theme).map((theme: string, i: number) => (
+                          <Col xs={24} sm={12} md={8} lg={5} key={theme + i}>
                             <Card
                               style={{
                                 textAlign: 'center',
-                                borderTop: `4px solid ${['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i]}`,
+                                borderTop: `4px solid ${['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i] || '#722ed1'}`,
                               }}
                               size="small"
                             >
-                              <Badge count={i + 1} style={{ backgroundColor: ['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i] }} />
+                              <Badge count={i + 1} style={{ backgroundColor: ['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i] || '#722ed1' }} />
                               <h4 style={{ marginTop: 8 }}>{theme}</h4>
-                              <div style={{ fontWeight: 'bold', color: ['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i] }}>
+                              <div style={{ fontWeight: 'bold', color: ['#722ed1', '#eb2f96', '#52c41a', '#fa8c16', '#1890ff'][i] || '#722ed1' }}>
                                 {sbtiResult.top5_scores?.[i] || 0}分
                               </div>
                             </Card>
