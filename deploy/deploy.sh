@@ -412,10 +412,10 @@ main() {
     log_info "数据目录: $DATA_PATH"
     echo ""
 
-    # 解析部署模式
-    case "$1" in
+    # 解析部署模式 (使用 ${1:-} 避免 unbound variable)
+    case "${1:-}" in
         -m|--mode)
-            DEPLOY_MODE="$2"
+            DEPLOY_MODE="${2:-simple}"
             shift 2
             ;;
         -s|--simple)
@@ -429,6 +429,12 @@ main() {
         -ms|--microservices)
             DEPLOY_MODE="microservices"
             shift
+            ;;
+        *)
+            # 无参数时使用默认模式 (简单部署)
+            if [[ $# -eq 0 ]]; then
+                DEPLOY_MODE="simple"
+            fi
             ;;
     esac
 
@@ -493,7 +499,7 @@ show_help() {
 }
 
 # 处理帮助选项
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+if [[ $# -gt 0 && ("$1" == "-h" || "$1" == "--help") ]]; then
     show_help
     exit 0
 fi
