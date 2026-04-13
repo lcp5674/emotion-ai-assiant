@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Card, Row, Col, Tag, Alert, Dropdown, Space } from 'antd'
-import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ShakeOutlined, BankOutlined, ToolOutlined, SettingOutlined, ColorPickerOutlined } from '@ant-design/icons'
+import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ShakeOutlined, BankOutlined, ToolOutlined, SettingOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
 import { useTheme } from '../hooks/useTheme'
