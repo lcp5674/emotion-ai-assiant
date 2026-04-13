@@ -105,7 +105,9 @@ check_all_ports() {
     for default_port in "${!port_vars[@]}"; do
         local var_name="${port_vars[$default_port]}"
         # 获取实际端口值（从环境变量或默认值）
-        local actual_port="${!var_name}"
+        # 使用 eval 代替 ${!var_name} 以避免 set -u 下的 unbound variable 问题
+        local actual_port
+        actual_port=$(eval echo "\$$var_name" 2>/dev/null)
         [[ -z "$actual_port" ]] && actual_port="$default_port"
         
         # 检查端口是否被占用
