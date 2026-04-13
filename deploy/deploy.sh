@@ -97,6 +97,14 @@ check_all_ports() {
     local port_conflicts=()
     local port_changes=()
     
+    # 获取当前占用端口列表（使用多种命令兼容）
+    local occupied_ports=""
+    if command -v ss &>/dev/null; then
+        occupied_ports=$(ss -tn 2>/dev/null | awk '{print $4}' | grep -oE '[0-9]+$' | sort -u)
+    elif command -v netstat &>/dev/null; then
+        occupied_ports=$(netstat -tn 2>/dev/null | awk '{print $4}' | grep -oE '[0-9]+$' | sort -u)
+    fi
+    
     # 检查每个端口
     for default_port in "${!port_vars[@]}"; do
         local var_name="${port_vars[$default_port]}"
@@ -107,14 +115,11 @@ check_all_ports() {
         fi
         [[ -z "$actual_port" ]] && actual_port="$default_port"
         
-        # 检查端口是否被占用（使用 ss 命令，更可靠）
-        # ss -ltn 检查 TCP 监听端口，-u 检查 UDP
-        if ss -ltn 2>/dev/null | grep -q ":${actual_port} " || \
-           ss -ltun 2>/dev/null | grep -q ":${actual_port} "; then
+        # 检查端口是否被占用
+        if echo "$occupied_ports" | grep -q "^${actual_port}$"; then
             # 找到可用端口
             local new_port=$((actual_port + 10000))
-            while ss -ltn 2>/dev/null | grep -q ":${new_port} " || \
-                  ss -ltun 2>/dev/null | grep -q ":${new_port} "; do
+            while echo "$occupied_ports" | grep -q "^${new_port}$"; do
                 new_port=$((new_port + 1))
                 if [[ $new_port -gt 65535 ]]; then
                     new_port=10000
@@ -127,7 +132,11 @@ check_all_ports() {
             port_changes+=("${actual_port}->${new_port}")
             
             # 更新 .env 文件
-            sed -i "s|^${var_name}=.*|${var_name}=${new_port}|" "$ENV_FILE"
+            if grep -q "^${var_name}=" "$ENV_FILE" 2>/dev/null; then
+                sed -i "s|^${var_name}=.*|${var_name}=${new_port}|" "$ENV_FILE"
+            else
+                echo "${var_name}=${new_port}" >> "$ENV_FILE"
+            fi
         fi
     done
     
