@@ -342,8 +342,29 @@ start_services() {
         log_info "使用临时配置启动其他服务"
     fi
 
-    # 构建并启动服务
-    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d --build
+    # 先构建镜像
+    log_info "构建 Docker 镜像..."
+    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" build --no-cache backend
+
+    # 逐个启动服务（不使用依赖检查），避免一个失败导致全部失败
+    log_info "启动 MySQL..."
+    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d mysql || log_warning "MySQL 启动失败"
+
+    log_info "启动 MinIO..."
+    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d minio || log_warning "MinIO 启动失败"
+
+    if ! lsof -i:${redis_port} &>/dev/null; then
+        log_info "启动 Redis..."
+        $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d redis || log_warning "Redis 启动失败"
+    fi
+
+    log_info "启动 Backend..."
+    $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d backend || log_warning "Backend 启动失败"
+
+    if ! lsof -i:${nginx_port} &>/dev/null; then
+        log_info "启动 Nginx..."
+        $COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" up -d nginx || log_warning "Nginx 启动失败"
+    fi
 
     # 清理临时文件
     if $use_temp_compose; then
