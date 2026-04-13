@@ -46,6 +46,12 @@ export default function MbtiTest() {
   const handleAnswer = (answer: string) => {
     if (questions.length === 0) return
     
+    // 确保currentQuestionIndex在有效范围内
+    if (currentQuestionIndex < 0 || currentQuestionIndex >= questions.length) {
+      console.error('无效的题目索引:', currentQuestionIndex)
+      return
+    }
+    
     const currentQuestion = questions[currentQuestionIndex]
     if (currentQuestion) {
       const isLastQuestion = currentQuestionIndex === questions.length - 1
@@ -60,8 +66,10 @@ export default function MbtiTest() {
           navigate('/login')
           return
         }
-        // 直接调用handleSubmit，让它从store获取最新的answers
-        handleSubmit()
+        // 延迟调用handleSubmit，确保状态已更新
+        setTimeout(() => {
+          handleSubmit()
+        }, 0)
       }
     }
   }
@@ -76,9 +84,8 @@ export default function MbtiTest() {
       return
     }
     
-    // 总是从store获取最新的answers
-    const store = useMbtiStore.getState()
-    const answersToSubmit = submitAnswers || store.answers
+    // 直接使用组件中从store获取的answers
+    const answersToSubmit = submitAnswers || answers
     
     // 去重，确保每个题目只有一个答案
     const uniqueAnswers = answersToSubmit.reduce((acc: typeof answers, answer) => {
@@ -106,7 +113,12 @@ export default function MbtiTest() {
       }
     } catch (error: any) {
       console.error('提交失败:', error)
-      message.error('提交失败，请稍后重试')
+      // 检查是否是网络错误
+      if (error.message && error.message.includes('Network Error')) {
+        message.error('网络连接失败，请检查网络设置后重试')
+      } else {
+        message.error('提交失败，请稍后重试')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -157,8 +169,10 @@ export default function MbtiTest() {
     )
   }
 
-  const currentQuestion = questions[currentQuestionIndex]
-  const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0
+  // 确保currentQuestionIndex在有效范围内
+  const safeQuestionIndex = Math.max(0, Math.min(currentQuestionIndex, questions.length - 1))
+  const currentQuestion = questions[safeQuestionIndex]
+  const progress = questions.length > 0 ? ((safeQuestionIndex + 1) / questions.length) * 100 : 0
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -220,7 +234,7 @@ export default function MbtiTest() {
                   }}
                   onClick={() => handleAnswer('A')}
                 >
-                  A. {currentQuestion.option_a}
+                  A. {currentQuestion.option_a || ''}
                 </Button>
                 <Button
                   size="large"
@@ -234,7 +248,7 @@ export default function MbtiTest() {
                   }}
                   onClick={() => handleAnswer('B')}
                 >
-                  B. {currentQuestion.option_b}
+                  B. {currentQuestion.option_b || ''}
                 </Button>
               </div>
             </div>

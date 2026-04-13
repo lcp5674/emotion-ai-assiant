@@ -157,7 +157,6 @@ export const useMbtiStore = create<MbtiState>((set) => ({
   setCurrentIndex: (index) => set({ currentQuestionIndex: index }),
   addAnswer: (answer) =>
     set((state) => {
-      const isLastQuestion = state.currentQuestionIndex === state.questions.length - 1
       // 检查是否已经存在该题目的答案
       const existingIndex = state.answers.findIndex(a => a.question_id === answer.question_id)
       let newAnswers
@@ -169,9 +168,11 @@ export const useMbtiStore = create<MbtiState>((set) => ({
         // 添加新的答案
         newAnswers = [...state.answers, answer]
       }
+      // 计算下一个问题索引，确保不超出范围
+      const nextIndex = Math.min(state.currentQuestionIndex + 1, state.questions.length - 1)
       return {
         answers: newAnswers,
-        currentQuestionIndex: isLastQuestion ? state.currentQuestionIndex : state.currentQuestionIndex + 1,
+        currentQuestionIndex: nextIndex,
       }
     }),
   setResult: (result) => set({ result }),
