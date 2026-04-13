@@ -83,43 +83,50 @@ check_all_ports() {
         fi
     fi
     
-    # 从 docker-compose.yml 提取所有端口映射
-    local ports_map=$(grep -E '^\s*-\s*".*:[0-9]+"' "$DOCKER_COMPOSE_FILE" 2>/dev/null | \
-                      sed 's/.*"\([0-9]*\):[0-9]*".*/\1/' | sort -u)
+    # 读取 .env 中的实际端口值，并构建冲突检测列表
+    # 从 docker-compose.yml 中提取端口映射，解析 ${VAR:-default} 格式
+    source "$ENV_FILE" 2>/dev/null
+    
+    # 定义要检查的端口及其对应的环境变量名
+    declare -A port_vars=(
+        ["3306"]="MYSQL_PORT"
+        ["6379"]="REDIS_PORT"
+        ["8000"]="BACKEND_PORT"
+        ["9000"]="MINIO_PORT"
+        ["9001"]="MINIO_CONSOLE_PORT"
+        ["80"]="HTTP_PORT"
+        ["443"]="HTTPS_PORT"
+    )
     
     local port_conflicts=()
     local port_changes=()
     
-    for port in $ports_map; do
-        if [[ -n "$port" && "$port" != "" ]] && lsof -i:${port} &>/dev/null 2>&1; then
+    # 检查每个端口
+    for default_port in "${!port_vars[@]}"; do
+        local var_name="${port_vars[$default_port]}"
+        # 获取实际端口值（从环境变量或默认值）
+        local actual_port="${!var_name}"
+        [[ -z "$actual_port" ]] && actual_port="$default_port"
+        
+        # 检查端口是否被占用
+        if lsof -i:${actual_port} &>/dev/null 2>&1; then
             # 找到可用端口
-            local new_port=$((port + 10000))
+            local new_port=$((actual_port + 10000))
             while lsof -i:${new_port} &>/dev/null 2>&1; do
                 new_port=$((new_port + 1))
-                # 防止无限循环
                 if [[ $new_port -gt 65535 ]]; then
                     new_port=10000
                     break
                 fi
             done
             
-            log_warning "端口 ${port} 被占用，自动更换为 ${new_port}"
-            port_conflicts+=("${port}")
-            port_changes+=("${port}->${new_port}")
+            log_warning "端口 ${actual_port} 被占用，自动更换为 ${new_port}"
+            port_conflicts+=("${actual_port}")
+            port_changes+=("${actual_port}->${new_port}")
             
-            # 替换 docker-compose 中的端口映射
-            sed -i "s/\"${port}:/${new_port}:/g" "$DOCKER_COMPOSE_FILE"
-            
-            # 替换 .env 中的端口变量
-            case $port in
-                3306) sed -i "s/^MYSQL_PORT=.*/MYSQL_PORT=${new_port}/" "$ENV_FILE" ;;
-                6379) sed -i "s/^REDIS_PORT=.*/REDIS_PORT=${new_port}/" "$ENV_FILE" ;;
-                8000) sed -i "s/^BACKEND_PORT=.*/BACKEND_PORT=${new_port}/" "$ENV_FILE" ;;
-                9000) sed -i "s/^MINIO_PORT=.*/MINIO_PORT=${new_port}/" "$ENV_FILE" ;;
-                9001) sed -i "s/^MINIO_CONSOLE_PORT=.*/MINIO_CONSOLE_PORT=${new_port}/" "$ENV_FILE" ;;
-                80)   sed -i "s/^HTTP_PORT=.*/HTTP_PORT=${new_port}/" "$ENV_FILE" ;;
-                443)  sed -i "s/^HTTPS_PORT=.*/HTTPS_PORT=${new_port}/" "$ENV_FILE" ;;
-            esac
+            # 更新 .env 文件
+            echo "${var_name}=${new_port}" >> "$ENV_FILE"
+            sed -i "s|^${var_name}=.*|${var_name}=${new_port}|" "$ENV_FILE"
         fi
     done
     
