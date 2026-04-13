@@ -41,11 +41,17 @@ request.interceptors.response.use(
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           window.location.href = '/login'
-          break
+          return Promise.reject(error)
+        case 404:
+          // 资源不存在，返回空对象
+          return Promise.resolve({})
+        default:
+          // 其他错误，返回空对象
+          return Promise.resolve({})
       }
     }
 
-    // 静默处理网络错误，避免在控制台显示错误日志
+    // 网络错误，返回空对象
     return Promise.resolve({})
   }
 )

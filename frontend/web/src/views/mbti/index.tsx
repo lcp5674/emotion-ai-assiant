@@ -82,9 +82,17 @@ export default function MbtiTest() {
     setSubmitting(true)
     try {
       const res = await api.mbti.submit(uniqueAnswers)
-      if (res) {
+      if (res && res.id) {
         setResult(res)
         navigate('/mbti/result')
+      } else {
+        // 如果没有返回结果，可能是未登录或其他错误
+        console.warn('提交失败，可能是未登录或服务器错误')
+        // 检查是否已登录
+        const authStore = useAuthStore.getState()
+        if (!authStore.isAuthenticated) {
+          navigate('/login')
+        }
       }
     } catch (error: any) {
       console.error('提交失败:', error)
