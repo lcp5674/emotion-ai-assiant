@@ -15,7 +15,14 @@ def get_llm_provider() -> LLMProvider:
     global _llm_provider
 
     if _llm_provider is None:
-        provider_name = settings.LLM_PROVIDER.lower()
+        provider_name = settings.LLM_PROVIDER.lower() if settings.LLM_PROVIDER else ""
+
+        if not provider_name:
+            raise ValueError(
+                "LLM_PROVIDER is not configured. "
+                "Please set LLM_PROVIDER environment variable. "
+                f"Available providers: {list(PROVIDER_MAP.keys())}"
+            )
 
         if provider_name not in PROVIDER_MAP:
             raise ValueError(f"Unknown LLM provider: {provider_name}. Available providers: {list(PROVIDER_MAP.keys())}")

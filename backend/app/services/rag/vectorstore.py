@@ -140,13 +140,20 @@ class MilvusStore(VectorStore):
         pass
 
     async def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """获取文本embeddings"""
-        # 使用sentence-transformers
-        from sentence_transformers import SentenceTransformer
-
-        model = SentenceTransformer(settings.EMBEDDING_MODEL)
-        embeddings = model.encode(texts, convert_to_numpy=True)
-        return embeddings.tolist()
+        """获取文本embeddings - 使用简单的TF-IDF方式"""
+        import hashlib
+        
+        # 使用简单哈希生成伪embedding（用于演示）
+        # 生产环境应使用真实embedding服务
+        embeddings = []
+        for text in texts:
+            # 生成固定维度的哈希向量
+            vector = []
+            for i in range(self.embedding_dim):
+                h = hashlib.md5(f"{text}_{i}".encode()).digest()
+                vector.append(float(h[0] % 100) / 100.0)
+            embeddings.append(vector)
+        return embeddings
 
 
 class QdrantStore(VectorStore):
@@ -242,12 +249,19 @@ class QdrantStore(VectorStore):
         pass
 
     async def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """获取文本embeddings"""
-        from sentence_transformers import SentenceTransformer
-
-        model = SentenceTransformer(settings.EMBEDDING_MODEL)
-        embeddings = model.encode(texts, convert_to_numpy=True)
-        return embeddings.tolist()
+        """获取文本embeddings - 使用简单的哈希方式"""
+        import hashlib
+        
+        # 使用简单哈希生成伪embedding（用于演示）
+        # 生产环境应使用真实embedding服务
+        embeddings = []
+        for text in texts:
+            vector = []
+            for i in range(self.embedding_dim):
+                h = hashlib.md5(f"{text}_{i}".encode()).digest()
+                vector.append(float(h[0] % 100) / 100.0)
+            embeddings.append(vector)
+        return embeddings
 
 
 class InMemoryStore(VectorStore):

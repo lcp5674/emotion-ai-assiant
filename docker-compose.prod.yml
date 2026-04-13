@@ -77,7 +77,7 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-emotion_ai}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+      - LLM_PROVIDER=${LLM_PROVIDER}
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - ENVIRONMENT=production
     depends_on:

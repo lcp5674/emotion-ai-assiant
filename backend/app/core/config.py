@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 30  # 30天
 
     # 大模型配置
-    LLM_PROVIDER: str = "mock"
+    LLM_PROVIDER: str = ""  # 必须配置，如: openai/anthropic/glm/qwen/minimax/ernie/hunyuan/spark/doubao/siliconflow
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-3.5-turbo"
