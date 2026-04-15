@@ -170,6 +170,9 @@ services:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple/}
     container_name: emotion-ai-backend
     restart: unless-stopped
+    # 加载环境变量文件
+    env_file:
+      - ./backend/.env.docker
     # 资源限制
     deploy:
       resources:
