@@ -50,20 +50,14 @@ request.interceptors.response.use(
     const { response } = error
 
     if (response) {
-      const { status } = response
+      const { status, data } = response
 
       switch (status) {
         case 401:
-          // token过期，清除并跳转登录
-          try {
-            localStorage.removeItem('access_token')
-            localStorage.removeItem('refresh_token')
-          } catch (error) {
-            console.warn('Token清理失败')
+          if (data?.detail) {
+            return Promise.reject(new Error(data.detail))
           }
-          // 跳转到登录页，并抛出错误让调用方处理
-          window.location.href = '/login'
-          return Promise.reject(new Error('Unauthorized: Token已过期，请重新登录'))
+          return Promise.reject(new Error('登录失败'))
         case 404:
           // 资源不存在，返回404错误
           return Promise.reject(new Error('Not Found: 资源不存在'))
