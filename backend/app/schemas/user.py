@@ -1,6 +1,7 @@
 """
 用户相关Schema
 """
+
 from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
@@ -10,6 +11,7 @@ import re
 
 class MemberLevelEnum(str, Enum):
     """会员等级"""
+
     FREE = "free"
     VIP = "vip"
     SVIP = "svip"
@@ -19,46 +21,36 @@ class MemberLevelEnum(str, Enum):
 # ========== 认证 ==========
 class SmsSendRequest(BaseModel):
     """发送验证码请求"""
+
     phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
 
 
 class SmsVerifyRequest(BaseModel):
     """验证验证码请求"""
+
     phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
     code: str = Field(..., min_length=6, max_length=6)
 
 
 class RegisterRequest(BaseModel):
     """注册请求"""
+
     phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
-    password: str = Field(..., min_length=8, max_length=20)
+    password: str = Field(..., min_length=6, max_length=20)
     code: str = Field(..., min_length=6, max_length=6)
     nickname: Optional[str] = None
-
-    @field_validator("password")
-    def validate_password(cls, v):
-        """验证密码强度：至少8位，包含大小写字母、数字、特殊字符"""
-        if len(v) < 8:
-            raise ValueError("密码长度至少8位")
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("密码必须包含大写字母")
-        if not re.search(r"[a-z]", v):
-            raise ValueError("密码必须包含小写字母")
-        if not re.search(r"\d", v):
-            raise ValueError("密码必须包含数字")
-        if not re.search(r"[!@#$%^&*()_+{}[\]:;<>,.?~\\-]", v):
-            raise ValueError("密码必须包含特殊字符")
-        return v
 
 
 class LoginRequest(BaseModel):
     """登录请求"""
+
     phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
-    password: str = Field(..., min_length=8, max_length=20)
+    password: str = Field(..., min_length=6, max_length=20)
 
 
 class LoginResponse(BaseModel):
     """登录响应"""
+
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -68,12 +60,14 @@ class LoginResponse(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     """刷新令牌请求"""
+
     refresh_token: str
 
 
 # ========== 用户信息 ==========
 class UserInfo(BaseModel):
     """用户信息"""
+
     id: int
     phone: Optional[str] = None
     email: Optional[str] = None
@@ -91,12 +85,14 @@ class UserInfo(BaseModel):
 
 class UpdateUserRequest(BaseModel):
     """更新用户信息请求"""
+
     nickname: Optional[str] = Field(None, max_length=50)
     avatar: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
     """修改密码请求"""
+
     old_password: str
     new_password: str = Field(..., min_length=8, max_length=20)
 
@@ -118,6 +114,7 @@ class ChangePasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     """重置密码请求（通过手机验证码）"""
+
     phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
     code: str = Field(..., min_length=6, max_length=6)
     new_password: str = Field(..., min_length=8, max_length=20)
@@ -141,6 +138,7 @@ class ResetPasswordRequest(BaseModel):
 # ========== 会员 ==========
 class MemberPrice(BaseModel):
     """会员价格"""
+
     level: str
     name: str
     price: int  # 分
@@ -150,11 +148,13 @@ class MemberPrice(BaseModel):
 
 class MemberOrderCreate(BaseModel):
     """创建会员订单"""
+
     level: MemberLevelEnum
 
 
 class MemberOrderResponse(BaseModel):
     """会员订单响应"""
+
     order_no: str
     amount: int
     pay_url: Optional[str] = None

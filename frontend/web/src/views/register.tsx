@@ -125,6 +125,7 @@ export default function Register() {
             rules={[
               { required: true, message: '请输入密码' },
               { min: 6, message: '密码至少6位' },
+              { pattern: /^(?=.*[a-zA-Z])(?=.*\d)/, message: '密码需包含字母和数字' },
             ]}
           >
             <Input.Password
