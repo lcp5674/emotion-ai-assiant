@@ -19,12 +19,21 @@ export default function Register() {
   const sendCode = async () => {
     try {
       const phone = form.getFieldValue('phone')
-      if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+      console.log('获取手机号:', phone, '类型:', typeof phone)
+      
+      if (!phone) {
+        message.warning('请输入手机号')
+        return
+      }
+      
+      const phoneStr = String(phone).trim()
+      if (!/^1[3-9]\d{9}$/.test(phoneStr)) {
         message.warning('请输入正确的手机号')
         return
       }
+      
       setSending(true)
-      await api.auth.sendCode(phone)
+      await api.auth.sendCode(phoneStr)
       message.success('验证码已发送')
       setCountdown(60)
       const timer = setInterval(() => {
