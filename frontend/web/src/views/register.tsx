@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Form, Input, Button, Card, App } from 'antd'
-import { UserOutlined, LockOutlined, PhoneOutlined, MailOutlined } from '@ant-design/icons'
+import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
 import { useTheme } from '../hooks/useTheme'
@@ -11,13 +11,19 @@ export default function Register() {
   const { message } = App.useApp()
   const { setAuth } = useAuthStore()
   const { themeColors, themeColor } = useTheme()
+  const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [countdown, setCountdown] = useState(0)
 
-  const sendCode = async (phone: string) => {
-    setSending(true)
+  const sendCode = async () => {
     try {
+      const phone = form.getFieldValue('phone')
+      if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+        message.warning('请输入正确的手机号')
+        return
+      }
+      setSending(true)
       await api.auth.sendCode(phone)
       message.success('验证码已发送')
       setCountdown(60)
@@ -71,6 +77,7 @@ export default function Register() {
         </div>
 
         <Form
+          form={form}
           name="register"
           onFinish={onFinish}
           autoComplete="off"
@@ -104,14 +111,7 @@ export default function Register() {
                   type="link"
                   size="small"
                   style={{ color: themeColors[themeColor] }}
-                  onClick={() => {
-                    const phone = document.querySelector('input[name="phone"]')?.getAttribute('value')
-                    if (phone && /^1[3-9]\d{9}$/.test(phone)) {
-                      sendCode(phone)
-                    } else {
-                      message.warning('请先输入正确的手机号')
-                    }
-                  }}
+                  onClick={sendCode}
                   disabled={countdown > 0}
                 >
                   {countdown > 0 ? `${countdown}s` : '获取验证码'}
