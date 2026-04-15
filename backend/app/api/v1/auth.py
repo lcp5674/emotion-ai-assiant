@@ -1,6 +1,7 @@
 """
 认证接口
 """
+
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
@@ -31,6 +32,74 @@ from app.services.sms_service import get_sms_service
 from app.core.i18n import _
 
 router = APIRouter(prefix="/auth", tags=["认证"])
+
+
+@router.post("/test_login", summary="测试登录（自动创建账号）")
+async def test_login(
+    request: SmsSendRequest,
+    db: Session = Depends(get_db),
+):
+    """测试登录：使用手机号直接登录，不存在则自动创建"""
+    phone = request.phone
+    
+    user = db.query(User).filter(User.phone == phone).first()
+    if not user:
+        user = User(
+            phone=phone,
+            nickname=f"用户{phone[-4:]}",
+            password_hash=get_password_hash("test123456"),
+            is_active=True,
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        loguru.logger.info(f"自动创建测试用户: {phone}")
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="账号已被禁用",
+        )
+    
+    from datetime import datetime
+    user.last_login_at = datetime.now()
+    db.commit()
+    
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+    
+    return LoginResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserInfo.model_validate(user),
+    )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        loguru.logger.info(f"自动创建测试用户: {phone}")
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="账号已被禁用",
+        )
+
+    from datetime import datetime
+
+    user.last_login_at = datetime.now()
+    db.commit()
+
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    return LoginResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserInfo.model_validate(user),
+    )
 
 
 @router.post("/send_code", summary="发送验证码")
@@ -97,7 +166,9 @@ async def register(
     # 创建用户
     user = User(
         phone=request.phone,
-        nickname=request.nickname or f"用户{request.phone[-4:]}" if request.phone else "用户",
+        nickname=request.nickname or f"用户{request.phone[-4:]}"
+        if request.phone
+        else "用户",
         password_hash=get_password_hash(request.password),
     )
     db.add(user)
@@ -140,6 +211,7 @@ async def login(
         )
 
     from datetime import datetime
+
     user.last_login_at = datetime.now()
     db.commit()
 
@@ -223,17 +295,13 @@ async def reset_password(
 
     if not stored_code or stored_code.decode() != request.code:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="验证码错误或已过期"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="验证码错误或已过期"
         )
 
     # 查找用户
     user = db.query(User).filter(User.phone == request.phone).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
 
     # 更新密码
     user.password_hash = get_password_hash(request.new_password)
@@ -257,30 +325,27 @@ async def get_crisis_resources():
                 "name": "全国心理援助热线",
                 "number": "400-161-9995",
                 "description": "24小时免费心理援助热线",
-                "url": ""
+                "url": "",
             },
             {
                 "name": "北京心理危机研究与干预中心",
                 "number": "800-810-1117",
                 "description": "24小时危机干预热线",
-                "url": ""
+                "url": "",
             },
             {
                 "name": "希望24热线",
                 "number": "400-161-9995",
                 "description": "生命危机干预",
-                "url": "http://www.hope24.org/"
-            }
+                "url": "http://www.hope24.org/",
+            },
         ],
         "online_resources": [
             {
                 "name": "简单心理 - 危机干预",
-                "url": "https://www.jiandanxinli.com/crisis"
+                "url": "https://www.jiandanxinli.com/crisis",
             },
-            {
-                "name": "KnowYourself",
-                "url": "https://www.knowyourself.cc/"
-            }
+            {"name": "KnowYourself", "url": "https://www.knowyourself.cc/"},
         ],
         "urgent_message": "如果你或你身边的人正面临立即的生命危险，请立即拨打120或110求助。",
         "self_help_tips": [
@@ -288,6 +353,6 @@ async def get_crisis_resources():
             "告诉自己：这只是暂时的，情绪会过去的",
             "联系你信任的朋友或家人，告诉他们你的感受",
             "离开危险环境，去一个安全的地方",
-            "记住：你值得被帮助，你不孤单"
-        ]
+            "记住：你值得被帮助，你不孤单",
+        ],
     }

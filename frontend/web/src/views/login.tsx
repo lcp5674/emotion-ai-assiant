@@ -19,12 +19,22 @@ export default function Login() {
       const res = await api.auth.login(values)
       setAuth(res.user, res.access_token, res.refresh_token)
       message.success('登录成功')
-      // 登录成功后，重定向回之前的页面或首页
       const redirectPath = localStorage.getItem('redirectPath') || '/'
       localStorage.removeItem('redirectPath')
       navigate(redirectPath)
     } catch (error: any) {
-      message.error(error.response?.data?.detail || '登录失败')
+      console.error('登录错误:', error)
+      let errorMsg = '登录失败，请稍后重试'
+      
+      if (error.response?.data?.detail) {
+        errorMsg = error.response.data.detail
+      } else if (error.message) {
+        errorMsg = error.message
+      } else if (error.status === 401) {
+        errorMsg = '手机号或密码错误'
+      }
+      
+      message.error(errorMsg)
     } finally {
       setLoading(false)
     }
