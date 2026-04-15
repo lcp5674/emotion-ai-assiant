@@ -37,6 +37,8 @@ const AttachmentTest = lazy(() => import('./views/attachment/test'))
 const AttachmentResult = lazy(() => import('./views/attachment/result'))
 // 深度画像
 const DeepProfile = lazy(() => import('./views/profile/deep'))
+// 三位一体综合测评
+const ComprehensiveTest = lazy(() => import('./views/comprehensive'))
 // 账户设置
 const Settings = lazy(() => import('./views/settings'))
 
@@ -87,7 +89,10 @@ function AppRoutes() {
       <Route path="/attachment/result" element={<AttachmentResult />} />
 
       {/* 深度画像 */}
-      <Route path="/profile/deep" element={<DeepProfile />} />
+      <Route path="/profile/deep" element={<DeepProfile />}
+
+      {/* 三位一体综合测评 */}
+      <Route path="/comprehensive" element={<ComprehensiveTest />}
 
       {/* 账户设置 */}
       <Route path="/settings" element={<Settings />} />

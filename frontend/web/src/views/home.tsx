@@ -354,6 +354,22 @@ export default function Home() {
 </p>
             {/* 三大测评入口 */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+              <Link to="/comprehensive">
+                <Button
+                  size="large"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '24px',
+                    padding: '10px 28px',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                  }}
+                >
+                  🔮 三位一体测评
+                </Button>
+              </Link>
               <Link to="/mbti/quick">
                 <Button
                   size="large"
@@ -575,7 +591,7 @@ export default function Home() {
           </Row>
           
           <div style={{ textAlign: 'center', marginTop: 40 }}>
-            <Link to="/profile/deep">
+            <Link to="/comprehensive">
               <Button
                 size="large"
                 style={{

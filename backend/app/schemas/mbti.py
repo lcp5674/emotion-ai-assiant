@@ -1,6 +1,7 @@
 """
 MBTI相关Schema
 """
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
@@ -8,6 +9,7 @@ from datetime import datetime
 
 class MbtiQuestionSchema(BaseModel):
     """MBTI题目"""
+
     id: int
     dimension: str
     question_no: int
@@ -21,30 +23,36 @@ class MbtiQuestionSchema(BaseModel):
 
 class MbtiQuestionListResponse(BaseModel):
     """题目列表响应"""
+
     total: int
     questions: List[MbtiQuestionSchema]
 
 
 class MbtiAnswerSubmit(BaseModel):
     """提交答案"""
+
     question_id: int
     answer: str = Field(..., pattern="^[AB]$")
 
 
 class MbtiTestSubmit(BaseModel):
     """提交测试"""
+
     answers: List[MbtiAnswerSubmit]
 
 
 class MbtiDimensionScore(BaseModel):
     """维度得分"""
+
     dimension: str
     score: int
-    tendency: str  # 倾向: E/I, S/N, T/F, J/P
+    percentage: int
+    tendency: str
 
 
 class MbtiResultSchema(BaseModel):
     """MBTI结果"""
+
     id: int
     mbti_type: str
     ei_score: int
@@ -66,6 +74,7 @@ class MbtiResultSchema(BaseModel):
 
 class MbtiTestStartResponse(BaseModel):
     """开始测试响应"""
+
     session_id: str
     total_questions: int
     estimated_time: int  # 分钟
@@ -73,6 +82,7 @@ class MbtiTestStartResponse(BaseModel):
 
 class AiAssistantSchema(BaseModel):
     """AI助手"""
+
     id: int
     name: str
     avatar: Optional[str] = None
@@ -90,12 +100,14 @@ class AiAssistantSchema(BaseModel):
 
 class AiAssistantListResponse(BaseModel):
     """助手列表响应"""
+
     total: int
     list: List[AiAssistantSchema]
 
 
 class RecommendAssistantRequest(BaseModel):
     """推荐助手请求"""
+
     mbti_type: Optional[str] = None
     tags: Optional[List[str]] = None
     expertise: Optional[List[str]] = None

@@ -610,9 +610,10 @@ export default function DeepProfile() {
 
         {/* Actions */}
         <div style={{ textAlign: 'center', marginTop: 32, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {!hasMbti && <Link to="/mbti/test"><Button type="primary" style={{ background: '#722ed1' }}>测评MBTI</Button></Link>}
-          {!hasSbti && <Link to="/sbti/test"><Button type="primary" style={{ background: '#722ed1' }}>测评SBTI</Button></Link>}
-          {!hasAttachment && <Link to="/attachment/test"><Button type="primary" style={{ background: '#eb2f96' }}>测评依恋风格</Button></Link>}
+          <Link to="/comprehensive"><Button type="primary" style={{ background: '#722ed1' }}>三位一体测评</Button></Link>
+          {!hasMbti && <Link to="/mbti/test"><Button>测评MBTI</Button></Link>}
+          {!hasSbti && <Link to="/sbti/test"><Button>测评SBTI</Button></Link>}
+          {!hasAttachment && <Link to="/attachment/test"><Button>测评依恋风格</Button></Link>}
           <Link to="/chat"><Button size="large">开始聊天</Button></Link>
         </div>
       </div>
