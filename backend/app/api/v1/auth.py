@@ -41,7 +41,7 @@ async def test_login(
 ):
     """测试登录：使用手机号直接登录，不存在则自动创建"""
     phone = request.phone
-    
+
     user = db.query(User).filter(User.phone == phone).first()
     if not user:
         user = User(
@@ -51,30 +51,6 @@ async def test_login(
             is_active=True,
             is_verified=True,
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        loguru.logger.info(f"自动创建测试用户: {phone}")
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="账号已被禁用",
-        )
-    
-    from datetime import datetime
-    user.last_login_at = datetime.now()
-    db.commit()
-    
-    access_token = create_access_token(data={"sub": str(user.id)})
-    refresh_token = create_refresh_token(data={"sub": str(user.id)})
-    
-    return LoginResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        user=UserInfo.model_validate(user),
-    )
         db.add(user)
         db.commit()
         db.refresh(user)
