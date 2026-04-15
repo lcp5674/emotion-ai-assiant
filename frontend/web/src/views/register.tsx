@@ -37,7 +37,14 @@ export default function Register() {
         })
       }, 1000)
     } catch (error: any) {
-      message.error(error.response?.data?.detail || '发送失败')
+      console.error('发送验证码错误:', error)
+      let errMsg = '发送失败，请稍后重试'
+      if (error.response?.data?.detail) {
+        errMsg = error.response.data.detail
+      } else if (error.message) {
+        errMsg = error.message
+      }
+      message.error(errMsg)
     } finally {
       setSending(false)
     }
