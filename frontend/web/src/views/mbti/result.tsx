@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Card, Button, Tag, Row, Col, Progress, Spin, App } from 'antd'
+import { Card, Button, Tag, Row, Col, Progress, Spin, App, Modal, Space } from 'antd'
+import { CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, ShareAltOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useMbtiStore, useAuthStore } from '../../stores'
 
@@ -8,6 +9,23 @@ export default function MbtiResult() {
   const navigate = useNavigate()
   const { result, setResult } = useMbtiStore()
   const { message } = App.useApp()
+  const [shareModalVisible, setShareModalVisible] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const shareText = `🎯 我的MBTI类型是 ${result?.mbti_type}！
+${getMbtiDescription(result?.mbti_type)}
+了解更多自己，探索成长 👉 情感AI助手`
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText)
+      setCopied(true)
+      message.success('复制成功！')
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      message.error('复制失败')
+    }
+  }
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(!result)
   const [assistants, setAssistants] = useState<any[]>([])
@@ -194,15 +212,53 @@ export default function MbtiResult() {
 
         {/* Actions */}
         <div style={{ textAlign: 'center', marginTop: 32 }}>
-          <Link to="/chat">
-            <Button type="primary" size="large" style={{ marginRight: 16, background: '#722ed1' }}>
-              开始聊天
+          <Space>
+            <Link to="/chat">
+              <Button type="primary" size="large" style={{ background: '#722ed1' }}>
+                开始聊天
+              </Button>
+            </Link>
+            <Button size="large" icon={<ShareAltOutlined />} onClick={() => setShareModalVisible(true)}>
+              分享结果
             </Button>
-          </Link>
-          <Link to="/mbti">
-            <Button size="large">重新测试</Button>
-          </Link>
+            <Link to="/mbti">
+              <Button size="large">重新测试</Button>
+            </Link>
+          </Space>
         </div>
+
+        <Modal
+          title="分享你的MBTI结果"
+          open={shareModalVisible}
+          onCancel={() => setShareModalVisible(false)}
+          footer={null}
+          centered
+        >
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <div style={{
+              fontSize: 48,
+              fontWeight: 'bold',
+              color: '#722ed1',
+              marginBottom: 16,
+            }}>
+              {result?.mbti_type}
+            </div>
+            <p style={{ marginBottom: 24, color: '#595959' }}>
+              {getMbtiDescription(result?.mbti_type)}
+            </p>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                icon={copied ? <CheckOutlined /> : <CopyOutlined />}
+                onClick={handleCopy}
+                block
+                style={{ background: '#722ed1' }}
+              >
+                {copied ? '已复制' : '复制文案'}
+              </Button>
+            </Space>
+          </div>
+        </Modal>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Tag, Row, Col, Progress, Spin, App, List, Avatar } from 'antd'
-import { CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, RadarChartOutlined } from '@ant-design/icons'
+import { CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, RadarChartOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useSbtiStore } from '../../stores'
 
@@ -260,6 +260,13 @@ export default function SbtiResult() {
       </header>
 
       <div className="container" style={{ marginTop: -20 }}>
+        {/* Back Button */}
+        <div style={{ marginBottom: 16 }}>
+          <Link to="/sbti">
+            <Button icon={<ArrowLeftOutlined />}>返回测试</Button>
+          </Link>
+        </div>
+
         {/* Top 5 Themes */}
         <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
           {result.top5_themes?.map((theme, index) => {

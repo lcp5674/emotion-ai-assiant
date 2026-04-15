@@ -1,6 +1,7 @@
 """
 SBTI测评API
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -133,14 +134,13 @@ async def get_questions(
     force_refresh: bool = False,
     db: Session = Depends(get_db),
 ):
-    """获取24道SBTI测评题目"""
+    """获取48道SBTI测评题目"""
     sbti_service = get_sbti_service()
-    
-    # 确保题目已初始化
+
     sbti_service.seed_questions(db, force=force_refresh)
-    
+
     questions = sbti_service.get_questions(db)
-    
+
     return SbtiQuestionListResponse(
         total=len(questions),
         questions=[SbtiQuestionSchema.model_validate(q) for q in questions],
@@ -153,43 +153,49 @@ async def submit_test(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """提交24道SBTI测评答案，计算并返回结果"""
-    if len(request.answers) != 24:
+    """提交48道SBTI测评答案，计算并返回结果"""
+    if len(request.answers) != 48:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="必须回答全部24道题目",
+            detail="必须回答全部48道题目",
         )
-    
+
     sbti_service = get_sbti_service()
-    
-    # 计算结果
+
     answers = [answer.model_dump() for answer in request.answers]
     result = sbti_service.calculate_result(db, current_user.id, answers)
-    
+
     # 保存答案并计算得分
     for answer_data in answers:
-        question = db.query(SBTIQuestion).filter(
-            SBTIQuestion.id == answer_data["question_id"]
-        ).first()
-        
+        question = (
+            db.query(SBTIQuestion)
+            .filter(SBTIQuestion.id == answer_data["question_id"])
+            .first()
+        )
+
         if question:
-            selected_theme = question.theme_a if answer_data["answer"] == "A" else question.theme_b
-            weight = question.weight_a if answer_data["answer"] == "A" else question.weight_b
-            
-            db.add(SBTIAnswer(
-                user_id=current_user.id,
-                question_id=answer_data["question_id"],
-                answer=answer_data["answer"],
-                selected_theme=selected_theme,
-                score=weight,
-            ))
-    
+            selected_theme = (
+                question.theme_a if answer_data["answer"] == "A" else question.theme_b
+            )
+            weight = (
+                question.weight_a if answer_data["answer"] == "A" else question.weight_b
+            )
+
+            db.add(
+                SBTIAnswer(
+                    user_id=current_user.id,
+                    question_id=answer_data["question_id"],
+                    answer=answer_data["answer"],
+                    selected_theme=selected_theme,
+                    score=weight,
+                )
+            )
+
     # 标记旧结果为非最新
     db.query(SBTIResult).filter(
-        SBTIResult.user_id == current_user.id,
-        SBTIResult.is_latest == True
+        SBTIResult.user_id == current_user.id, SBTIResult.is_latest == True
     ).update({"is_latest": False})
-    
+
     # 保存结果
     sbti_result = SBTIResult(
         user_id=current_user.id,
@@ -211,13 +217,13 @@ async def submit_test(
     db.add(sbti_result)
     db.commit()
     db.refresh(sbti_result)
-    
+
     # 更新用户的SBTI结果关联
     user = db.query(User).filter(User.id == current_user.id).first()
-    if user and hasattr(user, 'sbti_result_id'):
+    if user and hasattr(user, "sbti_result_id"):
         user.sbti_result_id = sbti_result.id
         db.commit()
-    
+
     # 返回结果
     return SbtiResultResponse(
         id=sbti_result.id,
@@ -236,23 +242,24 @@ async def get_result(
     db: Session = Depends(get_db),
 ):
     """获取当前用户的SBTI测评结果"""
-    if not hasattr(current_user, 'sbti_result_id') or not current_user.sbti_result_id:
+    if not hasattr(current_user, "sbti_result_id") or not current_user.sbti_result_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="尚未完成SBTI测评",
         )
-    
-    sbti_result = db.query(SBTIResult).filter(
-        SBTIResult.user_id == current_user.id,
-        SBTIResult.is_latest == True
-    ).first()
-    
+
+    sbti_result = (
+        db.query(SBTIResult)
+        .filter(SBTIResult.user_id == current_user.id, SBTIResult.is_latest == True)
+        .first()
+    )
+
     if not sbti_result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="SBTI测评结果不存在",
         )
-    
+
     # 解析report_json
     report = {}
     if sbti_result.report_json:
@@ -260,7 +267,7 @@ async def get_result(
             report = json.loads(sbti_result.report_json)
         except:
             report = {}
-    
+
     return SbtiResultResponse(
         id=sbti_result.id,
         top5_themes=[
@@ -290,13 +297,13 @@ async def get_theme_detail(
 ):
     """获取特定才干主题的详细信息"""
     theme_info = THEME_DETAILS.get(theme)
-    
+
     if not theme_info:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"未找到主题: {theme}",
         )
-    
+
     return SbtiThemeDetailResponse(
         theme=theme,
         info=ThemeInfo(**theme_info),

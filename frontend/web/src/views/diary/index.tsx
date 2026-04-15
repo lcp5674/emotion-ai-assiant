@@ -22,6 +22,8 @@ import {
   EditOutlined,
   PlusOutlined,
   SearchOutlined,
+  ArrowLeftOutlined,
+  HomeOutlined,
 } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useDiaryStore } from '../../stores'

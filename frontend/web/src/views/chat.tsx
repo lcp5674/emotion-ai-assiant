@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { Input, Button, List, Spin, Empty, Drawer, App } from 'antd'
-import { SendOutlined, ArrowLeftOutlined, UserOutlined, MenuOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
+import { SendOutlined, ArrowLeftOutlined, UserOutlined, MenuOutlined, DeleteOutlined, ReloadOutlined, HeartOutlined, TeamOutlined, BookOutlined, SmileOutlined, RocketOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore, useChatStore } from '../stores'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -32,6 +32,21 @@ export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState('')
   const [tempMessageId, setTempMessageId] = useState<number | null>(null)
+  const [showQuickReplies, setShowQuickReplies] = useState(true)
+
+  const quickReplies = [
+    { icon: <HeartOutlined />, label: '倾诉心情', prompt: '今天我有一些心情想和你分享...' },
+    { icon: <TeamOutlined />, label: '人际关系', prompt: '我想聊聊关于人际关系的问题...' },
+    { icon: <BookOutlined />, label: '自我成长', prompt: '我想聊一聊关于个人成长的话题...' },
+    { icon: <SmileOutlined />, label: '日常分享', prompt: '今天发生了一件小事...' },
+    { icon: <RocketOutlined />, label: '职业发展', prompt: '我想聊聊职业发展的问题...' },
+  ]
+
+  const handleQuickReply = (prompt: string) => {
+    setInputValue(prompt)
+    setShowQuickReplies(false)
+    handleSend()
+  }
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const isMobile = useIsMobile()
@@ -339,8 +354,26 @@ export default function Chat() {
               <Spin />
             </div>
           ) : messages.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 60 }}>
-              <Empty description="开始一段新对话吧" />
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <div style={{ marginBottom: 32 }}>
+                <Empty description="开始一段新对话吧" />
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
+                {quickReplies.map((item, idx) => (
+                  <Button
+                    key={idx}
+                    icon={item.icon}
+                    onClick={() => handleQuickReply(item.prompt)}
+                    style={{
+                      borderRadius: 20,
+                      background: '#fff',
+                      border: '1px solid #722ed130',
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           ) : (
             <div>

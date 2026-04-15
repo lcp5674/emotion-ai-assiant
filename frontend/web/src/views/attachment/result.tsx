@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Tag, Row, Col, Progress, Spin, App, List } from 'antd'
-import { HeartOutlined, CheckCircleOutlined, BulbOutlined } from '@ant-design/icons'
+import { HeartOutlined, CheckCircleOutlined, BulbOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useAttachmentStore } from '../../stores'
 
@@ -98,6 +98,12 @@ export default function AttachmentResult() {
       </header>
 
       <div className="container" style={{ marginTop: -20 }}>
+        <div style={{ marginBottom: 16 }}>
+          <Link to="/attachment">
+            <Button icon={<ArrowLeftOutlined />}>返回测试</Button>
+          </Link>
+        </div>
+
         {/* Dimension Scores */}
         <Card style={{ marginBottom: 24 }}>
           <h3 style={{ marginBottom: 24 }}>依恋维度分析</h3>

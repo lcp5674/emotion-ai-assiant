@@ -3,8 +3,9 @@
  * 提供紧急求助资源和一键拨打功能
  */
 import { useEffect, useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { Card, List, Button, Tag, Typography, Space, Alert, Divider } from 'antd'
-import { PhoneOutlined, GlobalOutlined, WarningOutlined, HeartOutlined } from '@ant-design/icons'
+import { PhoneOutlined, GlobalOutlined, WarningOutlined, HeartOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import './index.css'
 
@@ -41,6 +42,11 @@ export default function CrisisPage() {
 
   return (
     <div className="crisis-container">
+      <div style={{ marginBottom: 16 }}>
+        <Link to="/">
+          <Button icon={<ArrowLeftOutlined />}>返回首页</Button>
+        </Link>
+      </div>
       <Card loading={loading} className="crisis-card">
         {resources && (
           <>

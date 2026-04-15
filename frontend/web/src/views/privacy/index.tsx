@@ -3,7 +3,9 @@
  * 明确告知用户数据隐私政策，增强信任
  */
 import { useEffect, useState } from 'react'
-import { Card, Typography, Divider, List, Tag, Space } from 'antd'
+import { Card, Typography, Divider, List, Tag, Space, Button } from 'antd'
+import { Link } from 'react-router-dom'
+import { ArrowLeftOutlined } from '@ant-design/icons'
 import { apiClient } from '../../api/request'
 import './index.css'
 
@@ -43,6 +45,11 @@ export default function PrivacyPage() {
 
   return (
     <div className="privacy-container">
+      <div style={{ marginBottom: 16 }}>
+        <Link to="/">
+          <Button icon={<ArrowLeftOutlined />}>返回首页</Button>
+        </Link>
+      </div>
       <Card className="privacy-card" loading={loading}>
         {privacy && (
           <>

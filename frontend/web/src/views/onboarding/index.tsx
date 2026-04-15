@@ -35,39 +35,73 @@ const steps = [
         <ul>
           <li>🗓️ 记录每日心情，追踪情绪变化</li>
           <li>🤖 随时倾诉，获得专业的情感支持</li>
-          <li>📊 数据分析，帮你更好地了解自己</li>
+          <li>📊 三大测评，全面了解自己</li>
           <li>🌱 在交流中持续成长，成为更好的自己</li>
         </ul>
       </div>
     ),
   },
   {
-    title: '认识自己',
-    description: '完成MBTI人格测评，开启自我探索之旅',
+    title: 'MBTI测评',
+    description: '完成48道人格测试',
     icon: <TrophyOutlined />,
     content: (
       <div className="onboarding-step">
         <BookOutlined className="step-icon" />
         <Title level={3}>MBTI人格测评</Title>
         <Paragraph>
-          通过MBTI测评，我们可以更好地了解你的性格特点，为你匹配最适合你的AI助手风格，提供更个性化的陪伴体验。
+          通过48道题目，了解你的性格特点，为你匹配最适合的AI助手风格。
         </Paragraph>
         <Text type="secondary">
-          测评大约需要5-10分钟，准备好了吗？
+          约5分钟，准备好了吗？
+        </Text>
+      </div>
+    ),
+  },
+  {
+    title: 'SBTI测评',
+    description: '完成48道才干测试',
+    icon: <TrophyOutlined />,
+    content: (
+      <div className="onboarding-step">
+        <BookOutlined className="step-icon" />
+        <Title level={3}>SBTI才干测评</Title>
+        <Paragraph>
+          发现你的核心才干，了解自己在关系中的优势与成长点。
+        </Paragraph>
+        <Text type="secondary">
+          约5分钟，这是了解自己的第二步
+        </Text>
+      </div>
+    ),
+  },
+  {
+    title: '依恋测评',
+    description: '完成10道依恋测试',
+    icon: <TrophyOutlined />,
+    content: (
+      <div className="onboarding-step">
+        <BookOutlined className="step-icon" />
+        <Title level={3}>依恋风格测评</Title>
+        <Paragraph>
+          了解你在亲密关系中的依恋风格，帮你更好地理解和经营关系。
+        </Paragraph>
+        <Text type="secondary">
+          约3分钟，这是了解自己的第三步
         </Text>
       </div>
     ),
   },
   {
     title: '开始倾诉',
-    description: '写下你的第一篇日记，开启情绪记录',
+    description: '写下你的第一篇日记',
     icon: <BookOutlined />,
     content: (
       <div className="onboarding-step">
         <MessageOutlined className="step-icon" />
         <Title level={3}>记录你的心情</Title>
         <Paragraph>
-          养成记录情绪的习惯，是自我觉察的第一步。写下你今天的感受，AI会帮你分析情绪变化，陪伴你成长。
+          养成记录情绪的习惯，是自我觉察的第一步。写下你今天的感受。
         </Paragraph>
         <Text type="secondary">
           日记内容完全私密，只有你自己可以查看。
@@ -77,14 +111,14 @@ const steps = [
   },
   {
     title: '开始对话',
-    description: '与AI助手开始第一次对话',
+    description: '与AI助手开始对话',
     icon: <MessageOutlined />,
     content: (
       <div className="onboarding-step">
         <MessageOutlined className="step-icon" />
         <Title level={3}>开始对话</Title>
         <Paragraph>
-          现在，你可以随时和AI助手聊天了。无论是开心还是难过，我们都在这里陪伴你。
+          现在，你可以随时和AI助手聊天了。无论是开心还是难过，我们都在这里。
         </Paragraph>
         <Text type="secondary">
           真诚的交流，带来真实的成长。
@@ -100,7 +134,7 @@ const steps = [
       <Result
         status="success"
         title="引导完成！"
-        subTitle="你已经完成了所有准备工作，现在可以开始使用情感AI助手了。愿你的每一天都越来越好。"
+        subTitle="你已完成全部三大测评，现在可以开始使用情感AI助手了。"
         extra={
           <Button type="primary" size="large" icon={<ArrowRightOutlined />}>
             开始使用
@@ -167,6 +201,14 @@ export default function OnboardingPage() {
     navigate('/mbti')
   }
 
+  const goToSbti = () => {
+    navigate('/sbti')
+  }
+
+  const goToAttachment = () => {
+    navigate('/attachment')
+  }
+
   const goToCreateDiary = () => {
     navigate('/diary/create')
   }
@@ -177,7 +219,6 @@ export default function OnboardingPage() {
 
   const isLastStep = current === steps.length - 1
 
-  // 根据当前步骤提供不同的操作按钮
   const getActionButtons = () => {
     if (current === 1) {
       return (
@@ -188,13 +229,43 @@ export default function OnboardingPage() {
             </Button>
           )}
           <Button type="primary" size="large" onClick={goToMbti}>
-            去测评 {<ArrowRightOutlined />}
+            开始MBTI {<ArrowRightOutlined />}
           </Button>
         </Space>
       )
     }
 
     if (current === 2) {
+      return (
+        <Space>
+          {current > 0 && (
+            <Button size="large" onClick={prev} icon={<ArrowLeftOutlined />}>
+              上一步
+            </Button>
+          )}
+          <Button type="primary" size="large" onClick={goToSbti}>
+            开始SBTI {<ArrowRightOutlined />}
+          </Button>
+        </Space>
+      )
+    }
+
+    if (current === 3) {
+      return (
+        <Space>
+          {current > 0 && (
+            <Button size="large" onClick={prev} icon={<ArrowLeftOutlined />}>
+              上一步
+            </Button>
+          )}
+          <Button type="primary" size="large" onClick={goToAttachment}>
+            开始依恋 {<ArrowRightOutlined />}
+          </Button>
+        </Space>
+      )
+    }
+
+    if (current === 4) {
       return (
         <Space>
           {current > 0 && (
@@ -209,7 +280,7 @@ export default function OnboardingPage() {
       )
     }
 
-    if (current === 3) {
+    if (current === 5) {
       return (
         <Space>
           {current > 0 && (

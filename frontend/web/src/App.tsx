@@ -26,6 +26,7 @@ const DiaryStats = lazy(() => import('./views/diary/stats'))
 const Onboarding = lazy(() => import('./views/onboarding'))
 const PrivacyPage = lazy(() => import('./views/privacy'))
 const CrisisPage = lazy(() => import('./views/crisis'))
+const AchievementsPage = lazy(() => import('./views/achievements'))
 // SBTI
 const SbtiIndex = lazy(() => import('./views/sbti'))
 const SbtiTest = lazy(() => import('./views/sbti/test'))
@@ -72,6 +73,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/crisis" element={<CrisisPage />} />
+      <Route path="/achievements" element={<AchievementsPage />} />
 
       {/* SBTI */}
       <Route path="/sbti" element={<SbtiIndex />} />

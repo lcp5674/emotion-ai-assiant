@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Card, Row, Col, Tag, Alert, Dropdown, Space } from 'antd'
-import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ShakeOutlined, BankOutlined, ToolOutlined, SettingOutlined } from '@ant-design/icons'
+import { Button, Card, Row, Col, Tag, Alert, Dropdown, Space, Progress } from 'antd'
+import { HeartOutlined, CalendarOutlined, MessageOutlined, BookOutlined, TeamOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ShakeOutlined, BankOutlined, ToolOutlined, SettingOutlined, CrownOutlined, TrophyOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore } from '../stores'
 import { useTheme } from '../hooks/useTheme'
@@ -69,6 +69,13 @@ export default function Home() {
       desc: '选择你喜欢的AI情感助手',
       path: '/assistants',
       gradient: ['#34d399', '#14b8a6'],
+    },
+    {
+      icon: <TrophyOutlined />,
+      title: '成就徽章',
+      desc: '查看你的成长成就',
+      path: '/achievements',
+      gradient: ['#fa8c16', '#f56c2d'],
     },
   ]
 
@@ -394,6 +401,41 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* User Progress Section - Only show for authenticated users */}
+      {isAuthenticated && (
+        <section style={{ padding: '40px 0', background: '#f8f9ff' }}>
+          <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+            <Card style={{ borderRadius: 16 }}>
+              <Row gutter={[24, 24]} align="middle">
+                <Col xs={24} md={16}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <CrownOutlined style={{ fontSize: 40, color: themeColors[themeColor] }} />
+                    <div>
+                      <h3 style={{ margin: '0 0 8px' }}>你的成长进度</h3>
+                      <p style={{ color: '#6b7280', margin: 0 }}>
+                        完成三大测评，获得完整的AI个性化陪伴
+                      </p>
+                    </div>
+                  </div>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Link to="/profile/deep">
+                    <Button type="primary" size="large" style={{ 
+                      background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
+                      border: 'none',
+                      borderRadius: 24,
+                      padding: '8px 32px'
+                    }}>
+                     查看深度画像
+                    </Button>
+                  </Link>
+                </Col>
+              </Row>
+            </Card>
+          </div>
+        </section>
+      )}
 
       {/* Features */}
       <section style={{ padding: '100px 0', background: '#fff' }}>

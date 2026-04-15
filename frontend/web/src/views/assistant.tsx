@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Row, Col, Tag, Input, Spin, Button, App } from 'antd'
-import { SearchOutlined, HeartOutlined, MessageOutlined } from '@ant-design/icons'
+import { Link } from 'react-router-dom'
+import { SearchOutlined, HeartOutlined, MessageOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 
 interface Assistant {
@@ -74,6 +75,12 @@ export default function AssistantSquare() {
       </header>
 
       <div className="container" style={{ padding: '24px 16px' }}>
+        <div style={{ marginBottom: 16 }}>
+          <Link to="/">
+            <Button icon={<ArrowLeftOutlined />}>返回首页</Button>
+          </Link>
+        </div>
+
         {/* Search & Filter */}
         <Card style={{ marginBottom: 24 }}>
           <Row gutter={[16, 16]} align="middle">

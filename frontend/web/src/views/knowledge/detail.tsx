@@ -91,6 +91,12 @@ export default function ArticleDetail() {
       </header>
 
       <div className="container" style={{ padding: '24px 16px' }}>
+        <div style={{ marginBottom: 16 }}>
+          <Link to="/knowledge">
+            <Button icon={<ArrowLeftOutlined />}>返回列表</Button>
+          </Link>
+        </div>
+
         <Card>
           {/* Title */}
           <h1 style={{ fontSize: 28, marginBottom: 16 }}>{article.title}</h1>
