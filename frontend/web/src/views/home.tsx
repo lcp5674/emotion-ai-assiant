@@ -36,18 +36,38 @@ export default function Home() {
     {
       icon: <BankOutlined />,
       title: 'MBTI人格测试',
-      desc: '专业48题MBTI测试，了解真实的自己',
+      desc: '16型人格深度解析，了解真实的自己',
       path: '/mbti',
       tag: '推荐',
       gradient: ['#6366f1', '#a855f7'],
+      shortDesc: '发现你的性格优势',
     },
     {
       icon: <ToolOutlined />,
+      title: 'SBTI甜蜜测评',
+      desc: '解读你的恋爱风格，找到理想伴侣',
+      path: '/sbti',
+      tag: '热门',
+      gradient: ['#f472b6', '#ec4899'],
+      shortDesc: '了解你的恋爱模式',
+    },
+    {
+      icon: <UserOutlined />,
+      title: '依恋风格测评',
+      desc: '分析你的依恋类型，建立健康关系',
+      path: '/attachment',
+      tag: '专业',
+      gradient: ['#34d399', '#14b8a6'],
+      shortDesc: '认识你的依恋模式',
+    },
+    {
+      icon: <CalendarOutlined />,
       title: '情感日记',
       desc: '记录心情变化，追踪情绪成长',
       path: '/diary',
       tag: '新功能',
       gradient: ['#f472b6', '#ec4899'],
+      shortDesc: '记录成长足迹',
     },
     {
       icon: <MessageOutlined />,
@@ -55,6 +75,7 @@ export default function Home() {
       desc: '智能AI助手，24小时倾听与陪伴',
       path: '/assistants',
       gradient: ['#60a5fa', '#22d3ee'],
+      shortDesc: '随时随地陪伴',
     },
     {
       icon: <BookOutlined />,
@@ -62,20 +83,7 @@ export default function Home() {
       desc: '海量心理学知识，助你自我成长',
       path: '/knowledge',
       gradient: ['#fbbf24', '#f97316'],
-    },
-    {
-      icon: <TeamOutlined />,
-      title: '助手广场',
-      desc: '选择你喜欢的AI情感助手',
-      path: '/assistants',
-      gradient: ['#34d399', '#14b8a6'],
-    },
-    {
-      icon: <TrophyOutlined />,
-      title: '成就徽章',
-      desc: '查看你的成长成就',
-      path: '/achievements',
-      gradient: ['#fa8c16', '#f56c2d'],
+      shortDesc: '学习心理知识',
     },
   ]
 
@@ -341,11 +349,63 @@ export default function Home() {
               color: '#6b7280',
               lineHeight: '1.6',
             }}>
-              基于MBTI人格测试，匹配最适合你的AI情感助手
-              随时随地倾听你的心声，陪伴你成长
-            </p>
+              三位一体深度测评：MBTI人格 + SBTI恋爱风格 + 依恋类型<br/>
+              全面认识自己，找到最懂你的AI情感伴侣
+</p>
+            {/* 三大测评入口 */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+              <Link to="/mbti/quick">
+                <Button
+                  size="large"
+                  style={{
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '24px',
+                    padding: '10px 28px',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                  }}
+                >
+                  🔥 MBTI人格
+                </Button>
+              </Link>
+              <Link to="/sbti">
+                <Button
+                  size="large"
+                  style={{
+                    background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '24px',
+                    padding: '10px 28px',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                  }}
+                >
+                  💕 SBTI恋爱
+                </Button>
+              </Link>
+              <Link to="/attachment">
+                <Button
+                  size="large"
+                  style={{
+                    background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '24px',
+                    padding: '10px 28px',
+                    fontSize: '15px',
+                    fontWeight: 600,
+                  }}
+                >
+                  💙 依恋风格
+                </Button>
+              </Link>
+            </div>
+            
             <div style={{ display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap' }}>
-              <Link to="/mbti">
+              <Link to="/profile/deep">
                 <Button
                   size="large"
                   style={{
@@ -357,18 +417,9 @@ export default function Home() {
                     fontSize: '16px',
                     fontWeight: 600,
                     boxShadow: `0 6px 20px ${themeColors[themeColor]}40`,
-                    transition: 'all 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = `0 8px 25px ${themeColors[themeColor]}50`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = `0 6px 20px ${themeColors[themeColor]}40`;
                   }}
                 >
-                  开始测试
+                  查看完整画像
                 </Button>
               </Link>
               <Link to="/assistants">
@@ -382,16 +433,6 @@ export default function Home() {
                     padding: '12px 40px',
                     fontSize: '16px',
                     fontWeight: 600,
-                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
-                    transition: 'all 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-3px)';
-                    e.currentTarget.style.boxShadow = `0 4px 15px ${themeColors[themeColor]}20`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.05)';
                   }}
                 >
                   探索助手
@@ -436,6 +477,124 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Three-in-One Assessment Section */}
+      <section style={{ padding: '80px 0', background: 'linear-gradient(180deg, #f8fafc 0%, #fff 100%)' }}>
+        <div className="container" style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '0 24px',
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{
+              fontSize: 'clamp(28px, 4vw, 36px)',
+              fontWeight: 700,
+              marginBottom: 16,
+              color: '#1f2937',
+            }}>
+              🔮 三位一体深度画像
+            </h2>
+            <p style={{
+              fontSize: '18px',
+              color: '#6b7280',
+              maxWidth: '700px',
+              margin: '0 auto',
+            }}>
+              从MBTI人格、SBTI恋爱风格、依恋类型三个维度<br/>
+              全面解析你的性格特点、情感需求与人际关系模式
+            </p>
+          </div>
+          
+          <Row gutter={[32, 24]} justify="center">
+            <Col xs={24} lg={7}>
+              <Card
+                style={{
+                  borderRadius: '20px',
+                  border: 'none',
+                  boxShadow: '0 8px 30px rgba(99, 102, 241, 0.15)',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                }}
+              >
+                <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
+                  <div style={{ fontSize: 40, marginBottom: 16 }}>🔱</div>
+                  <h3 style={{ color: '#fff', fontSize: 22, marginBottom: 12 }}>MBTI人格测评</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
+                    16种人格类型<br/>
+                    发现你的性格优势与成长点<br/>
+                    <span style={{ fontWeight: 600, marginTop: 12, display: 'block' }}>
+                      适合你的AI助手类型
+                    </span>
+                  </p>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} lg={7}>
+              <Card
+                style={{
+                  borderRadius: '20px',
+                  border: 'none',
+                  boxShadow: '0 8px 30px rgba(244, 114, 182, 0.15)',
+                  background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
+                }}
+              >
+                <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
+                  <div style={{ fontSize: 40, marginBottom: 16 }}>💕</div>
+                  <h3 style={{ color: '#fff', fontSize: 22, marginBottom: 12 }}>SBTI恋爱风格</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
+                    34种恋爱类型<br/>
+                    解读你的恋爱模式<br/>
+                    <span style={{ fontWeight: 600, marginTop: 12, display: 'block' }}>
+                      找到理想伴侣类型
+                    </span>
+                  </p>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} lg={7}>
+              <Card
+                style={{
+                  borderRadius: '20px',
+                  border: 'none',
+                  boxShadow: '0 8px 30px rgba(52, 211, 153, 0.15)',
+                  background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)',
+                }}
+              >
+                <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
+                  <div style={{ fontSize: 40, marginBottom: 16 }}>💙</div>
+                  <h3 style={{ color: '#fff', fontSize: 22, marginBottom: 12 }}>依恋风格测评</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
+                    4种依恋类型<br/>
+                    认识你的依恋模式<br/>
+                    <span style={{ fontWeight: 600, marginTop: 12, display: 'block' }}>
+                      建立健康关系
+                    </span>
+                  </p>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+          
+          <div style={{ textAlign: 'center', marginTop: 40 }}>
+            <Link to="/profile/deep">
+              <Button
+                size="large"
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '28px',
+                  padding: '14px 48px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  boxShadow: '0 8px 25px rgba(99, 102, 241, 0.3)',
+                }}
+              >
+                开始三位一体测评
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Features */}
       <section style={{ padding: '100px 0', background: '#fff' }}>

@@ -1,10 +1,11 @@
+
 """
 深度画像API
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 import json
 import loguru
 
@@ -30,15 +31,20 @@ from app.api.deps import get_current_user
 router = APIRouter(prefix="/profile", tags=["深度画像"])
 
 
-@router.get("/deep", summary="获取三位一体深度画像")
-async def get_deep_profile(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """获取MBTI + SBTI + 依恋风格三位一体的深度画像"""
-    profile_service = get_profile_service()
+def _get_user_assessment_results(
+    current_user: User,
+    db: Session
+) -> Tuple[Optional[MbtiResult], Optional[SBTIResult], Optional[AttachmentResult]]:
+    """
+    获取用户的测评结果（私有辅助函数，消除代码重复）
     
-    # 获取各模块结果
+    Args:
+        current_user: 当前用户
+        db: 数据库会话
+        
+    Returns:
+        (mbti_result, sbti_result, attachment_result) 三元组
+    """
     mbti_result = None
     sbti_result = None
     attachment_result = None
@@ -60,7 +66,25 @@ async def get_deep_profile(
             AttachmentResult.is_latest == True
         ).first()
     
-    # 计算完成状态
+    return mbti_result, sbti_result, attachment_result
+
+
+def _calculate_completion_status(
+    mbti_result: Optional[MbtiResult],
+    sbti_result: Optional[SBTIResult],
+    attachment_result: Optional[AttachmentResult]
+) -> Tuple[CompletionStatus, int]:
+    """
+    计算测评完成状态和百分比（私有辅助函数）
+    
+    Args:
+        mbti_result: MBTI结果
+        sbti_result: SBTI结果
+        attachment_result: 依恋风格结果
+        
+    Returns:
+        (completion_status, completion_percentage) 二元组
+    """
     completed_count = sum([
         mbti_result is not None,
         sbti_result is not None,
@@ -75,6 +99,25 @@ async def get_deep_profile(
         completion_status = CompletionStatus.COMPLETE
     else:
         completion_status = CompletionStatus.PARTIAL
+    
+    return completion_status, completion_percentage
+
+
+@router.get("/deep", summary="获取三位一体深度画像")
+async def get_deep_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取MBTI + SBTI + 依恋风格三位一体的深度画像"""
+    profile_service = get_profile_service()
+    
+    # 获取各模块结果（使用重构后的函数）
+    mbti_result, sbti_result, attachment_result = _get_user_assessment_results(current_user, db)
+    
+    # 计算完成状态（使用重构后的函数）
+    completion_status, completion_percentage = _calculate_completion_status(
+        mbti_result, sbti_result, attachment_result
+    )
     
     # 构建画像
     profile = profile_service.build_profile(
@@ -112,27 +155,8 @@ async def generate_profile(
     
     profile_service = get_profile_service()
     
-    # 获取各模块结果
-    mbti_result = None
-    sbti_result = None
-    attachment_result = None
-    
-    if hasattr(current_user, 'mbti_result_id') and current_user.mbti_result_id:
-        mbti_result = db.query(MbtiResult).filter(
-            MbtiResult.id == current_user.mbti_result_id
-        ).first()
-    
-    if hasattr(current_user, 'sbti_result_id') and current_user.sbti_result_id:
-        sbti_result = db.query(SBTIResult).filter(
-            SBTIResult.user_id == current_user.id,
-            SBTIResult.is_latest == True
-        ).first()
-    
-    if hasattr(current_user, 'attachment_result_id') and current_user.attachment_result_id:
-        attachment_result = db.query(AttachmentResult).filter(
-            AttachmentResult.user_id == current_user.id,
-            AttachmentResult.is_latest == True
-        ).first()
+    # 获取各模块结果（使用重构后的函数）
+    mbti_result, sbti_result, attachment_result = _get_user_assessment_results(current_user, db)
     
     # 检查是否至少有一个测评完成
     if not any([mbti_result, sbti_result, attachment_result]):
@@ -141,21 +165,10 @@ async def generate_profile(
             detail="请至少完成一个测评后再生成画像",
         )
     
-    # 计算完成状态
-    completed_count = sum([
-        mbti_result is not None,
-        sbti_result is not None,
-        attachment_result is not None,
-    ])
-    
-    completion_percentage = int(completed_count / 3 * 100)
-    
-    if completed_count == 0:
-        completion_status = CompletionStatus.PENDING
-    elif completed_count == 3:
-        completion_status = CompletionStatus.COMPLETE
-    else:
-        completion_status = CompletionStatus.PARTIAL
+    # 计算完成状态（使用重构后的函数）
+    completion_status, completion_percentage = _calculate_completion_status(
+        mbti_result, sbti_result, attachment_result
+    )
     
     # 构建画像
     profile = profile_service.build_profile(
@@ -186,27 +199,8 @@ async def get_profile_summary(
     """获取简短画像摘要，用于对话上下文"""
     profile_service = get_profile_service()
     
-    # 获取各模块结果
-    mbti_result = None
-    sbti_result = None
-    attachment_result = None
-    
-    if hasattr(current_user, 'mbti_result_id') and current_user.mbti_result_id:
-        mbti_result = db.query(MbtiResult).filter(
-            MbtiResult.id == current_user.mbti_result_id
-        ).first()
-    
-    if hasattr(current_user, 'sbti_result_id') and current_user.sbti_result_id:
-        sbti_result = db.query(SBTIResult).filter(
-            SBTIResult.user_id == current_user.id,
-            SBTIResult.is_latest == True
-        ).first()
-    
-    if hasattr(current_user, 'attachment_result_id') and current_user.attachment_result_id:
-        attachment_result = db.query(AttachmentResult).filter(
-            AttachmentResult.user_id == current_user.id,
-            AttachmentResult.is_latest == True
-        ).first()
+    # 获取各模块结果（使用重构后的函数）
+    mbti_result, sbti_result, attachment_result = _get_user_assessment_results(current_user, db)
     
     # 生成摘要
     summary = profile_service.generate_summary(
@@ -283,3 +277,4 @@ async def get_ai_partners(
         total=len(partners),
         list=partners,
     )
+

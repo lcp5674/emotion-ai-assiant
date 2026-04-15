@@ -545,3 +545,69 @@ async def seed_assistants(db: Session) -> None:
             await cache_assistants(type_assistants, mbti_type)
     
     print(f"已初始化 {len(AI_ASSISTANTS_DATA)} 个AI助手")
+
+
+# ==================== 快速版MBTI测试（12题）====================
+
+QUICK_MBTI_QUESTIONS = [
+    {"dimension": "EI", "text": "在社交聚会中，你通常？", "a": "和很多人交流，感觉很自在", "b": "只和熟悉的几个人聊天"},
+    {"dimension": "EI", "text": "当你遇到问题时，你倾向于？", "a": "找朋友倾诉讨论", "b": "独自思考解决"},
+    {"dimension": "EI", "text": "面对新工作环境，你会？", "a": "主动认识新同事", "b": "等别人来认识我"},
+    {"dimension": "SN", "text": "你更关注事物的？", "a": "具体的事实和细节", "b": "可能性和整体印象"},
+    {"dimension": "SN", "text": "学习新东西时，你喜欢？", "a": "亲自动手实践", "b": "先理解理论原理"},
+    {"dimension": "SN", "text": "当别人描述一件事，你会？", "a": "记住具体细节", "b": "记住整体感觉"},
+    {"dimension": "TF", "text": "做决定时，你更看重？", "a": "逻辑和公正", "b": "对他人的影响"},
+    {"dimension": "TF", "text": "当别人犯错时，你会？", "a": "直接指出问题", "b": "考虑对方感受"},
+    {"dimension": "TF", "text": "你更容易被什么说服？", "a": "数据和逻辑", "b": "感情和价值"},
+    {"dimension": "JP", "text": "你更喜欢的生活方式是？", "a": "有计划有安排", "b": "灵活随性"},
+    {"dimension": "JP", "text": "面对截止日期，你会？", "a": "提前完成", "b": "最后一刻完成"},
+    {"dimension": "JP", "text": "你的工作习惯是？", "a": "列清单，按优先级", "b": "随做随学，灵活调整"},
+]
+
+
+def get_quick_questions() -> List[Dict]:
+    """获取快速版MBTI题目（12题）"""
+    return [
+        {"question_id": i, "dimension": q["dimension"], "text": q["text"], "option_a": q["a"], "option_b": q["b"]}
+        for i, q in enumerate(QUICK_MBTI_QUESTIONS)
+    ]
+
+
+def calculate_quick_result(answers: List[Dict]) -> Dict:
+    """计算快速版MBTI结果
+    
+    12题版本：每维度3题，每题+1(A)或-1(B)
+    分数规则：
+    - 得分 > 0: 选择A端的类型 (E/S/T/J)
+    - 得分 <= 0: 选择B端的类型 (I/N/F/P)
+    - 注意：如果回答数量少于12题，可能出现0分，此时默认B端
+    """
+    scores = {"EI": 0, "SN": 0, "TF": 0, "JP": 0}
+    
+    for answer in answers:
+        q_idx = answer.get("question_id", 0)
+        # 验证题目索引有效性
+        if q_idx < 0 or q_idx >= len(QUICK_MBTI_QUESTIONS):
+            loguru.logger.warning(f"无效题目索引: {q_idx}")
+            continue
+        q = QUICK_MBTI_QUESTIONS[q_idx]
+        dimension = q["dimension"]
+        # 答案转换为标准格式
+        user_answer = answer.get("answer", "").upper()
+        if user_answer == "A":
+            scores[dimension] += 1
+        elif user_answer == "B":
+            scores[dimension] -= 1
+        else:
+            loguru.logger.warning(f"无效答案: {answer.get('answer')}")
+    
+    # 确定MBTI类型
+    mbti_type = ""
+    mbti_type += "E" if scores["EI"] > 0 else "I"
+    mbti_type += "S" if scores["SN"] > 0 else "N"
+    mbti_type += "T" if scores["TF"] > 0 else "F"
+    mbti_type += "J" if scores["JP"] > 0 else "P"
+    
+    loguru.logger.info(f"快速MBTI结果: {mbti_type}, 分数: {scores}, 回答数: {len(answers)}")
+    
+    return {"mbti_type": mbti_type, "scores": scores}

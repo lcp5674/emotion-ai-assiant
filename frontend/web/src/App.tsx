@@ -57,6 +57,7 @@ function AppRoutes() {
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
       <Route path="/mbti" element={<MbtiTest />} />
+      <Route path="/mbti/quick" element={<MbtiTest />} />
       <Route path="/mbti/result" element={<MbtiResult />} />
       <Route path="/chat" element={<Chat />} />
       <Route path="/chat/:sessionId" element={<Chat />} />

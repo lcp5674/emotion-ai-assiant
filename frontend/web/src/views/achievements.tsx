@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Row, Col, Progress, Spin, Empty, Badge, Button, List } from 'antd'
 import { TrophyOutlined, CrownOutlined, StarOutlined, FireOutlined, ArrowLeftOutlined, LockOutlined } from '@ant-design/icons'
-import { api } from '../../api/request'
-import { useAuthStore } from '../../stores'
+import { api, apiClient } from '../api/request'
+import { useAuthStore } from '../stores'
 
 interface Badge {
   id: number
@@ -38,8 +38,8 @@ export default function AchievementsPage() {
   const fetchAchievements = async () => {
     try {
       const [badgesRes, levelRes] = await Promise.all([
-        api.get('/growth/badges/user'),
-        api.get('/growth/level'),
+        apiClient.get('/growth/badges/user'),
+        apiClient.get('/growth/level'),
       ])
       setBadges(badgesRes || [])
       setUserLevel(levelRes)

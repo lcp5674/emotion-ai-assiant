@@ -32,7 +32,34 @@ export default function PaymentPage() {
 
   const loadPlans = async () => {
     try {
-      const res = await apiClient.get('/payment/plans')
+      // 优先从member接口获取套餐
+      let res
+      try {
+        res = await apiClient.get('/member/prices')
+        if (res.list && res.list.length > 0) {
+          // 转换为Payment页面需要的格式
+          setPlans(res.list.map(p => ({
+            id: p.level,
+            name: p.name,
+            display_name: p.name,
+            description: p.description || '',
+            price: p.price / 100, // 分转元
+            duration_days: p.duration,
+            features: p.features || [],
+            popular: p.level === 'svip',
+          })))
+          if (res.list.length > 0) {
+            setSelectedPlan(res.list[0].level)
+          }
+          setLoading(false)
+          return
+        }
+      } catch (e) {
+        console.log('member接口不可用，使用payment接口')
+      }
+      
+      // 备用：从payment接口获取
+      res = await apiClient.get('/payment/plans')
       setPlans(res.data.plans)
       if (res.data.plans.length > 0) {
         setSelectedPlan(res.data.plans[0].id)
@@ -67,10 +94,19 @@ export default function PaymentPage() {
     }
 
     try {
-      // 这里实际项目中可以跳转到支付页面或调用支付接口
-      message.info(`即将购买${plan.display_name}，价格 ¥${plan.price}`)
-      // TODO: 实际支付逻辑需要对接支付网关
-      // 比如微信支付、支付宝等，这里先留空
+      message.info(`正在创建订单...`)
+      
+      // 调用支付宝网页支付接口
+      const res = await apiClient.post('/payment/alipay/page', {
+        level: selectedPlan,
+      })
+      
+      if (res.data.pay_url) {
+        // 跳转到支付页面
+        window.location.href = res.data.pay_url
+      } else {
+        message.error('支付页面创建失败')
+      }
     } catch (error) {
       console.error('购买失败', error)
       message.error('购买失败，请重试')

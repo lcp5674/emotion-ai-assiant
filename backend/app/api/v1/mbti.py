@@ -214,3 +214,61 @@ async def get_assistant(
         )
 
     return AiAssistantSchema.model_validate(assistant)
+
+
+# ==================== 快速版MBTI测试（12题）====================
+
+@router.get("/quick/questions", summary="获取快速版测试题目")
+async def get_quick_questions():
+    """获取12题快速MBTI测试"""
+    from app.services.mbti_service import get_quick_questions
+    questions = get_quick_questions()
+    return {"total": len(questions), "questions": questions}
+
+
+@router.post("/quick/submit", summary="提交快速版测试答案")
+async def submit_quick_test(
+    request: MbtiTestSubmit,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """提交快速版MBTI测试答案"""
+    from app.services.mbti_service import calculate_quick_result, get_quick_questions
+    
+    # 验证题目数量
+    questions = get_quick_questions()
+    if len(request.answers) != len(questions):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"请回答所有{len(questions)}道题目"
+        )
+    
+    # 计算结果
+    result = calculate_quick_result([a.model_dump() for a in request.answers])
+    
+    # 保存到数据库（复用完整版逻辑）
+    from app.models.mbti import MbtiType
+    mbti_result = MbtiResult(
+        user_id=current_user.id,
+        mbti_type=MbtiType[result["mbti_type"]],
+        ei_score=result["scores"]["EI"],
+        sn_score=result["scores"]["SN"],
+        tf_score=result["scores"]["TF"],
+        jp_score=result["scores"]["JP"],
+        report_json=str(result),
+    )
+    db.add(mbti_result)
+    db.flush()
+    
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if user:
+        user.mbti_type = MbtiType[result["mbti_type"]]
+        user.mbti_result_id = mbti_result.id
+        db.commit()
+        db.refresh(user)
+    else:
+        db.commit()
+    
+    db.refresh(mbti_result)
+    
+    return {"mbti_type": result["mbti_type"], "scores": result["scores"]}

@@ -5,6 +5,29 @@ import { CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, Shar
 import { api } from '../../api/request'
 import { useMbtiStore, useAuthStore } from '../../stores'
 
+// MBTI类型描述映射
+const getMbtiDescription = (mbtiType: string | undefined): string => {
+  const descriptions: Record<string, string> = {
+    'ISTJ': '沉默务实，注重责任和传统，擅长逻辑分析。',
+    'ISFJ': '温柔体贴，忠诚可靠，总是默默照顾他人。',
+    'INFJ': '理想主义，有洞察力，追求意义和价值。',
+    'INTJ': '独立思考，战略眼光，追求知识和能力。',
+    'ISTP': '冷静观察，灵活应变，擅长实际操作。',
+    'ISFP': '温柔敏感，追求美感，享受当下。',
+    'INFP': '理想主义，内心丰富，寻求真实和意义。',
+    'INTP': '理性思考，爱因斯坦型人格，善于分析。',
+    'ESTP': '大胆行动，灵活变通，勇于尝试。',
+    'ESFP': '热情活力，热爱社交，享受生活。',
+    'ENFP': '热情洋溢，创意无限，善于激励他人。',
+    'ENTP': '聪明机智，喜欢辩论，敢于挑战。',
+    'ESTJ': '务实高效，果断决策，注重结果。',
+    'ESFJ': '热情助人，善于社交，照顾他人感受。',
+    'ENFJ': '天生的领导者，善于激励和启发他人。',
+    'ENTJ': '果断决策，目标导向，擅长战略规划。',
+  }
+  return descriptions[mbtiType || ''] || '探索中...'
+}
+
 export default function MbtiResult() {
   const navigate = useNavigate()
   const { result, setResult } = useMbtiStore()

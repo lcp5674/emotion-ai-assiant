@@ -931,3 +931,12 @@ class SBTIService:
                 "weight_b": 1,
             },
         ]
+_sbti_service: Optional["SBTIService"] = None
+
+
+def get_sbti_service() -> "SBTIService":
+    """获取SBTI服务实例"""
+    global _sbti_service
+    if _sbti_service is None:
+        _sbti_service = SBTIService()
+    return _sbti_service

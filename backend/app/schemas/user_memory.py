@@ -52,7 +52,7 @@ class UserMemoryResponse(BaseModel):
     last_accessed_at: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserMemoryListResponse(BaseModel):
@@ -94,7 +94,7 @@ class MemoryInsightResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ============ 用户偏好 ============

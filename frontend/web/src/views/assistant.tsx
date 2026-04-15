@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Row, Col, Tag, Input, Spin, Button, App } from 'antd'
-import { Link } from 'react-router-dom'
 import { SearchOutlined, HeartOutlined, MessageOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 

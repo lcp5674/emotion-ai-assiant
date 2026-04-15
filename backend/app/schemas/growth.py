@@ -21,7 +21,7 @@ class BadgeInfo(BaseModel):
     is_hidden: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserBadgeInfo(BaseModel):
@@ -65,7 +65,7 @@ class ExpRecordResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class GrowthTaskResponse(BaseModel):
@@ -86,7 +86,7 @@ class GrowthTaskResponse(BaseModel):
     completed_at: Optional[datetime]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SetBadgeDisplayRequest(BaseModel):

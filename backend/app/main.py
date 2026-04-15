@@ -90,12 +90,13 @@ try:
 except ImportError:
     loguru.logger.warning("限流中间件加载失败")
 
-# 安全头中间件（暂时禁用，避免CSP头问题）
-# try:
-#     from app.middleware.security import SecurityHeadersMiddleware
-#     app.add_middleware(SecurityHeadersMiddleware)
-# except ImportError:
-#     loguru.logger.warning("安全头中间件加载失败")
+# 安全头中间件 - 已启用
+try:
+    from app.middleware.security import SecurityHeadersMiddleware
+    app.add_middleware(SecurityHeadersMiddleware)
+    loguru.logger.info("安全头中间件已启用")
+except ImportError:
+    loguru.logger.warning("安全头中间件加载失败")
 
 # 请求大小限制中间件
 try:
@@ -156,6 +157,19 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
+    from fastapi.responses import JSONResponse
+    from fastapi import Request
+    
+    # 全局异常处理器
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        """全局异常处理"""
+        loguru.logger.error(f"未处理的异常: {exc}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "服务器内部错误", "message": str(exc)[:200]},
+        )
+    
     uvicorn.run(
         "app.main:app",
         host=settings.HOST,

@@ -55,29 +55,30 @@ request.interceptors.response.use(
       switch (status) {
         case 401:
           // token过期，清除并跳转登录
-          // 优化：使用try-catch确保清理逻辑完善
           try {
             localStorage.removeItem('access_token')
             localStorage.removeItem('refresh_token')
           } catch (error) {
             console.warn('Token清理失败')
           }
-          // 只在前端没有检查登录状态时才跳转
-          // 不返回Promise.reject，避免错误传播到前端
+          // 跳转到登录页，并抛出错误让调用方处理
           window.location.href = '/login'
-          // 直接返回，不返回任何值
-          return new Promise(() => {})
+          return Promise.reject(new Error('Unauthorized: Token已过期，请重新登录'))
         case 404:
-          // 资源不存在，返回空对象
-          return Promise.resolve({})
+          // 资源不存在，返回404错误
+          return Promise.reject(new Error('Not Found: 资源不存在'))
+        case 500:
+          // 服务器错误
+          return Promise.reject(new Error('Server Error: 服务器内部错误'))
         default:
           // 其他错误，返回错误对象
-          return Promise.reject(error)
+          const errorMessage = response.data?.message || '请求失败'
+          return Promise.reject(new Error(errorMessage))
       }
     }
 
     // 网络错误，返回错误对象
-    return Promise.reject(error)
+    return Promise.reject(new Error('Network Error: 网络连接失败，请检查网络'))
   }
 )
 
