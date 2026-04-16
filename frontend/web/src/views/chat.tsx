@@ -611,7 +611,7 @@ export default function Chat() {
                       {currentAssistant?.name?.[0] || 'AI'}
                     </Avatar>
                   )}
-                  <div style={{ maxWidth: isMobile ? '80%' : '70%', width: '100%' }}>
+                  <div style={{ maxWidth: isMobile ? '85%' : '70%' }}>
                     {/* 助手名称 */}
                     {msg.role === 'assistant' && currentAssistant && (
                       <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4 }}>{currentAssistant.name}</div>
@@ -620,7 +620,7 @@ export default function Chat() {
                     {msg.role === 'user' && (
                       <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4, textAlign: 'right' }}>{user?.nickname || '我'}</div>
                     )}
-                    {/* 消息气泡 */}
+                    {/* 消息气泡 - 根据内容自适应宽度 */}
                     <div style={{
                       padding: '10px 14px',
                       borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
@@ -633,7 +633,8 @@ export default function Chat() {
                       textAlign: 'left',
                       lineHeight: 1.6,
                       fontSize: 14,
-                      maxWidth: '75%',
+                      display: 'inline-block',
+                      maxWidth: '100%',
                     }}>
                       {msg.content || '...'}
                     </div>
