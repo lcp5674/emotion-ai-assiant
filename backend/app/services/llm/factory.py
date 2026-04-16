@@ -146,6 +146,12 @@ def _create_provider(provider_name: str) -> Optional[LLMProvider]:
                 api_key=getattr(settings, 'LINGYI_API_KEY', None) or "",
                 model=getattr(settings, 'LINGYI_MODEL', 'yi-medium'),
             )
+        elif provider_name == "mock":
+            # Mock Provider - 用于测试和开发
+            return provider_class(
+                api_key="mock",
+                model="mock",
+            )
     except Exception as e:
         loguru.logger.error(f"Failed to create provider {provider_name}: {e}")
         return None
