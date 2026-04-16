@@ -602,7 +602,7 @@ export default function Chat() {
                     gap: 8,
                   }}
                 >
-                  {/* 助手消息：头像在左 */}
+                  {/* 头像在左 */}
                   {msg.role === 'assistant' && (
                     <Avatar
                       src={currentAssistant?.avatar}
@@ -611,12 +611,19 @@ export default function Chat() {
                       {currentAssistant?.name?.[0] || 'AI'}
                     </Avatar>
                   )}
+                  {msg.role === 'user' && (
+                    <Avatar
+                      src={user?.avatar}
+                      style={{ background: '#722ed1', flexShrink: 0 }}
+                    >
+                      {user?.nickname?.[0] || user?.phone?.[0] || '我'}
+                    </Avatar>
+                  )}
                   <div style={{ maxWidth: isMobile ? '85%' : '70%', flexShrink: 0 }}>
-                    {/* 助手名称 */}
+                    {/* 名称 */}
                     {msg.role === 'assistant' && currentAssistant && (
                       <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4 }}>{currentAssistant.name}</div>
                     )}
-                    {/* 用户名称 */}
                     {msg.role === 'user' && (
                       <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4, textAlign: 'right' }}>{user?.nickname || '我'}</div>
                     )}
@@ -655,15 +662,6 @@ export default function Chat() {
                       })}
                     </div>
                   </div>
-                  {/* 用户头像在右 */}
-                  {msg.role === 'user' && (
-                    <Avatar
-                      src={user?.avatar}
-                      style={{ background: '#722ed1', flexShrink: 0 }}
-                    >
-                      {user?.nickname?.[0] || user?.phone?.[0] || '我'}
-                    </Avatar>
-                  )}
                 </div>
               ))}
               
