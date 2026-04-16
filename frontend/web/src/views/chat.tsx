@@ -611,7 +611,7 @@ export default function Chat() {
                       {currentAssistant?.name?.[0] || 'AI'}
                     </Avatar>
                   )}
-                  <div style={{ maxWidth: isMobile ? '85%' : '70%' }}>
+                  <div style={{ maxWidth: isMobile ? '85%' : '70%', flexShrink: 0 }}>
                     {/* 助手名称 */}
                     {msg.role === 'assistant' && currentAssistant && (
                       <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4 }}>{currentAssistant.name}</div>
