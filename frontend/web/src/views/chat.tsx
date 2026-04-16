@@ -492,33 +492,29 @@ export default function Chat() {
       bottom: 0,
     }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <TextArea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="输入你想说的话...（Enter发送，Shift+Enter换行）"
-            autoSize={{ minRows: 1, maxRows: 4 }}
-            style={{
-              flex: 1,
-              background: darkColors.inputBg,
-              color: darkColors.inputText,
-              borderColor: darkColors.borderColor,
-              resize: 'none',
-              lineHeight: 1.5,
-              padding: '8px 12px',
-              overflow: 'hidden',
-            }}
-            className={isDark ? 'dark-input' : ''}
-            disabled={sending}
-          />
-        </div>
+        <TextArea
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="输入你想说的话...（Enter发送，Shift+Enter换行）"
+          autoSize={{ minRows: 1, maxRows: 6 }}
+          style={{
+            flex: 1,
+            background: darkColors.inputBg,
+            color: darkColors.inputText,
+            borderColor: darkColors.borderColor,
+            resize: 'none',
+            lineHeight: 1.5,
+          }}
+          className={isDark ? 'dark-input' : ''}
+          disabled={sending}
+        />
         <Button
           type="primary"
           icon={<SendOutlined />}
           onClick={handleSend}
           loading={sending}
-          style={{ background: '#722ed1', height: 'auto', alignSelf: 'flex-end' }}
+          style={{ background: '#722ed1' }}
         />
       </div>
     </div>
@@ -626,8 +622,7 @@ export default function Chat() {
                     )}
                     {/* 消息气泡 */}
                     <div style={{
-                      width: '100%',
-                      padding: '12px 16px',
+                      padding: '10px 14px',
                       borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                       background: msg.role === 'user' ? darkColors.userBubbleBg : darkColors.bubbleBg,
                       color: msg.role === 'user' ? darkColors.userBubbleText : darkColors.bubbleText,
@@ -636,9 +631,9 @@ export default function Chat() {
                       whiteSpace: 'pre-wrap',
                       overflowWrap: 'break-word',
                       textAlign: 'left',
-                      minHeight: 44,
                       lineHeight: 1.6,
                       fontSize: 14,
+                      maxWidth: '75%',
                     }}>
                       {msg.content || '...'}
                     </div>
