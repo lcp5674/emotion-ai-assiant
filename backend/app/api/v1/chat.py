@@ -193,6 +193,7 @@ async def get_conversations(
                 "session_id": c.session_id,
                 "title": c.title,
                 "assistant_id": c.assistant_id,
+                "assistant_name": c.assistant.name if c.assistant else None,
                 "message_count": c.message_count,
                 "status": c.status.value if hasattr(c.status, 'value') else c.status,
                 "created_at": c.created_at,

@@ -491,23 +491,34 @@ export default function Chat() {
       position: 'sticky',
       bottom: 0,
     }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <TextArea
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="输入你想说的话...（Enter发送，Shift+Enter换行）"
-          autoSize={{ minRows: 1, maxRows: 4 }}
-          style={{ flex: 1, background: darkColors.inputBg, color: darkColors.inputText, borderColor: darkColors.borderColor }}
-          className={isDark ? 'dark-input' : ''}
-          disabled={sending}
-        />
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <TextArea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="输入你想说的话...（Enter发送，Shift+Enter换行）"
+            autoSize={{ minRows: 1, maxRows: 4 }}
+            style={{
+              flex: 1,
+              background: darkColors.inputBg,
+              color: darkColors.inputText,
+              borderColor: darkColors.borderColor,
+              resize: 'none',
+              lineHeight: 1.5,
+              padding: '8px 12px',
+              overflow: 'hidden',
+            }}
+            className={isDark ? 'dark-input' : ''}
+            disabled={sending}
+          />
+        </div>
         <Button
           type="primary"
           icon={<SendOutlined />}
           onClick={handleSend}
           loading={sending}
-          style={{ background: '#722ed1', height: 'auto' }}
+          style={{ background: '#722ed1', height: 'auto', alignSelf: 'flex-end' }}
         />
       </div>
     </div>
