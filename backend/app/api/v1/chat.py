@@ -125,7 +125,7 @@ async def stream_message(
 
     history = db.query(Message).filter(
         Message.conversation_id == conversation.id,
-    ).order_by(Message.created_at.desc()).limit(10).all()
+    ).order_by(Message.created_at.desc()).limit(50).all()
     ctx = "\n".join([f"{m.role}: {m.content}" for m in reversed(history)])
 
     stream_svc = get_stream_service()
@@ -422,7 +422,7 @@ async def regenerate_response(
     # 获取历史上下文（排除刚删除的AI回复）
     history = db.query(Message).filter(
         Message.conversation_id == conversation.id,
-    ).order_by(Message.created_at.desc()).limit(10).all()
+    ).order_by(Message.created_at.desc()).limit(50).all()
     ctx = "\n".join([f"{m.role}: {m.content}" for m in reversed(history)])
 
     from app.services.stream_service import get_stream_service

@@ -267,14 +267,103 @@ class MbtiService:
         db: Session,
         mbti_type: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        user_id: Optional[int] = None,
     ) -> List[AiAssistant]:
-        """获取推荐的AI助手"""
+        """获取推荐的AI助手（支持三位一体综合推荐）"""
         query = db.query(AiAssistant).filter(AiAssistant.is_active == True)
 
-        if mbti_type:
-            query = query.filter(AiAssistant.mbti_type == MbtiType[mbti_type])
+        assistants = query.all()
 
-        return query.order_by(AiAssistant.sort_order.desc(), AiAssistant.id).all()
+        # 如果提供了user_id，进行三位一体综合匹配
+        if user_id:
+            # 获取用户的三项测评结果
+            from app.models import User
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                user_profile = self._get_user_personality_profile(db, user)
+                # 计算兼容性评分并排序
+                scored_assistants = []
+                for assistant in assistants:
+                    score = self._calculate_compatibility(assistant, user_profile)
+                    scored_assistants.append((assistant, score))
+                # 按兼容性分数降序排序
+                scored_assistants.sort(key=lambda x: x[1], reverse=True)
+                return [a[0] for a in scored_assistants]
+
+        # 原有的简单过滤逻辑
+        if mbti_type:
+            assistants = [a for a in assistants if str(a.mbti_type) == mbti_type]
+
+        return assistants
+
+    def _get_user_personality_profile(self, db: Session, user: 'User') -> dict:
+        """获取用户的人格画像（MBTI + SBTI + 依恋风格）"""
+        profile = {
+            'mbti': None,
+            'sbti': [],
+            'attachment': None,
+        }
+
+        # 获取MBTI结果
+        if user.mbti_type:
+            profile['mbti'] = str(user.mbti_type)
+
+        # 获取SBTI结果
+        if user.sbti_result_id:
+            from app.models import SBTIResult
+            sbti_result = db.query(SBTIResult).filter(SBTIResult.id == user.sbti_result_id).first()
+            if sbti_result:
+                # 获取得分最高的前三个主题
+                themes = [
+                    sbti_result.top_theme_1,
+                    sbti_result.top_theme_2,
+                    sbti_result.top_theme_3,
+                ]
+                profile['sbti'] = [t for t in themes if t]
+
+        # 获取依恋风格结果
+        if user.attachment_result_id:
+            from app.models import AttachmentResult
+            attachment_result = db.query(AttachmentResult).filter(AttachmentResult.id == user.attachment_result_id).first()
+            if attachment_result:
+                profile['attachment'] = attachment_result.attachment_style
+
+        return profile
+
+    def _calculate_compatibility(self, assistant: 'AiAssistant', user_profile: dict) -> float:
+        """计算助手与用户的兼容性评分（0-100）"""
+        score = 0.0
+        weights = {'mbti': 40, 'sbti': 35, 'attachment': 25}
+
+        # MBTI匹配（40%权重）
+        if user_profile['mbti'] and str(assistant.mbti_type) == user_profile['mbti']:
+            score += weights['mbti']
+        elif user_profile['mbti']:
+            # 部分匹配：检查第一个字母是否相同（能量方向）
+            if str(assistant.mbti_type)[0] == user_profile['mbti'][0]:
+                score += weights['mbti'] * 0.3
+
+        # SBTI匹配（35%权重）
+        if user_profile['sbti'] and assistant.sbti_types:
+            assistant_sbti = [s.strip() for s in assistant.sbti_types.split(',') if s.strip()]
+            matches = sum(1 for s in user_profile['sbti'] if s in assistant_sbti)
+            if matches > 0:
+                score += (matches / len(user_profile['sbti'])) * weights['sbti']
+
+        # 依恋风格匹配（25%权重）
+        if user_profile['attachment'] and assistant.attachment_styles:
+            assistant_attach = [a.strip() for a in assistant.attachment_styles.split(',') if a.strip()]
+            if user_profile['attachment'] in assistant_attach:
+                score += weights['attachment']
+            # 安全型依恋可以与其他类型较好匹配
+            elif user_profile['attachment'] == 'secure' and len(assistant_attach) > 0:
+                score += weights['attachment'] * 0.3
+
+        # 如果助手有推荐标记，增加分数
+        if assistant.is_recommended:
+            score += 5
+
+        return min(score, 100)
 
     def seed_questions(self, db: Session, force: bool = False) -> None:
         """初始化MBTI题目"""

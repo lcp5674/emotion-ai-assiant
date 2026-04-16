@@ -147,9 +147,14 @@ export default function DiaryList() {
         zIndex: 100,
       }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/" style={{ fontSize: 20, color: '#722ed1', fontWeight: 'bold' }}>
-            心灵伴侣AI
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link to="/" style={{ fontSize: 20, color: '#722ed1', fontWeight: 'bold' }}>
+              心灵伴侣AI
+            </Link>
+            <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate('/')}>
+              返回首页
+            </Button>
+          </div>
           <div>
             <Button
               type="primary"

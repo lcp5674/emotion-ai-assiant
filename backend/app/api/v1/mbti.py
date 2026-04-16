@@ -8,7 +8,7 @@ import loguru
 from datetime import datetime
 
 from app.core.database import get_db
-from app.models import User, MbtiQuestion, MbtiAnswer, MbtiResult, AiAssistant
+from app.models import User, MbtiQuestion, MbtiAnswer, MbtiResult, AiAssistant, AssistantCollection
 from app.models.mbti import MbtiType
 from app.schemas.mbti import (
     MbtiQuestionSchema,
@@ -135,20 +135,14 @@ async def get_result(
 ):
     """获取用户的MBTI测试结果"""
     if not current_user.mbti_result_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="尚未完成MBTI测试",
-        )
+        return None
 
     mbti_result = db.query(MbtiResult).filter(
         MbtiResult.id == current_user.mbti_result_id
     ).first()
 
     if not mbti_result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="测试结果不存在",
-        )
+        return None
 
     # 解析report_json
     import ast
@@ -181,17 +175,93 @@ async def get_assistants(
     tags: Optional[str] = None,
     recommended: Optional[bool] = None,
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
 ):
     """获取AI助手列表"""
     mbti_service = get_mbti_service()
 
     tag_list = tags.split(",") if tags else None
 
-    assistants = mbti_service.get_recommended_assistants(db, mbti_type, tag_list)
+    # 传递user_id以支持三位一体个性化推荐
+    user_id = current_user.id if current_user else None
+    assistants = mbti_service.get_recommended_assistants(db, mbti_type, tag_list, user_id)
 
     # 过滤推荐
     if recommended:
         assistants = [a for a in assistants if a.is_recommended]
+
+    # 获取用户收藏列表
+    favorited_ids = set()
+    if current_user:
+        favorites = db.query(AssistantCollection).filter(
+            AssistantCollection.user_id == current_user.id
+        ).all()
+        favorited_ids = {f.assistant_id for f in favorites}
+
+    # 构建返回数据，标记收藏状态
+    assistant_list = []
+    for a in assistants:
+        schema = AiAssistantSchema.model_validate(a)
+        schema.is_favorited = a.id in favorited_ids
+        assistant_list.append(schema)
+
+    return AiAssistantListResponse(
+        total=len(assistant_list),
+        list=assistant_list,
+    )
+
+
+@router.post("/assistants/{assistant_id}/favorite", summary="收藏/取消收藏助手")
+async def toggle_favorite(
+    assistant_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """切换助手收藏状态"""
+    # 检查助手是否存在
+    assistant = db.query(AiAssistant).filter(AiAssistant.id == assistant_id).first()
+    if not assistant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="助手不存在",
+        )
+
+    # 检查是否已收藏
+    existing = db.query(AssistantCollection).filter(
+        AssistantCollection.user_id == current_user.id,
+        AssistantCollection.assistant_id == assistant_id,
+    ).first()
+
+    if existing:
+        # 取消收藏
+        db.delete(existing)
+        db.commit()
+        return {"is_favorited": False, "message": "已取消收藏"}
+    else:
+        # 添加收藏
+        new_favorite = AssistantCollection(
+            user_id=current_user.id,
+            assistant_id=assistant_id,
+        )
+        db.add(new_favorite)
+        db.commit()
+        return {"is_favorited": True, "message": "收藏成功"}
+
+
+@router.get("/assistants/favorites", summary="获取用户收藏的助手列表")
+async def get_favorites(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取用户收藏的AI助手列表"""
+    favorites = db.query(AssistantCollection).filter(
+        AssistantCollection.user_id == current_user.id
+    ).all()
+
+    assistant_ids = [f.assistant_id for f in favorites]
+    assistants = db.query(AiAssistant).filter(
+        AiAssistant.id.in_(assistant_ids)
+    ).all() if assistant_ids else []
 
     return AiAssistantListResponse(
         total=len(assistants),

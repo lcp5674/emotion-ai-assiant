@@ -46,6 +46,27 @@ interface ConfigData {
   has_spark_key?: boolean
   has_doubao_key?: boolean
   has_siliconflow_key?: boolean
+  volcengine_api_key?: string
+  volcengine_model?: string
+  volcengine_base_url?: string
+  has_volcengine_key?: boolean
+  sensetime_api_key?: string
+  sensetime_model?: string
+  has_sensetime_key?: boolean
+  baichuan_api_key?: string
+  baichuan_model?: string
+  has_baichuan_key?: boolean
+  moonshot_api_key?: string
+  moonshot_model?: string
+  has_moonshot_key?: boolean
+  lingyi_api_key?: string
+  lingyi_model?: string
+  has_lingyi_key?: boolean
+  custom_llm_api_key?: string
+  custom_llm_model?: string
+  custom_llm_base_url?: string
+  has_custom_llm_key?: boolean
+  llm_failover_chain?: string
 }
 
 interface Assistant {
@@ -54,6 +75,8 @@ interface Assistant {
   description?: string
   avatar?: string
   mbti_type: string
+  sbti_types?: string  // SBTI主题类型
+  attachment_styles?: string  // 依恋风格类型
   personality?: string
   speaking_style?: string
   expertise?: string
@@ -61,6 +84,7 @@ interface Assistant {
   tags?: string[]
   is_active: boolean
   is_recommended?: boolean
+  is_favorited?: boolean
   created_at: string
 }
 
@@ -68,14 +92,39 @@ const PROVIDERS = [
   { value: 'mock', label: 'Mock (开发测试)' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic Claude' },
+  { value: 'volcengine', label: '字节火山引擎' },
+  { value: 'doubao', label: '字节豆包' },
   { value: 'glm', label: '智谱 GLM' },
   { value: 'qwen', label: '阿里通义千问' },
   { value: 'minimax', label: 'MiniMax' },
   { value: 'ernie', label: '百度文心一言' },
   { value: 'hunyuan', label: '腾讯混元' },
   { value: 'spark', label: '讯飞星火' },
-  { value: 'doubao', label: '字节豆包' },
   { value: 'siliconflow', label: '硅基流动' },
+  { value: 'sensetime', label: '商汤科技' },
+  { value: 'baichuan', label: '百川智能' },
+  { value: 'moonshot', label: '月之暗面' },
+  { value: 'lingyi', label: '零一万物' },
+  { value: 'custom', label: '自定义 (兼容OpenAI协议)' },
+]
+
+const FAILOVER_CHAIN_OPTIONS = [
+  { value: 'volcengine', label: '火山引擎' },
+  { value: 'doubao', label: '豆包' },
+  { value: 'glm', label: '智谱GLM' },
+  { value: 'qwen', label: '通义千问' },
+  { value: 'siliconflow', label: '硅基流动' },
+  { value: 'ernie', label: '文心一言' },
+  { value: 'hunyuan', label: '腾讯混元' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'anthropic', label: 'Claude' },
+  { value: 'minimax', label: 'MiniMax' },
+  { value: 'spark', label: '讯飞星火' },
+  { value: 'sensetime', label: '商汤' },
+  { value: 'baichuan', label: '百川' },
+  { value: 'moonshot', label: '月之暗面' },
+  { value: 'lingyi', label: '零一万物' },
+  { value: 'custom', label: '自定义' },
 ]
 
 const MODELS: Record<string, { value: string; label: string }[]> = {
@@ -148,14 +197,18 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
+  const [testingProvider, setTestingProvider] = useState<string | null>(null)
   const [config, setConfig] = useState<ConfigData>({
     llm_provider: 'mock',
+    llm_failover_chain: 'volcengine,doubao,glm,qwen,siliconflow,ernie,hunyuan',
   })
   const [assistants, setAssistants] = useState<Assistant[]>([])
   const [assistantLoading, setAssistantLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null)
   const [form] = Form.useForm()
+  const [providerStatus, setProviderStatus] = useState<{provider: string; has_api_key: boolean; model: string; base_url: string}[]>([])
+  const [providerStatusLoading, setProviderStatusLoading] = useState(false)
 
   useEffect(() => {
     loadConfig()
@@ -167,10 +220,40 @@ export default function Admin() {
       setLoading(true)
       const res = await api.admin.config()
       setConfig(res || { llm_provider: 'mock' })
+      // 加载provider状态
+      loadProviderStatus()
     } catch (error) {
       console.error(error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadProviderStatus = async () => {
+    try {
+      setProviderStatusLoading(true)
+      const res = await api.admin.providerStatus()
+      setProviderStatus(res.providers || [])
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setProviderStatusLoading(false)
+    }
+  }
+
+  const testProvider = async (provider: string) => {
+    try {
+      setTestingProvider(provider)
+      const res = await api.admin.testProvider(provider)
+      if (res.success) {
+        message.success(`${provider} 测试成功! 模型: ${res.model}`)
+      } else {
+        message.error(`${provider} 测试失败: ${res.error}`)
+      }
+    } catch (error: any) {
+      message.error(`${provider} 测试失败: ${error?.response?.data?.detail || error?.message || '未知错误'}`)
+    } finally {
+      setTestingProvider(null)
     }
   }
 
@@ -186,46 +269,67 @@ export default function Admin() {
     }
   }
 
+  // 辅助函数：检测是否是掩码值（格式如 d76c...c157）
+  const isMaskedValue = (value: string) => value && value.includes('...')
+
   const handleSaveConfig = async () => {
     try {
       setSaving(true)
       const updateData: any = {
         llm_provider: config.llm_provider,
+        llm_failover_chain: config.llm_failover_chain,
       }
-      
-      if (config.openai_api_key) updateData.openai_api_key = config.openai_api_key
+
+      // API Key：只有非掩码值才发送，掩码表示已有配置但用户未修改
+      if (config.openai_api_key && !isMaskedValue(config.openai_api_key)) updateData.openai_api_key = config.openai_api_key
       if (config.openai_model) updateData.openai_model = config.openai_model
       if (config.openai_base_url) updateData.openai_base_url = config.openai_base_url
-      if (config.anthropic_api_key) updateData.anthropic_api_key = config.anthropic_api_key
+      if (config.anthropic_api_key && !isMaskedValue(config.anthropic_api_key)) updateData.anthropic_api_key = config.anthropic_api_key
       if (config.anthropic_model) updateData.anthropic_model = config.anthropic_model
       if (config.anthropic_base_url) updateData.anthropic_base_url = config.anthropic_base_url
-      if (config.glm_api_key) updateData.glm_api_key = config.glm_api_key
+      if (config.glm_api_key && !isMaskedValue(config.glm_api_key)) updateData.glm_api_key = config.glm_api_key
       if (config.glm_model) updateData.glm_model = config.glm_model
       if (config.glm_base_url) updateData.glm_base_url = config.glm_base_url
-      if (config.qwen_api_key) updateData.qwen_api_key = config.qwen_api_key
+      if (config.qwen_api_key && !isMaskedValue(config.qwen_api_key)) updateData.qwen_api_key = config.qwen_api_key
       if (config.qwen_model) updateData.qwen_model = config.qwen_model
       if (config.qwen_base_url) updateData.qwen_base_url = config.qwen_base_url
-      if (config.minimax_api_key) updateData.minimax_api_key = config.minimax_api_key
+      if (config.minimax_api_key && !isMaskedValue(config.minimax_api_key)) updateData.minimax_api_key = config.minimax_api_key
       if (config.minimax_model) updateData.minimax_model = config.minimax_model
       if (config.minimax_base_url) updateData.minimax_base_url = config.minimax_base_url
-      if (config.ernie_api_key) updateData.ernie_api_key = config.ernie_api_key
+      if (config.ernie_api_key && !isMaskedValue(config.ernie_api_key)) updateData.ernie_api_key = config.ernie_api_key
       if (config.ernie_model) updateData.ernie_model = config.ernie_model
       if (config.ernie_base_url) updateData.ernie_base_url = config.ernie_base_url
-      if (config.hunyuan_api_key) updateData.hunyuan_api_key = config.hunyuan_api_key
+      if (config.hunyuan_api_key && !isMaskedValue(config.hunyuan_api_key)) updateData.hunyuan_api_key = config.hunyuan_api_key
       if (config.hunyuan_model) updateData.hunyuan_model = config.hunyuan_model
       if (config.hunyuan_base_url) updateData.hunyuan_base_url = config.hunyuan_base_url
-      if (config.spark_api_key) updateData.spark_api_key = config.spark_api_key
+      if (config.spark_api_key && !isMaskedValue(config.spark_api_key)) updateData.spark_api_key = config.spark_api_key
       if (config.spark_model) updateData.spark_model = config.spark_model
       if (config.spark_base_url) updateData.spark_base_url = config.spark_base_url
-      if (config.doubao_api_key) updateData.doubao_api_key = config.doubao_api_key
+      if (config.doubao_api_key && !isMaskedValue(config.doubao_api_key)) updateData.doubao_api_key = config.doubao_api_key
       if (config.doubao_model) updateData.doubao_model = config.doubao_model
       if (config.doubao_base_url) updateData.doubao_base_url = config.doubao_base_url
-      if (config.siliconflow_api_key) updateData.siliconflow_api_key = config.siliconflow_api_key
+      if (config.siliconflow_api_key && !isMaskedValue(config.siliconflow_api_key)) updateData.siliconflow_api_key = config.siliconflow_api_key
       if (config.siliconflow_model) updateData.siliconflow_model = config.siliconflow_model
       if (config.siliconflow_base_url) updateData.siliconflow_base_url = config.siliconflow_base_url
-      
+      if (config.volcengine_api_key && !isMaskedValue(config.volcengine_api_key)) updateData.volcengine_api_key = config.volcengine_api_key
+      if (config.volcengine_model) updateData.volcengine_model = config.volcengine_model
+      if (config.volcengine_base_url) updateData.volcengine_base_url = config.volcengine_base_url
+      if (config.sensetime_api_key && !isMaskedValue(config.sensetime_api_key)) updateData.sensetime_api_key = config.sensetime_api_key
+      if (config.sensetime_model) updateData.sensetime_model = config.sensetime_model
+      if (config.baichuan_api_key && !isMaskedValue(config.baichuan_api_key)) updateData.baichuan_api_key = config.baichuan_api_key
+      if (config.baichuan_model) updateData.baichuan_model = config.baichuan_model
+      if (config.moonshot_api_key && !isMaskedValue(config.moonshot_api_key)) updateData.moonshot_api_key = config.moonshot_api_key
+      if (config.moonshot_model) updateData.moonshot_model = config.moonshot_model
+      if (config.lingyi_api_key && !isMaskedValue(config.lingyi_api_key)) updateData.lingyi_api_key = config.lingyi_api_key
+      if (config.lingyi_model) updateData.lingyi_model = config.lingyi_model
+      if (config.custom_llm_api_key && !isMaskedValue(config.custom_llm_api_key)) updateData.custom_llm_api_key = config.custom_llm_api_key
+      if (config.custom_llm_model) updateData.custom_llm_model = config.custom_llm_model
+      if (config.custom_llm_base_url) updateData.custom_llm_base_url = config.custom_llm_base_url
+
       await api.admin.updateConfig(updateData)
       message.success('配置保存成功')
+      // 重新加载provider状态
+      loadProviderStatus()
     } catch (error) {
       console.error(error)
       message.error('保存失败')
@@ -239,39 +343,55 @@ export default function Admin() {
       setTesting(true)
       const updateData: any = {
         llm_provider: config.llm_provider,
+        llm_failover_chain: config.llm_failover_chain,
       }
-      
-      if (config.openai_api_key) updateData.openai_api_key = config.openai_api_key
+
+      // API Key：只有非掩码值才发送，掩码表示已有配置但用户未修改
+      if (config.openai_api_key && !isMaskedValue(config.openai_api_key)) updateData.openai_api_key = config.openai_api_key
       if (config.openai_model) updateData.openai_model = config.openai_model
       if (config.openai_base_url) updateData.openai_base_url = config.openai_base_url
-      if (config.anthropic_api_key) updateData.anthropic_api_key = config.anthropic_api_key
+      if (config.anthropic_api_key && !isMaskedValue(config.anthropic_api_key)) updateData.anthropic_api_key = config.anthropic_api_key
       if (config.anthropic_model) updateData.anthropic_model = config.anthropic_model
       if (config.anthropic_base_url) updateData.anthropic_base_url = config.anthropic_base_url
-      if (config.glm_api_key) updateData.glm_api_key = config.glm_api_key
+      if (config.glm_api_key && !isMaskedValue(config.glm_api_key)) updateData.glm_api_key = config.glm_api_key
       if (config.glm_model) updateData.glm_model = config.glm_model
       if (config.glm_base_url) updateData.glm_base_url = config.glm_base_url
-      if (config.qwen_api_key) updateData.qwen_api_key = config.qwen_api_key
+      if (config.qwen_api_key && !isMaskedValue(config.qwen_api_key)) updateData.qwen_api_key = config.qwen_api_key
       if (config.qwen_model) updateData.qwen_model = config.qwen_model
       if (config.qwen_base_url) updateData.qwen_base_url = config.qwen_base_url
-      if (config.minimax_api_key) updateData.minimax_api_key = config.minimax_api_key
+      if (config.minimax_api_key && !isMaskedValue(config.minimax_api_key)) updateData.minimax_api_key = config.minimax_api_key
       if (config.minimax_model) updateData.minimax_model = config.minimax_model
       if (config.minimax_base_url) updateData.minimax_base_url = config.minimax_base_url
-      if (config.ernie_api_key) updateData.ernie_api_key = config.ernie_api_key
+      if (config.ernie_api_key && !isMaskedValue(config.ernie_api_key)) updateData.ernie_api_key = config.ernie_api_key
       if (config.ernie_model) updateData.ernie_model = config.ernie_model
       if (config.ernie_base_url) updateData.ernie_base_url = config.ernie_base_url
-      if (config.hunyuan_api_key) updateData.hunyuan_api_key = config.hunyuan_api_key
+      if (config.hunyuan_api_key && !isMaskedValue(config.hunyuan_api_key)) updateData.hunyuan_api_key = config.hunyuan_api_key
       if (config.hunyuan_model) updateData.hunyuan_model = config.hunyuan_model
       if (config.hunyuan_base_url) updateData.hunyuan_base_url = config.hunyuan_base_url
-      if (config.spark_api_key) updateData.spark_api_key = config.spark_api_key
+      if (config.spark_api_key && !isMaskedValue(config.spark_api_key)) updateData.spark_api_key = config.spark_api_key
       if (config.spark_model) updateData.spark_model = config.spark_model
       if (config.spark_base_url) updateData.spark_base_url = config.spark_base_url
-      if (config.doubao_api_key) updateData.doubao_api_key = config.doubao_api_key
+      if (config.doubao_api_key && !isMaskedValue(config.doubao_api_key)) updateData.doubao_api_key = config.doubao_api_key
       if (config.doubao_model) updateData.doubao_model = config.doubao_model
       if (config.doubao_base_url) updateData.doubao_base_url = config.doubao_base_url
-      if (config.siliconflow_api_key) updateData.siliconflow_api_key = config.siliconflow_api_key
+      if (config.siliconflow_api_key && !isMaskedValue(config.siliconflow_api_key)) updateData.siliconflow_api_key = config.siliconflow_api_key
       if (config.siliconflow_model) updateData.siliconflow_model = config.siliconflow_model
       if (config.siliconflow_base_url) updateData.siliconflow_base_url = config.siliconflow_base_url
-      
+      if (config.volcengine_api_key && !isMaskedValue(config.volcengine_api_key)) updateData.volcengine_api_key = config.volcengine_api_key
+      if (config.volcengine_model) updateData.volcengine_model = config.volcengine_model
+      if (config.volcengine_base_url) updateData.volcengine_base_url = config.volcengine_base_url
+      if (config.sensetime_api_key && !isMaskedValue(config.sensetime_api_key)) updateData.sensetime_api_key = config.sensetime_api_key
+      if (config.sensetime_model) updateData.sensetime_model = config.sensetime_model
+      if (config.baichuan_api_key && !isMaskedValue(config.baichuan_api_key)) updateData.baichuan_api_key = config.baichuan_api_key
+      if (config.baichuan_model) updateData.baichuan_model = config.baichuan_model
+      if (config.moonshot_api_key && !isMaskedValue(config.moonshot_api_key)) updateData.moonshot_api_key = config.moonshot_api_key
+      if (config.moonshot_model) updateData.moonshot_model = config.moonshot_model
+      if (config.lingyi_api_key && !isMaskedValue(config.lingyi_api_key)) updateData.lingyi_api_key = config.lingyi_api_key
+      if (config.lingyi_model) updateData.lingyi_model = config.lingyi_model
+      if (config.custom_llm_api_key && !isMaskedValue(config.custom_llm_api_key)) updateData.custom_llm_api_key = config.custom_llm_api_key
+      if (config.custom_llm_model) updateData.custom_llm_model = config.custom_llm_model
+      if (config.custom_llm_base_url) updateData.custom_llm_base_url = config.custom_llm_base_url
+
       await api.admin.updateConfig(updateData)
       
       const testRes = await api.admin.testConnection()
@@ -329,6 +449,8 @@ export default function Admin() {
       const submitData = {
         ...values,
         tags: values.tags?.join(',') || '',
+        sbti_types: values.sbti_types || '',
+        attachment_styles: values.attachment_styles || '',
       }
       if (editingAssistant) {
         await api.admin.updateAssistant(editingAssistant.id, submitData)
@@ -358,6 +480,7 @@ export default function Admin() {
       case 'spark': return config.spark_model
       case 'doubao': return config.doubao_model
       case 'siliconflow': return config.siliconflow_model
+      case 'custom': return config.custom_llm_model
       default: return ''
     }
   }
@@ -378,6 +501,20 @@ export default function Admin() {
       dataIndex: 'mbti_type',
       width: 80,
       render: (mbti: string) => <Tag color="purple">{mbti || '-'}</Tag>,
+    },
+    {
+      title: 'SBTI主题',
+      dataIndex: 'sbti_types',
+      width: 150,
+      ellipsis: true,
+      render: (sbti: string) => sbti ? <Tag color="blue">{sbti}</Tag> : '-',
+    },
+    {
+      title: '依恋风格',
+      dataIndex: 'attachment_styles',
+      width: 100,
+      ellipsis: true,
+      render: (style: string) => style ? <Tag color="green">{style}</Tag> : '-',
     },
     {
       title: '人格',
@@ -434,6 +571,55 @@ export default function Admin() {
             options={PROVIDERS}
           />
         </Form.Item>
+
+        <Form.Item label="Failover Chain (降级链)" tooltip="当主Provider失败时，按顺序尝试其他Provider。用逗号分隔。">
+          <Select
+            mode="multiple"
+            value={config.llm_failover_chain?.split(',').filter(Boolean) || []}
+            onChange={(values) => setConfig({ ...config, llm_failover_chain: values.join(',') })}
+            options={FAILOVER_CHAIN_OPTIONS}
+            placeholder="选择降级Provider顺序"
+            style={{ width: '100%' }}
+          />
+        </Form.Item>
+
+        {/* 降级链Provider状态 */}
+        {providerStatus.length > 0 && (
+          <Form.Item label="降级链状态" tooltip="显示降级链中各Provider的配置状态和可用性测试">
+            <div style={{ border: '1px solid #d9d9d9', borderRadius: 8, padding: 16, background: '#fafafa' }}>
+              <Spin spinning={providerStatusLoading}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                  {providerStatus.map((p) => (
+                    <div key={p.provider} style={{
+                      padding: 12,
+                      border: '1px solid #d9d9d9',
+                      borderRadius: 6,
+                      background: p.has_api_key ? '#f6ffed' : '#fff7e6',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontWeight: 500 }}>{p.provider}</span>
+                        <Tag color={p.has_api_key ? 'green' : 'orange'}>
+                          {p.has_api_key ? '已配置' : '未配置'}
+                        </Tag>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8 }}>
+                        模型: {p.model}
+                      </div>
+                      <Button
+                        size="small"
+                        onClick={() => testProvider(p.provider)}
+                        loading={testingProvider === p.provider}
+                        disabled={!p.has_api_key}
+                      >
+                        测试连接
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Spin>
+            </div>
+          </Form.Item>
+        )}
 
         {provider === 'openai' && (
           <>
@@ -697,6 +883,134 @@ export default function Admin() {
           </>
         )}
 
+        {provider === 'volcengine' && (
+          <>
+            <Form.Item label="API Key">
+              <Input.Password
+                value={config.volcengine_api_key || ''}
+                onChange={(e) => setConfig({ ...config, volcengine_api_key: e.target.value })}
+                placeholder={config.has_volcengine_key ? '已配置 (不修改请留空)' : '请输入火山引擎 API Key'}
+              />
+            </Form.Item>
+            <Form.Item label="Model">
+              <Input
+                value={config.volcengine_model || ''}
+                onChange={(e) => setConfig({ ...config, volcengine_model: e.target.value })}
+                placeholder="输入模型名称，如 doubao-pro-32k"
+              />
+            </Form.Item>
+            <Form.Item label="Base URL">
+              <Input
+                value={config.volcengine_base_url || ''}
+                onChange={(e) => setConfig({ ...config, volcengine_base_url: e.target.value })}
+                placeholder="https://ark.cn-beijing.volces.com/api/v3"
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {provider === 'sensetime' && (
+          <>
+            <Form.Item label="API Key">
+              <Input.Password
+                value={config.sensetime_api_key || ''}
+                onChange={(e) => setConfig({ ...config, sensetime_api_key: e.target.value })}
+                placeholder={config.has_sensetime_key ? '已配置 (不修改请留空)' : '请输入商汤科技 API Key'}
+              />
+            </Form.Item>
+            <Form.Item label="Model">
+              <Input
+                value={config.sensetime_model || ''}
+                onChange={(e) => setConfig({ ...config, sensetime_model: e.target.value })}
+                placeholder="输入模型名称，如 sensechat-5"
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {provider === 'baichuan' && (
+          <>
+            <Form.Item label="API Key">
+              <Input.Password
+                value={config.baichuan_api_key || ''}
+                onChange={(e) => setConfig({ ...config, baichuan_api_key: e.target.value })}
+                placeholder={config.has_baichuan_key ? '已配置 (不修改请留空)' : '请输入百川智能 API Key'}
+              />
+            </Form.Item>
+            <Form.Item label="Model">
+              <Input
+                value={config.baichuan_model || ''}
+                onChange={(e) => setConfig({ ...config, baichuan_model: e.target.value })}
+                placeholder="输入模型名称，如 baichuan4"
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {provider === 'moonshot' && (
+          <>
+            <Form.Item label="API Key">
+              <Input.Password
+                value={config.moonshot_api_key || ''}
+                onChange={(e) => setConfig({ ...config, moonshot_api_key: e.target.value })}
+                placeholder={config.has_moonshot_key ? '已配置 (不修改请留空)' : '请输入月之暗面 API Key'}
+              />
+            </Form.Item>
+            <Form.Item label="Model">
+              <Input
+                value={config.moonshot_model || ''}
+                onChange={(e) => setConfig({ ...config, moonshot_model: e.target.value })}
+                placeholder="输入模型名称，如 moonshot-v1-8k"
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {provider === 'lingyi' && (
+          <>
+            <Form.Item label="API Key">
+              <Input.Password
+                value={config.lingyi_api_key || ''}
+                onChange={(e) => setConfig({ ...config, lingyi_api_key: e.target.value })}
+                placeholder={config.has_lingyi_key ? '已配置 (不修改请留空)' : '请输入零一万物 API Key'}
+              />
+            </Form.Item>
+            <Form.Item label="Model">
+              <Input
+                value={config.lingyi_model || ''}
+                onChange={(e) => setConfig({ ...config, lingyi_model: e.target.value })}
+                placeholder="输入模型名称，如 yi-medium"
+              />
+            </Form.Item>
+          </>
+        )}
+
+        {provider === 'custom' && (
+          <>
+            <Form.Item label="API Key" tooltip="填入您的API Key，支持任何兼容OpenAI协议的服务">
+              <Input.Password
+                value={config.custom_llm_api_key || ''}
+                onChange={(e) => setConfig({ ...config, custom_llm_api_key: e.target.value })}
+                placeholder={config.has_custom_llm_key ? '已配置 (不修改请留空)' : '请输入 API Key'}
+              />
+            </Form.Item>
+            <Form.Item label="Model" tooltip="填入要使用的模型名称">
+              <Input
+                value={config.custom_llm_model || ''}
+                onChange={(e) => setConfig({ ...config, custom_llm_model: e.target.value })}
+                placeholder="输入模型名称，如 gpt-3.5-turbo"
+              />
+            </Form.Item>
+            <Form.Item label="Base URL" tooltip="填入API Endpoint URL，必须是OpenAI兼容格式">
+              <Input
+                value={config.custom_llm_base_url || ''}
+                onChange={(e) => setConfig({ ...config, custom_llm_base_url: e.target.value })}
+                placeholder="https://api.openai.com/v1"
+              />
+            </Form.Item>
+          </>
+        )}
+
         {provider === 'mock' && (
           <Form.Item>
             <div style={{ color: '#888' }}>Mock 模式仅用于开发测试，不会调用真实 LLM API</div>
@@ -776,6 +1090,12 @@ export default function Admin() {
           </Form.Item>
           <Form.Item name="mbti_type" label="MBTI类型" rules={[{ required: true, message: '请输入MBTI类型' }]}>
             <Input placeholder="如: ENFP, INFP" />
+          </Form.Item>
+          <Form.Item name="sbti_types" label="SBTI主题类型" tooltip="逗号分隔的主题类型，如: executing,influencing,relationship,strategic">
+            <Input placeholder="如: executing,influencing,relationship" />
+          </Form.Item>
+          <Form.Item name="attachment_styles" label="依恋风格类型" tooltip="逗号分隔的风格类型，如: secure,anxious,avoidant">
+            <Input placeholder="如: secure,anxious" />
           </Form.Item>
           <Form.Item name="personality" label="人格描述">
             <Input.TextArea rows={2} placeholder="请描述助手的人格特点" />

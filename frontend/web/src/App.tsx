@@ -1,11 +1,14 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Button, App as AntApp, Spin } from 'antd'
 import { SunOutlined, MoonOutlined } from '@ant-design/icons'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { ProtectedRoute } from './components/ProtectedRoute'
 import { useTheme } from './hooks/useTheme'
 import { useAuthStore } from './stores'
 import { lazy } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { setNavigate } from './api/request'
 
 // 直接导入组件（避免复杂的路由配置）
 const Home = lazy(() => import('./views/home'))
@@ -18,6 +21,7 @@ const AssistantSquare = lazy(() => import('./views/assistant'))
 const Profile = lazy(() => import('./views/profile'))
 const Knowledge = lazy(() => import('./views/knowledge'))
 const ArticleDetail = lazy(() => import('./views/knowledge/detail'))
+const KnowledgeCollections = lazy(() => import('./views/knowledge/collections'))
 const Admin = lazy(() => import('./views/admin'))
 const DiaryList = lazy(() => import('./views/diary'))
 const DiaryDetail = lazy(() => import('./views/diary/detail'))
@@ -27,6 +31,7 @@ const Onboarding = lazy(() => import('./views/onboarding'))
 const PrivacyPage = lazy(() => import('./views/privacy'))
 const CrisisPage = lazy(() => import('./views/crisis'))
 const AchievementsPage = lazy(() => import('./views/achievements'))
+const CheckInPage = lazy(() => import('./views/checkin'))
 // SBTI
 const SbtiIndex = lazy(() => import('./views/sbti'))
 const SbtiTest = lazy(() => import('./views/sbti/test'))
@@ -55,52 +60,176 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      {/* 公开路由 - 无需登录 */}
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/" /> : <Register />} />
-      <Route path="/mbti" element={<MbtiTest />} />
-      <Route path="/mbti/quick" element={<MbtiTest />} />
-      <Route path="/mbti/result" element={<MbtiResult />} />
-      <Route path="/chat" element={<Chat />} />
-      <Route path="/chat/:sessionId" element={<Chat />} />
-      <Route path="/assistants" element={<AssistantSquare />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/knowledge" element={<Knowledge />} />
-      <Route path="/knowledge/:id" element={<ArticleDetail />} />
-      <Route path="/admin" element={<Admin />} />
-      <Route path="/diary" element={<DiaryList />} />
-      <Route path="/diary/create" element={<DiaryCreate />} />
-      <Route path="/diary/:id" element={<DiaryDetail />} />
-      <Route path="/diary/:id/edit" element={<DiaryCreate />} />
-      <Route path="/diary/stats" element={<DiaryStats />} />
-      <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/crisis" element={<CrisisPage />} />
-      <Route path="/achievements" element={<AchievementsPage />} />
 
-      {/* SBTI */}
-      <Route path="/sbti" element={<SbtiIndex />} />
-      <Route path="/sbti/test" element={<SbtiTest />} />
-      <Route path="/sbti/result" element={<SbtiResult />} />
+      {/* 首页 - 需要登录 */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      } />
 
-      {/* 依恋风格 */}
-      <Route path="/attachment" element={<AttachmentIndex />} />
-      <Route path="/attachment/test" element={<AttachmentTest />} />
-      <Route path="/attachment/result" element={<AttachmentResult />} />
+      {/* 知识库 - 需要登录 */}
+      <Route path="/knowledge" element={
+        <ProtectedRoute>
+          <Knowledge />
+        </ProtectedRoute>
+      } />
+      <Route path="/knowledge/:id" element={
+        <ProtectedRoute>
+          <ArticleDetail />
+        </ProtectedRoute>
+      } />
 
-      {/* 深度画像 */}
-      <Route path="/profile/deep" element={<DeepProfile />}
+      {/* 测评相关 - 需要登录才能访问 */}
+      <Route path="/mbti" element={
+        <ProtectedRoute>
+          <MbtiTest />
+        </ProtectedRoute>
+      } />
+      <Route path="/mbti/quick" element={
+        <ProtectedRoute>
+          <MbtiTest />
+        </ProtectedRoute>
+      } />
+      <Route path="/sbti" element={
+        <ProtectedRoute>
+          <SbtiIndex />
+        </ProtectedRoute>
+      } />
+      <Route path="/sbti/test" element={
+        <ProtectedRoute>
+          <SbtiTest />
+        </ProtectedRoute>
+      } />
+      <Route path="/attachment" element={
+        <ProtectedRoute>
+          <AttachmentIndex />
+        </ProtectedRoute>
+      } />
+      <Route path="/attachment/test" element={
+        <ProtectedRoute>
+          <AttachmentTest />
+        </ProtectedRoute>
+      } />
+      <Route path="/comprehensive" element={
+        <ProtectedRoute>
+          <ComprehensiveTest />
+        </ProtectedRoute>
+      } />
 
-      {/* 三位一体综合测评 */}
-      <Route path="/comprehensive" element={<ComprehensiveTest />}
-
-      {/* 账户设置 */}
-      <Route path="/settings" element={<Settings />} />
+      {/* 受保护的路由 - 需要登录 */}
+      <Route path="/mbti/result" element={
+        <ProtectedRoute>
+          <MbtiResult />
+        </ProtectedRoute>
+      } />
+      <Route path="/chat" element={
+        <ProtectedRoute>
+          <Chat />
+        </ProtectedRoute>
+      } />
+      <Route path="/chat/:sessionId" element={
+        <ProtectedRoute>
+          <Chat />
+        </ProtectedRoute>
+      } />
+      <Route path="/assistants" element={
+        <ProtectedRoute>
+          <AssistantSquare />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile/deep" element={
+        <ProtectedRoute>
+          <DeepProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/knowledge/collections" element={
+        <ProtectedRoute>
+          <KnowledgeCollections />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <Admin />
+        </ProtectedRoute>
+      } />
+      <Route path="/diary" element={
+        <ProtectedRoute>
+          <DiaryList />
+        </ProtectedRoute>
+      } />
+      <Route path="/diary/create" element={
+        <ProtectedRoute>
+          <DiaryCreate />
+        </ProtectedRoute>
+      } />
+      <Route path="/diary/:id" element={
+        <ProtectedRoute>
+          <DiaryDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/diary/:id/edit" element={
+        <ProtectedRoute>
+          <DiaryCreate />
+        </ProtectedRoute>
+      } />
+      <Route path="/diary/stats" element={
+        <ProtectedRoute>
+          <DiaryStats />
+        </ProtectedRoute>
+      } />
+      <Route path="/onboarding" element={
+        <ProtectedRoute>
+          <Onboarding />
+        </ProtectedRoute>
+      } />
+      <Route path="/achievements" element={
+        <ProtectedRoute>
+          <AchievementsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/checkin" element={
+        <ProtectedRoute>
+          <CheckInPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/sbti/result" element={
+        <ProtectedRoute>
+          <SbtiResult />
+        </ProtectedRoute>
+      } />
+      <Route path="/attachment/result" element={
+        <ProtectedRoute>
+          <AttachmentResult />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
     </Routes>
   )
 }
 
 export default function App() {
+  const navigate = useNavigate()
+
+  // 设置全局 navigate 函数，用于 401 时跳转到登录页
+  useEffect(() => {
+    setNavigate(navigate)
+  }, [navigate])
+
   return (
     <AntApp>
       <Layout>

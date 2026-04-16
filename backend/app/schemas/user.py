@@ -77,6 +77,7 @@ class UserInfo(BaseModel):
     member_level: str = "free"
     member_expire_at: Optional[datetime] = None
     is_verified: bool = False
+    is_admin: bool = False
     created_at: datetime
 
     class Config:

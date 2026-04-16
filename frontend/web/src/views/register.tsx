@@ -81,11 +81,13 @@ export default function Register() {
       justifyContent: 'center',
       background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
     }}>
-      <Card style={{ 
-        width: 400, 
+      <Card style={{
+        width: '100%',
+        maxWidth: 400,
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         borderRadius: '12px',
-        border: 'none'
+        border: 'none',
+        margin: '0 16px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h1 style={{ fontSize: 28, color: themeColors[themeColor], marginBottom: 8, fontWeight: 700 }}>注册</h1>

@@ -16,6 +16,8 @@ from app.services.llm.factory import chat_stream
 from app.services.member_service import get_member_service
 from app.services.content_filter import get_content_filter
 from app.services.crisis_service import get_crisis_detector
+from app.services.user_memory_service import get_user_memory_service
+from app.services.memory_service import get_memory_service
 from app.api.deps import get_current_user_ws
 from app.core.security import decode_token
 
@@ -90,13 +92,15 @@ async def get_websocket_current_user(websocket: WebSocket) -> User:
 
 async def handle_websocket_chat(
     websocket: WebSocket,
-    current_user: User = Depends(get_websocket_current_user),
     db: Session = Depends(get_db),
 ):
     """处理WebSocket聊天"""
+    # 获取当前用户
+    current_user = await get_websocket_current_user(websocket)
+
     session_id = websocket.query_params.get("session_id")
     assistant_id = websocket.query_params.get("assistant_id")
-    
+
     # 建立连接
     await manager.connect(websocket, current_user.id, session_id)
     
@@ -143,11 +147,11 @@ async def handle_websocket_chat(
                     "greeting": ai_asst.greeting,
                 }
         
-        # 获取最近的消息历史
-        history = db.query(Message).filter(
-            Message.conversation_id == conversation.id,
-        ).order_by(Message.created_at.desc()).limit(10).all()
-        ctx = "\n".join([f"{m.role}: {m.content}" for m in reversed(history)])
+                # 获取最近的消息历史（增加上下文窗口以保留更多对话记录）
+                history = db.query(Message).filter(
+                    Message.conversation_id == conversation.id,
+                ).order_by(Message.created_at.desc()).limit(50).all()
+                ctx = "\n".join([f"{m.role}: {m.content}" for m in reversed(history)])
         
         # 接收并处理消息
         while True:
@@ -221,9 +225,20 @@ async def handle_websocket_chat(
                     loguru.logger.warning(f"检索失败: {e}")
                     docs = []
                 
+                # 获取用户记忆上下文
+                memory_service = get_user_memory_service()
+                full_context = f"{ctx}\n{query}" if ctx else query
+                memory_context = memory_service.get_formatted_memories_for_prompt(
+                    db, current_user.id, full_context, limit=5
+                )
+                
                 # 构建提示词
                 system_prompt = generator._build_system_prompt(assistant_info, user_mbti)
                 user_prompt = generator._build_user_prompt(query, docs)
+                
+                # 如果有相关记忆，添加到用户提示词中
+                if memory_context:
+                    user_prompt = f"{user_prompt}\n\n{memory_context}"
                 
                 messages = [
                     {"role": "system", "content": system_prompt},
@@ -252,17 +267,31 @@ async def handle_websocket_chat(
                 db.commit()
                 db.refresh(assistant_message)
                 message_id = assistant_message.id
-                
-                # 发送完成消息
+
+                # 发送完成消息（包含完整内容）
                 await websocket.send_text(json.dumps({
                     "type": "done",
                     "message_id": message_id,
+                    "content": full_content,
                 }))
                 
                 # 更新对话时间
                 conversation.updated_at = __import__('datetime').datetime.now()
-                conversation.message_count += 1
+                conversation.message_count += 2  # 用户消息 + 助手消息
                 db.commit()
+                
+                # 异步提取用户偏好（不阻塞响应）
+                try:
+                    vector_memory_service = get_memory_service()
+                    asyncio.create_task(
+                        vector_memory_service.extract_preference(
+                            user_id=current_user.id,
+                            message=query,
+                            assistant_response=full_content
+                        )
+                    )
+                except Exception as e:
+                    loguru.logger.warning(f"提取用户偏好失败: {e}")
                 
             except WebSocketDisconnect:
                 break

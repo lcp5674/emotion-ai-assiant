@@ -3,7 +3,7 @@ Redis缓存服务 - 提供统一的缓存管理
 """
 import json
 import loguru
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 from datetime import timedelta
 import redis.asyncio as redis
 
@@ -281,6 +281,40 @@ class CacheService:
         """清除对话相关的所有缓存"""
         return await self.delete_pattern(f"conv:*:{conversation_id}")
 
+    async def cache_assistants(self, assistants_data: List[Dict], mbti_type: Optional[str] = None) -> bool:
+        """缓存AI助手数据
+
+        Args:
+            assistants_data: 助手数据列表
+            mbti_type: 可选的MBTI类型，用于分类缓存
+
+        Returns:
+            是否成功
+        """
+        try:
+            if mbti_type:
+                key = f"assistants:mbti:{mbti_type}"
+            else:
+                key = "assistants:all"
+            return await self.set(key, assistants_data, ttl=3600 * 24)  # 24小时缓存
+        except Exception as e:
+            loguru.logger.warning(f"Cache assistants error: {e}")
+            return False
+
+
+async def cache_assistants(assistants_data: List[Dict], mbti_type: Optional[str] = None) -> bool:
+    """Standalone function to cache AI assistants data
+
+    Args:
+        assistants_data: 助手数据列表
+        mbti_type: 可选的MBTI类型，用于分类缓存
+
+    Returns:
+        是否成功
+    """
+    cache = get_cache_service()
+    return await cache.cache_assistants(assistants_data, mbti_type)
+
 
 # 全局实例
 _cache_service: Optional[CacheService] = None
@@ -292,3 +326,35 @@ def get_cache_service() -> CacheService:
     if _cache_service is None:
         _cache_service = CacheService()
     return _cache_service
+
+
+class SessionMemory:
+    """会话记忆服务 - 用于存储对话上下文"""
+    
+    async def get_topics(self, session_id: str) -> List[str]:
+        """获取会话主题"""
+        cache = get_cache_service()
+        topics = await cache.get(f"session:topics:{session_id}")
+        return topics or []
+    
+    async def set_topics(self, session_id: str, topics: List[str]) -> bool:
+        """设置会话主题"""
+        cache = get_cache_service()
+        return await cache.set(f"session:topics:{session_id}", topics, ttl=3600)
+    
+    async def get_emotion_state(self, session_id: str) -> Dict[str, Any]:
+        """获取情绪状态"""
+        cache = get_cache_service()
+        state = await cache.get(f"session:emotion:{session_id}")
+        return state or {}
+
+
+_session_memory: Optional[SessionMemory] = None
+
+
+def get_session_memory() -> SessionMemory:
+    """获取会话记忆服务实例"""
+    global _session_memory
+    if _session_memory is None:
+        _session_memory = SessionMemory()
+    return _session_memory

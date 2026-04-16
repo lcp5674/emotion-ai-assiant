@@ -24,12 +24,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         try:
             redis_client = await get_redis()
-            current = await redis_client.incr(key)
+            current = await redis_client.incr(key.encode("utf-8") if isinstance(key, str) else key)
 
             if current == 1:
-                await redis_client.expire(key, 60)
+                await redis_client.expire(key.encode("utf-8") if isinstance(key, str) else key, 60)
 
-            ttl = await redis_client.ttl(key)
+            ttl = await redis_client.ttl(key.encode("utf-8") if isinstance(key, str) else key)
             remaining = max(0, self.requests_per_minute - current)
 
             if current > self.requests_per_minute:
@@ -79,13 +79,14 @@ async def check_rate_limit(user_id: int, action: str, limit: int, window: int = 
         tuple: (是否通过, 剩余次数)
     """
     key = f"ratelimit:user:{user_id}:{action}:{int(time.time() / window)}"
+    key_bytes = key.encode("utf-8") if isinstance(key, str) else key
 
     try:
         redis_client = await get_redis()
-        current = await redis_client.incr(key)
+        current = await redis_client.incr(key_bytes)
 
         if current == 1:
-            await redis_client.expire(key, window)
+            await redis_client.expire(key_bytes, window)
 
         remaining = max(0, limit - current)
         return current <= limit, remaining

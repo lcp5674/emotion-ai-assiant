@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Tag, Row, Col, Progress, Spin, App, Modal, Space } from 'antd'
-import { CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, ShareAltOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, ShareAltOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useMbtiStore, useAuthStore } from '../../stores'
 
@@ -115,16 +115,26 @@ ${getMbtiDescription(result?.mbti_type)}
         color: '#fff',
       }}>
         <div className="container">
-          <h1 style={{ fontSize: 36, marginBottom: 8 }}>你的MBTI类型</h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              style={{ color: '#fff', position: 'absolute', left: 20 }}
+              size="large"
+            />
+            <h1 style={{ fontSize: 36, margin: 0 }}>你的MBTI类型</h1>
+          </div>
           <div style={{
-            fontSize: 72,
+            fontSize: 'clamp(36px, 10vw, 72px)',
             fontWeight: 'bold',
             color: '#ffffff',
             textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            wordBreak: 'break-word',
           }}>
             {result.mbti_type}
           </div>
-          <p style={{ fontSize: 18, marginTop: 8, opacity: 0.9 }}>
+          <p style={{ fontSize: 18, marginTop: 8, opacity: 0.9, wordBreak: 'break-word' }}>
             {result.personality}
           </p>
         </div>

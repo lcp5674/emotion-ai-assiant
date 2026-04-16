@@ -42,6 +42,7 @@ class Settings(BaseSettings):
 
     # 大模型配置
     LLM_PROVIDER: str = ""  # 必须配置，如: openai/anthropic/glm/qwen/minimax/ernie/hunyuan/spark/doubao/siliconflow
+    LLM_FAILOVER_CHAIN: Optional[str] = None  # 可选，自定义LLM降级链，逗号分隔
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-3.5-turbo"
@@ -81,6 +82,12 @@ class Settings(BaseSettings):
     SILICONFLOW_API_KEY: Optional[str] = None
     SILICONFLOW_MODEL: str = "Qwen/Qwen2-72B-Instruct"
     SILICONFLOW_BASE_URL: Optional[str] = None
+
+    # ========== 自定义LLM配置（兼容OpenAI协议）==========
+    # 支持任何提供OpenAI兼容API的服务商
+    CUSTOM_LLM_API_KEY: Optional[str] = None
+    CUSTOM_LLM_MODEL: str = "gpt-3.5-turbo"
+    CUSTOM_LLM_BASE_URL: str = "https://api.openai.com/v1"
 
     # ========== 火山引擎配置 ==========
     VOLCENGINE_API_KEY: Optional[str] = None

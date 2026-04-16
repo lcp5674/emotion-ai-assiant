@@ -56,7 +56,7 @@ async def submit_test(
     
     # 计算结果
     answers = [answer.model_dump() for answer in request.answers]
-    result = attachment_service.calculate_result(db, current_user.id, answers)
+    result = await attachment_service.calculate_result(db, current_user.id, answers)
     
     # 保存答案
     for answer_data in answers:
@@ -115,31 +115,32 @@ async def get_result(
 ):
     """获取当前用户的依恋风格测评结果"""
     if not hasattr(current_user, 'attachment_result_id') or not current_user.attachment_result_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="尚未完成依恋风格测评",
-        )
-    
+        return None
+
     attachment_result = db.query(AttachmentResult).filter(
         AttachmentResult.user_id == current_user.id,
         AttachmentResult.is_latest == True
     ).first()
-    
+
     if not attachment_result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="依恋风格测评结果不存在",
-        )
+        return None
     
-    # 获取风格
+    # 获取风格 - 从枚举值映射回中文名称
+    ENUM_TO_CHINESE = {
+        "secure": "安全型",
+        "anxious": "焦虑型",
+        "avoidant": "回避型",
+        "disorganized": "混乱型",
+    }
     style_value = attachment_result.attachment_style.value if hasattr(attachment_result.attachment_style, 'value') else str(attachment_result.attachment_style)
-    
+    style_name = ENUM_TO_CHINESE.get(style_value, style_value)
+
     # 获取特征列表
     characteristics = attachment_result.characteristics if isinstance(attachment_result.characteristics, list) else []
-    
+
     return AttachmentResultResponse(
         id=attachment_result.id,
-        style=style_value,
+        style=style_name,
         anxiety_score=attachment_result.anxiety_score,
         avoidance_score=attachment_result.avoidance_score,
         characteristics=characteristics,

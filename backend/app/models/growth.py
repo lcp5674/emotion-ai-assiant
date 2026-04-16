@@ -2,7 +2,7 @@
 用户成长体系和成就徽章模型
 """
 import enum
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Date, Boolean, Text, ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -105,6 +105,54 @@ class ExpRecord(Base):
 
     def __repr__(self):
         return f"<ExpRecord(user_id={self.user_id}, action={self.action}, exp={self.exp_gained})>"
+
+
+class CheckIn(Base):
+    """每日打卡记录"""
+    __tablename__ = "check_ins"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="用户ID")
+    check_in_date = Column(Date, nullable=False, comment="打卡日期")
+    check_in_time = Column(DateTime, server_default=func.now(), comment="打卡时间")
+    streak_days = Column(Integer, default=1, comment="连续打卡天数")
+    xp_reward = Column(Integer, default=5, comment="获得经验")
+    note = Column(String(200), nullable=True, comment="打卡备注")
+
+    # 关系
+    user = relationship("User")
+
+    __table_args__ = (
+        # 同一用户同一天只能打卡一次
+        UniqueConstraint('user_id', 'check_in_date', name='uix_user_check_in_date'),
+    )
+
+    def __repr__(self):
+        return f"<CheckIn(user_id={self.user_id}, date={self.check_in_date}, streak={self.streak_days})>"
+
+
+class Reminder(Base):
+    """回访提醒"""
+    __tablename__ = "reminders"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="用户ID")
+
+    reminder_type = Column(String(50), nullable=False, comment="提醒类型: daily_checkin/diary_reminder/return_visit")
+    title = Column(String(100), nullable=False, comment="提醒标题")
+    message = Column(String(500), nullable=True, comment="提醒内容")
+    scheduled_time = Column(DateTime, nullable=False, comment="计划发送时间")
+    is_sent = Column(Boolean, default=False, comment="是否已发送")
+    is_cancelled = Column(Boolean, default=False, comment="是否已取消")
+    sent_at = Column(DateTime, nullable=True, comment="实际发送时间")
+
+    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+
+    # 关系
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<Reminder(user_id={self.user_id}, type={self.reminder_type}, scheduled={self.scheduled_time})>"
 
 
 class GrowthTask(Base):

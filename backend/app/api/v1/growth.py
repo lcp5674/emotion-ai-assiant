@@ -218,11 +218,16 @@ async def get_growth_overview(
     pending_tasks = len([t for t in tasks if not t.is_completed])
 
     return {
-        "level": level_info,
+        "username": current_user.nickname or "用户",
+        "level": level_info["current_level"],
+        "total_badges": badge_progress["total"],
+        "unlocked_badges": badge_progress["unlocked_count"],
         "badges": {
             "total": badge_progress["total"],
             "unlocked": badge_progress["unlocked_count"],
             "progress_percent": int(badge_progress["unlocked_count"] / badge_progress["total"] * 100) if badge_progress["total"] > 0 else 0,
         },
         "pending_tasks": pending_tasks,
+        "current_exp": level_info["current_exp"],
+        "total_exp_gained": level_info["total_exp_gained"],
     }

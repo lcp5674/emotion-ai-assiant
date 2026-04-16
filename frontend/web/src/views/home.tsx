@@ -352,75 +352,93 @@ export default function Home() {
               三位一体深度测评：MBTI人格 + SBTI恋爱风格 + 依恋类型<br/>
               全面认识自己，找到最懂你的AI情感伴侣
 </p>
-            {/* 三大测评入口 */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-              <Link to="/comprehensive">
-                <Button
-                  size="large"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '24px',
-                    padding: '10px 28px',
-                    fontSize: '15px',
-                    fontWeight: 600,
-                  }}
-                >
-                  🔮 三位一体测评
-                </Button>
+            {/* 三大测评入口卡片式展示 */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: 16, 
+              maxWidth: '800px', 
+              margin: '0 auto',
+              width: '100%',
+            }}>
+              {/* MBTI卡片 */}
+              <Link to="/mbti" style={{ textDecoration: 'none' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                  borderRadius: '20px',
+                  padding: '24px 20px',
+                  textAlign: 'center',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 8px 25px rgba(99, 102, 241, 0.35)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 35px rgba(99, 102, 241, 0.45)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(99, 102, 241, 0.35)';
+                }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>🔱</div>
+                  <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: '#fff' }}>MBTI人格测评</h4>
+                  <p style={{ fontSize: 12, opacity: 0.9, marginBottom: 0 }}>发现你的性格优势</p>
+                </div>
               </Link>
-              <Link to="/mbti/quick">
-                <Button
-                  size="large"
-                  style={{
-                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '24px',
-                    padding: '10px 28px',
-                    fontSize: '15px',
-                    fontWeight: 600,
-                  }}
-                >
-                  🔥 MBTI人格
-                </Button>
+              {/* SBTI卡片 */}
+              <Link to="/sbti" style={{ textDecoration: 'none' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
+                  borderRadius: '20px',
+                  padding: '24px 20px',
+                  textAlign: 'center',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 8px 25px rgba(244, 114, 182, 0.35)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 35px rgba(244, 114, 182, 0.45)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(244, 114, 182, 0.35)';
+                }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>💕</div>
+                  <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: '#fff' }}>SBTI恋爱风格</h4>
+                  <p style={{ fontSize: 12, opacity: 0.9, marginBottom: 0 }}>找到理想伴侣类型</p>
+                </div>
               </Link>
-              <Link to="/sbti">
-                <Button
-                  size="large"
-                  style={{
-                    background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '24px',
-                    padding: '10px 28px',
-                    fontSize: '15px',
-                    fontWeight: 600,
-                  }}
-                >
-                  💕 SBTI恋爱
-                </Button>
-              </Link>
-              <Link to="/attachment">
-                <Button
-                  size="large"
-                  style={{
-                    background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '24px',
-                    padding: '10px 28px',
-                    fontSize: '15px',
-                    fontWeight: 600,
-                  }}
-                >
-                  💙 依恋风格
-                </Button>
+              {/* 依恋风格卡片 */}
+              <Link to="/attachment" style={{ textDecoration: 'none' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)',
+                  borderRadius: '20px',
+                  padding: '24px 20px',
+                  textAlign: 'center',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 8px 25px rgba(52, 211, 153, 0.35)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 35px rgba(52, 211, 153, 0.45)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 8px 25px rgba(52, 211, 153, 0.35)';
+                }}>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>💙</div>
+                  <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: '#fff' }}>依恋风格测评</h4>
+                  <p style={{ fontSize: 12, opacity: 0.9, marginBottom: 0 }}>认识你的依恋模式</p>
+                </div>
               </Link>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginTop: 32 }}>
               <Link to="/profile/deep">
                 <Button
                   size="large"
@@ -494,7 +512,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* Three-in-One Assessment Section */}
+      {/* Three-in-One Assessment Section - Enhanced Cards */}
       <section style={{ padding: '80px 0', background: 'linear-gradient(180deg, #f8fafc 0%, #fff 100%)' }}>
         <div className="container" style={{
           maxWidth: '1200px',
@@ -508,7 +526,7 @@ export default function Home() {
               marginBottom: 16,
               color: '#1f2937',
             }}>
-              🔮 三位一体深度画像
+              🔮 三大测评入口
             </h2>
             <p style={{
               fontSize: '18px',
@@ -521,91 +539,234 @@ export default function Home() {
             </p>
           </div>
           
-          <Row gutter={[32, 24]} justify="center">
+          <Row gutter={[32, 32]} justify="center">
+            {/* MBTI Card */}
             <Col xs={24} lg={7}>
-              <Card
-                style={{
-                  borderRadius: '20px',
-                  border: 'none',
-                  boxShadow: '0 8px 30px rgba(99, 102, 241, 0.15)',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                }}
-              >
-                <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
-                  <div style={{ fontSize: 40, marginBottom: 16 }}>🔱</div>
-                  <h3 style={{ color: '#fff', fontSize: 22, marginBottom: 12 }}>MBTI人格测评</h3>
-                  <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
-                    16种人格类型<br/>
-                    发现你的性格优势与成长点<br/>
-                    <span style={{ fontWeight: 600, marginTop: 12, display: 'block' }}>
-                      适合你的AI助手类型
-                    </span>
-                  </p>
-                </div>
-              </Card>
+              <Link to="/mbti" style={{ textDecoration: 'none' }}>
+                <Card
+                  hoverable
+                  style={{
+                    borderRadius: '24px',
+                    border: 'none',
+                    boxShadow: '0 12px 40px rgba(99, 102, 241, 0.2)',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    transition: 'all 0.3s ease',
+                  }}
+                  bodyStyle={{ padding: 0 }}
+                  onMouseEnter={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.transform = 'translateY(-8px)';
+                    target.style.boxShadow = '0 20px 50px rgba(99, 102, 241, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.transform = 'translateY(0)';
+                    target.style.boxShadow = '0 12px 40px rgba(99, 102, 241, 0.2)';
+                  }}
+                >
+                  {/* Card Glow Effect */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    right: '-30%',
+                    width: '80%',
+                    height: '200%',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
+                    pointerEvents: 'none',
+                  }} />
+                  <div style={{ textAlign: 'center', color: '#fff', padding: '40px 24px 32px', position: 'relative', zIndex: 1 }}>
+                    <div style={{ 
+                      width: 80, 
+                      height: 80, 
+                      borderRadius: '50%', 
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 20px',
+                      fontSize: 40,
+                    }}>🔱</div>
+                    <h3 style={{ color: '#fff', fontSize: 24, marginBottom: 12, fontWeight: 700 }}>MBTI人格测评</h3>
+                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, lineHeight: 1.6, marginBottom: 24 }}>
+                      16种人格类型<br/>
+                      发现性格优势与成长点<br/>
+                      匹配最适合你的AI助手
+                    </p>
+                    <div style={{
+                      background: 'rgba(255,255,255,0.95)',
+                      color: '#6366f1',
+                      padding: '12px 32px',
+                      borderRadius: '20px',
+                      fontWeight: 600,
+                      fontSize: 15,
+                      display: 'inline-block',
+                    }}>
+                      开始测评 →
+                    </div>
+                  </div>
+                </Card>
+              </Link>
             </Col>
+            
+            {/* SBTI Card */}
             <Col xs={24} lg={7}>
-              <Card
-                style={{
-                  borderRadius: '20px',
-                  border: 'none',
-                  boxShadow: '0 8px 30px rgba(244, 114, 182, 0.15)',
-                  background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
-                }}
-              >
-                <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
-                  <div style={{ fontSize: 40, marginBottom: 16 }}>💕</div>
-                  <h3 style={{ color: '#fff', fontSize: 22, marginBottom: 12 }}>SBTI恋爱风格</h3>
-                  <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
-                    34种恋爱类型<br/>
-                    解读你的恋爱模式<br/>
-                    <span style={{ fontWeight: 600, marginTop: 12, display: 'block' }}>
+              <Link to="/sbti" style={{ textDecoration: 'none' }}>
+                <Card
+                  hoverable
+                  style={{
+                    borderRadius: '24px',
+                    border: 'none',
+                    boxShadow: '0 12px 40px rgba(244, 114, 182, 0.2)',
+                    background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    transition: 'all 0.3s ease',
+                  }}
+                  bodyStyle={{ padding: 0 }}
+                  onMouseEnter={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.transform = 'translateY(-8px)';
+                    target.style.boxShadow = '0 20px 50px rgba(244, 114, 182, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.transform = 'translateY(0)';
+                    target.style.boxShadow = '0 12px 40px rgba(244, 114, 182, 0.2)';
+                  }}
+                >
+                  {/* Card Glow Effect */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    right: '-30%',
+                    width: '80%',
+                    height: '200%',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
+                    pointerEvents: 'none',
+                  }} />
+                  <div style={{ textAlign: 'center', color: '#fff', padding: '40px 24px 32px', position: 'relative', zIndex: 1 }}>
+                    <div style={{ 
+                      width: 80, 
+                      height: 80, 
+                      borderRadius: '50%', 
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 20px',
+                      fontSize: 40,
+                    }}>💕</div>
+                    <h3 style={{ color: '#fff', fontSize: 24, marginBottom: 12, fontWeight: 700 }}>SBTI恋爱风格</h3>
+                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, lineHeight: 1.6, marginBottom: 24 }}>
+                      34种恋爱类型<br/>
+                      解读你的恋爱模式<br/>
                       找到理想伴侣类型
-                    </span>
-                  </p>
-                </div>
-              </Card>
+                    </p>
+                    <div style={{
+                      background: 'rgba(255,255,255,0.95)',
+                      color: '#ec4899',
+                      padding: '12px 32px',
+                      borderRadius: '20px',
+                      fontWeight: 600,
+                      fontSize: 15,
+                      display: 'inline-block',
+                    }}>
+                      开始测评 →
+                    </div>
+                  </div>
+                </Card>
+              </Link>
             </Col>
+            
+            {/* Attachment Card */}
             <Col xs={24} lg={7}>
-              <Card
-                style={{
-                  borderRadius: '20px',
-                  border: 'none',
-                  boxShadow: '0 8px 30px rgba(52, 211, 153, 0.15)',
-                  background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)',
-                }}
-              >
-                <div style={{ textAlign: 'center', color: '#fff', padding: '20px 0' }}>
-                  <div style={{ fontSize: 40, marginBottom: 16 }}>💙</div>
-                  <h3 style={{ color: '#fff', fontSize: 22, marginBottom: 12 }}>依恋风格测评</h3>
-                  <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
-                    4种依恋类型<br/>
-                    认识你的依恋模式<br/>
-                    <span style={{ fontWeight: 600, marginTop: 12, display: 'block' }}>
+              <Link to="/attachment" style={{ textDecoration: 'none' }}>
+                <Card
+                  hoverable
+                  style={{
+                    borderRadius: '24px',
+                    border: 'none',
+                    boxShadow: '0 12px 40px rgba(52, 211, 153, 0.2)',
+                    background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    transition: 'all 0.3s ease',
+                  }}
+                  bodyStyle={{ padding: 0 }}
+                  onMouseEnter={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.transform = 'translateY(-8px)';
+                    target.style.boxShadow = '0 20px 50px rgba(52, 211, 153, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.transform = 'translateY(0)';
+                    target.style.boxShadow = '0 12px 40px rgba(52, 211, 153, 0.2)';
+                  }}
+                >
+                  {/* Card Glow Effect */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    right: '-30%',
+                    width: '80%',
+                    height: '200%',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
+                    pointerEvents: 'none',
+                  }} />
+                  <div style={{ textAlign: 'center', color: '#fff', padding: '40px 24px 32px', position: 'relative', zIndex: 1 }}>
+                    <div style={{ 
+                      width: 80, 
+                      height: 80, 
+                      borderRadius: '50%', 
+                      background: 'rgba(255,255,255,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 20px',
+                      fontSize: 40,
+                    }}>💙</div>
+                    <h3 style={{ color: '#fff', fontSize: 24, marginBottom: 12, fontWeight: 700 }}>依恋风格测评</h3>
+                    <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15, lineHeight: 1.6, marginBottom: 24 }}>
+                      4种依恋类型<br/>
+                      认识你的依恋模式<br/>
                       建立健康关系
-                    </span>
-                  </p>
-                </div>
-              </Card>
+                    </p>
+                    <div style={{
+                      background: 'rgba(255,255,255,0.95)',
+                      color: '#14b8a6',
+                      padding: '12px 32px',
+                      borderRadius: '20px',
+                      fontWeight: 600,
+                      fontSize: 15,
+                      display: 'inline-block',
+                    }}>
+                      开始测评 →
+                    </div>
+                  </div>
+                </Card>
+              </Link>
             </Col>
           </Row>
           
-          <div style={{ textAlign: 'center', marginTop: 40 }}>
+          <div style={{ textAlign: 'center', marginTop: 48 }}>
             <Link to="/comprehensive">
               <Button
                 size="large"
                 style={{
-                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                  background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
                   color: '#fff',
                   border: 'none',
                   borderRadius: '28px',
                   padding: '14px 48px',
                   fontSize: '16px',
                   fontWeight: 600,
-                  boxShadow: '0 8px 25px rgba(99, 102, 241, 0.3)',
+                  boxShadow: `0 8px 25px ${themeColors[themeColor]}40`,
                 }}
               >
-                开始三位一体测评
+                🔮 完成三位一体测评
               </Button>
             </Link>
           </div>
@@ -867,8 +1028,9 @@ export default function Home() {
               icon={<WarningOutlined />}
               style={{
                 borderRadius: '12px',
-                border: '1px solid #fde68a',
-                background: '#fef3c7',
+                border: theme === 'dark' ? '1px solid #5c4512' : '1px solid #fde68a',
+                background: theme === 'dark' ? '#2d2608' : '#fef3c7',
+                color: theme === 'dark' ? '#fff' : undefined,
               }}
               action={
                 <Button

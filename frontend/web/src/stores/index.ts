@@ -9,6 +9,7 @@ interface User {
   mbti_type?: string
   member_level: string
   is_verified: boolean
+  is_admin: boolean
 }
 
 interface AuthState {
@@ -16,9 +17,11 @@ interface AuthState {
   access_token: string | null
   refresh_token: string | null
   isAuthenticated: boolean
+  isHydrated: boolean  // 添加：追踪persist是否已完成数据恢复
   setAuth: (user: User, access_token: string, refresh_token: string) => void
   updateUser: (user: Partial<User>) => void
   logout: () => void
+  setHydrated: (hydrated: boolean) => void  // 添加：设置hydrate状态
 }
 
 /**
@@ -41,6 +44,7 @@ export const useAuthStore = create<AuthState>()(
       access_token: null,
       refresh_token: null,
       isAuthenticated: false,
+      isHydrated: false,  // 初始状态为false
 
       setAuth: (user, access_token, refresh_token) => {
         // 优化：使用try-catch防止localStorage不可用时出错
@@ -69,6 +73,8 @@ export const useAuthStore = create<AuthState>()(
         }
         set({ user: null, access_token: null, refresh_token: null, isAuthenticated: false })
       },
+
+      setHydrated: (hydrated) => set({ isHydrated: hydrated }),
     }),
     {
       name: 'auth-storage',
@@ -80,6 +86,10 @@ export const useAuthStore = create<AuthState>()(
         refresh_token: state.refresh_token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        // persist恢复完成后设置isHydrated为true
+        state?.setHydrated(true)
+      },
     }
   )
 )

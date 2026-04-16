@@ -87,12 +87,15 @@ class AiAssistantSchema(BaseModel):
     name: str
     avatar: Optional[str] = None
     mbti_type: str
+    sbti_types: Optional[str] = None  # SBTI主题类型,如: executing,influencing,relationship,strategic
+    attachment_styles: Optional[str] = None  # 依恋风格类型,如: secure,anxious,avoidant
     personality: Optional[str] = None
     speaking_style: Optional[str] = None
     expertise: Optional[str] = None
     greeting: Optional[str] = None
     tags: Optional[str] = None
     is_recommended: bool = False
+    is_favorited: bool = False  # 当前用户是否收藏
 
     class Config:
         from_attributes = True

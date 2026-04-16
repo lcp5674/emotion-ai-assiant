@@ -40,14 +40,17 @@ async def create_diary(
 
     try:
         diary = await diary_service.create_diary(db, current_user.id, request)
+        db.commit()  # 显式提交事务
         return DiaryDetailSchema.from_orm(diary)
 
     except ValueError as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"创建日记失败: {str(e)}",
@@ -123,25 +126,6 @@ async def get_mood_config():
 
 
 # ============ 日记操作 ============
-
-@router.get("/{diary_id}", summary="获取日记详情", response_model=DiaryDetailSchema)
-async def get_diary(
-    diary_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """获取日记的详细信息"""
-    diary_service = get_diary_service()
-    diary = diary_service.get_diary(db, current_user.id, diary_id)
-
-    if not diary:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="日记不存在",
-        )
-
-    return DiaryDetailSchema.from_orm(diary)
-
 
 @router.get("/date/{diary_date}", summary="根据日期获取日记", response_model=DiaryDetailSchema)
 async def get_diary_by_date(
@@ -516,3 +500,24 @@ async def get_terms_of_service():
         "last_updated": "2024-01-01",
         "version": "1.0"
     }
+
+
+# ============ 日记详情（放在最后，避免拦截其他路由）============
+
+@router.get("/{diary_id}", summary="获取日记详情", response_model=DiaryDetailSchema)
+async def get_diary(
+    diary_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """获取日记的详细信息"""
+    diary_service = get_diary_service()
+    diary = diary_service.get_diary(db, current_user.id, diary_id)
+
+    if not diary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="日记不存在",
+        )
+
+    return DiaryDetailSchema.from_orm(diary)

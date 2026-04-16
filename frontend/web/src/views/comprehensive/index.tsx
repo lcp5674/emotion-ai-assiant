@@ -31,8 +31,13 @@ export default function ComprehensiveTest() {
       (testStatuses.attachment.completed ? 3 : 2) : 1) : 0
 
   useEffect(() => {
-    loadTestStatuses()
-  }, [])
+    // 只有登录用户才加载测评状态
+    if (isAuthenticated) {
+      loadTestStatuses()
+    } else {
+      setLoading(false)
+    }
+  }, [isAuthenticated])
 
   const loadTestStatuses = async () => {
     setLoading(true)
@@ -43,10 +48,14 @@ export default function ComprehensiveTest() {
         api.attachment.result().catch(() => null),
       ])
 
+      const getResult = (result: PromiseSettledResult<any>) => {
+        return result.status === 'fulfilled' ? result.value : null
+      }
+
       setTestStatuses({
-        mbti: { completed: mbti.status === 'fulfilled' && !!mbti.value, result: mbti.value },
-        sbti: { completed: sbti.status === 'fulfilled' && !!sbti.value, result: sbti.value },
-        attachment: { completed: attachment.status === 'fulfilled' && !!attachment.value, result: attachment.value },
+        mbti: { completed: mbti.status === 'fulfilled' && !!mbti.value, result: getResult(mbti) },
+        sbti: { completed: sbti.status === 'fulfilled' && !!sbti.value, result: getResult(sbti) },
+        attachment: { completed: attachment.status === 'fulfilled' && !!attachment.value, result: getResult(attachment) },
       })
     } catch (error) {
       console.error('加载测评状态失败:', error)

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Card, Button, Tag, Row, Col, Spin, App, Tabs, List, Avatar, Empty, Progress, Badge } from 'antd'
-import { UserOutlined, CrownOutlined, HeartOutlined, RobotOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { Card, Button, Tag, Row, Col, Spin, App, Tabs, List, Avatar, Empty, Progress, Badge, Statistic } from 'antd'
+import { UserOutlined, CrownOutlined, HeartOutlined, RobotOutlined, CheckCircleOutlined, ArrowLeftOutlined, SolutionOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useDeepProfileStore, useAuthStore } from '../../stores'
 
-// 雷达图组件
-const RadarChart = ({ data, width = 280, height = 280 }: { data: { label: string; value: number }[]; width?: number; height?: number }) => {
+// 雷达图组件 - 响应式版本
+const RadarChart = ({ data, width = 350, height = 350 }: { data: { label: string; value: number }[]; width?: number; height?: number }) => {
   const maxValue = 100
   const centerX = width / 2
   const centerY = height / 2
@@ -43,78 +43,82 @@ const RadarChart = ({ data, width = 280, height = 280 }: { data: { label: string
   })
 
   return (
-    <svg width={width} height={height} style={{ display: 'block', margin: '0 auto' }}>
-      {grids.map((p, i) => (
-        <polygon key={i} points={p} fill="none" stroke="#e8e8e8" strokeWidth="1" />
-      ))}
-      {data.map((_, i) => {
-        const angle = startAngle + i * angleStep
-        return (
-          <line
-            key={i}
-            x1={centerX}
-            y1={centerY}
-            x2={centerX + radius * Math.cos(angle)}
-            y2={centerY + radius * Math.sin(angle)}
-            stroke="#e8e8e8"
-            strokeWidth="1"
-          />
-        )
-      })}
-      <polygon
-        points={points.map(p => `${p.x},${p.y}`).join(' ')}
-        fill="rgba(114, 46, 209, 0.3)"
-        stroke="#722ed1"
-        strokeWidth="2"
-      />
-      {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="4" fill="#722ed1" />
-      ))}
-      {labels.map((l, i) => (
-        <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="#595959">
-          {l.label}
-        </text>
-      ))}
-    </svg>
+    <div style={{ width: '100%', maxWidth: width, margin: '0 auto', overflow: 'hidden', aspectRatio: `${width} / ${height}` }}>
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+        {grids.map((p, i) => (
+          <polygon key={i} points={p} fill="none" stroke="#e8e8e8" strokeWidth="1" />
+        ))}
+        {data.map((_, i) => {
+          const angle = startAngle + i * angleStep
+          return (
+            <line
+              key={i}
+              x1={centerX}
+              y1={centerY}
+              x2={centerX + radius * Math.cos(angle)}
+              y2={centerY + radius * Math.sin(angle)}
+              stroke="#e8e8e8"
+              strokeWidth="1"
+            />
+          )
+        })}
+        <polygon
+          points={points.map(p => `${p.x},${p.y}`).join(' ')}
+          fill="rgba(114, 46, 209, 0.3)"
+          stroke="#722ed1"
+          strokeWidth="2"
+        />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="4" fill="#722ed1" />
+        ))}
+        {labels.map((l, i) => (
+          <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="#595959">
+            {l.label}
+          </text>
+        ))}
+      </svg>
+    </div>
   )
 }
 
-// 柱状图组件
+// 柱状图组件 - 响应式版本
 const BarChart = ({ data, width = 350, height = 180 }: { data: { label: string; value: number; color?: string }[]; width?: number; height?: number }) => {
   const maxValue = Math.max(...data.map(d => d.value), 100)
   const barWidth = (width - 40) / data.length - 8
   const chartHeight = height - 40
 
   return (
-    <svg width={width} height={height} style={{ display: 'block', margin: '0 auto' }}>
-      {[0, 25, 50, 75, 100].map(pct => (
-        <line
-          key={pct}
-          x1="30"
-          y1={chartHeight - (pct / 100) * chartHeight}
-          x2={width - 10}
-          y2={chartHeight - (pct / 100) * chartHeight}
-          stroke="#f0f0f0"
-          strokeDasharray="4"
-        />
-      ))}
-      {data.map((d, i) => {
-        const barHeight = (d.value / maxValue) * chartHeight
-        const x = 35 + i * (barWidth + 8)
-        const y = chartHeight - barHeight
-        return (
-          <g key={i}>
-            <rect x={x} y={y} width={barWidth} height={barHeight} fill={d.color || '#722ed1'} rx="4" />
-            <text x={x + barWidth / 2} y={chartHeight + 15} textAnchor="middle" fontSize="10" fill="#8c8c8c">
-              {d.label}
-            </text>
-            <text x={x + barWidth / 2} y={y - 5} textAnchor="middle" fontSize="10" fill="#595959" fontWeight="bold">
-              {d.value}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
+    <div style={{ width: '100%', maxWidth: width, margin: '0 auto', overflow: 'hidden', aspectRatio: `${width} / ${height}` }}>
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+        {[0, 25, 50, 75, 100].map(pct => (
+          <line
+            key={pct}
+            x1="30"
+            y1={chartHeight - (pct / 100) * chartHeight}
+            x2={width - 10}
+            y2={chartHeight - (pct / 100) * chartHeight}
+            stroke="#f0f0f0"
+            strokeDasharray="4"
+          />
+        ))}
+        {data.map((d, i) => {
+          const barHeight = (d.value / maxValue) * chartHeight
+          const x = 35 + i * (barWidth + 8)
+          const y = chartHeight - barHeight
+          return (
+            <g key={i}>
+              <rect x={x} y={y} width={barWidth} height={barHeight} fill={d.color || '#722ed1'} rx="4" />
+              <text x={x + barWidth / 2} y={chartHeight + 15} textAnchor="middle" fontSize="10" fill="#8c8c8c">
+                {d.label}
+              </text>
+              <text x={x + barWidth / 2} y={y - 5} textAnchor="middle" fontSize="10" fill="#595959" fontWeight="bold">
+                {d.value}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
   )
 }
 
@@ -137,19 +141,47 @@ export default function DeepProfile() {
   const loadAllResults = async () => {
     setLocalLoading(true)
     try {
-      const [mbti, sbti, attachment, partners] = await Promise.allSettled([
-        api.mbti.result().catch(() => null),
-        api.sbti.result().catch(() => null),
-        api.attachment.result().catch(() => null),
-        api.profile.aiPartners().catch(() => ({ list: [] })),
-      ])
+      // 使用 Promise.all 配合 try-catch，每个 API 独立处理错误
+      let mbtiData = null
+      let sbtiData = null
+      let attachmentData = null
+      let partnersData: any[] = []
 
-      if (mbti.status === 'fulfilled') setMbtiResult(mbti.value)
-      if (sbti.status === 'fulfilled') setSbtiResult(sbti.value)
-      if (attachment.status === 'fulfilled') setAttachmentResult(attachment.value)
-      if (partners.status === 'fulfilled') setAiPartners(partners.value.list || [])
+      try {
+        const res = await api.mbti.result()
+        mbtiData = res
+      } catch (e) {
+        // 404 表示未测评，忽略错误
+        mbtiData = null
+      }
+
+      try {
+        const res = await api.sbti.result()
+        sbtiData = res
+      } catch (e) {
+        sbtiData = null
+      }
+
+      try {
+        const res = await api.attachment.result()
+        attachmentData = res
+      } catch (e) {
+        attachmentData = null
+      }
+
+      try {
+        const res = await api.profile.aiPartners()
+        partnersData = res?.list || []
+      } catch (e) {
+        partnersData = []
+      }
+
+      setMbtiResult(mbtiData)
+      setSbtiResult(sbtiData)
+      setAttachmentResult(attachmentData)
+      setAiPartners(partnersData)
     } catch (error) {
-      console.error(error)
+      console.error('加载测评结果失败:', error)
     } finally {
       setLocalLoading(false)
     }
@@ -222,11 +254,22 @@ export default function DeepProfile() {
       {/* Header */}
       <header style={{
         background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 50%, #fa8c16 100%)',
-        padding: '40px 0',
+        padding: '40px 24px',
         textAlign: 'center',
         color: '#fff',
+        position: 'relative',
+        zIndex: 1,
       }}>
         <div className="container">
+          <div style={{ position: 'relative' }}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              type="text"
+              style={{ color: '#fff', position: 'absolute', left: 0, top: 0 }}
+              size="large"
+            />
+          </div>
           <div style={{
             width: 80,
             height: 80,
@@ -252,6 +295,64 @@ export default function DeepProfile() {
       </header>
 
       <div className="container" style={{ marginTop: -20 }}>
+        {/* 未测评用户的引导页面 */}
+        {!hasAnyResult && (
+          <Card style={{ marginBottom: 24, textAlign: 'center' }}>
+            <div style={{ padding: '20px 0' }}>
+              <SolutionOutlined style={{ fontSize: 48, color: '#722ed1', marginBottom: 16 }} />
+              <h2 style={{ color: '#595959', marginBottom: 8 }}>开启你的深度人格探索之旅</h2>
+              <p style={{ color: '#8c8c8c', marginBottom: 24 }}>
+                完成 MBTI、SBTI、依恋风格 三大测评，获得专属的AI伴侣匹配
+              </p>
+              <Row gutter={[16, 16]} justify="center">
+                <Col xs={24} sm={8}>
+                  <Card hoverable style={{ height: '100%' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <UserOutlined style={{ fontSize: 32, color: '#722ed1' }} />
+                      <h4 style={{ marginTop: 12 }}>MBTI人格测试</h4>
+                      <p style={{ fontSize: 12, color: '#8c8c8c' }}>16种人格类型，找出真实的自己</p>
+                      <Link to="/mbti">
+                        <Button type="primary" style={{ background: '#722ed1', marginTop: 8 }}>开始测评</Button>
+                      </Link>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <Card hoverable style={{ height: '100%' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <CrownOutlined style={{ fontSize: 32, color: '#eb2f96' }} />
+                      <h4 style={{ marginTop: 12 }}>SBTI才干测试</h4>
+                      <p style={{ fontSize: 12, color: '#8c8c8c' }}>34个才干主题，发现你的核心优势</p>
+                      <Link to="/sbti/test">
+                        <Button type="primary" style={{ background: '#eb2f96', marginTop: 8 }}>开始测评</Button>
+                      </Link>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                  <Card hoverable style={{ height: '100%' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <HeartOutlined style={{ fontSize: 32, color: '#fa8c16' }} />
+                      <h4 style={{ marginTop: 12 }}>依恋风格测试</h4>
+                      <p style={{ fontSize: 12, color: '#8c8c8c' }}>4种依恋类型，了解你的情感模式</p>
+                      <Link to="/attachment/test">
+                        <Button type="primary" style={{ background: '#fa8c16', marginTop: 8 }}>开始测评</Button>
+                      </Link>
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+              <div style={{ marginTop: 24 }}>
+                <Link to="/comprehensive">
+                  <Button type="primary" size="large" style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)' }}>
+                    一键完成三大测评
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Comprehensive Insights */}
         {hasAnyResult && insights.length > 0 && (
           <Card
@@ -290,6 +391,7 @@ export default function DeepProfile() {
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
+          style={{ position: 'relative', zIndex: 10 }}
           items={[
             {
               key: 'mbti',
@@ -301,12 +403,11 @@ export default function DeepProfile() {
               children: hasMbti ? (
                 <Row gutter={[24, 24]}>
                   <Col xs={24} md={8}>
-                    <Card style={{ textAlign: 'center', height: '100%' }}>
-                      <div style={{ fontSize: 64, fontWeight: 'bold', color: '#722ed1', marginBottom: 16 }}>
+                    <Card style={{ textAlign: 'center', height: '100%', overflow: 'hidden' }}>
+                      <div style={{ fontSize: 'clamp(36px, 8vw, 64px)', fontWeight: 'bold', color: '#722ed1', marginBottom: 16, wordBreak: 'break-all', lineHeight: 1.2 }}>
                         {mbtiResult.mbti_type}
                       </div>
-                      <p style={{ color: '#595959', marginBottom: 16 }}>{mbtiResult.personality}</p>
-                      <Tag color="purple">{mbtiResult.personality?.split('，')[0]}</Tag>
+                      <p style={{ color: '#595959', marginBottom: 16, wordBreak: 'break-word', overflow: 'hidden', textAlign: 'center' }}>{mbtiResult.personality}</p>
                     </Card>
                   </Col>
 
@@ -327,9 +428,10 @@ export default function DeepProfile() {
                             <Tag>{dim.tendency}</Tag>
                           </div>
                           <Progress
-                            percent={Math.min(Math.abs(dim.score) * 5 + 50, 100)}
+                            percent={dim.percentage || 50}
                             strokeColor="#722ed1"
                             size="small"
+                            format={percent => `${percent}%`}
                           />
                         </div>
                       ))}
@@ -347,8 +449,8 @@ export default function DeepProfile() {
                   </Col>
 
                   <Col xs={24} md={12}>
-                    <Card title="关系建议">
-                      <p style={{ color: '#595959', lineHeight: 1.8 }}>
+                    <Card title="关系建议" style={{ overflow: 'hidden' }}>
+                      <p style={{ color: '#595959', lineHeight: 1.8, wordBreak: 'break-word' }}>
                         {mbtiResult.relationship_tips}
                       </p>
                     </Card>
@@ -356,7 +458,7 @@ export default function DeepProfile() {
                 </Row>
               ) : (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无MBTI测评结果">
-                  <Link to="/mbti/test">
+                  <Link to="/mbti">
                     <Button type="primary" style={{ background: '#722ed1' }}>去测评</Button>
                   </Link>
                 </Empty>
@@ -511,16 +613,16 @@ export default function DeepProfile() {
                       <div style={{ marginBottom: 24 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                           <span>焦虑程度</span>
-                          <span style={{ color: '#eb2f96', fontWeight: 'bold' }}>{attachmentResult.anxiety_score}%</span>
+                          <span style={{ color: '#eb2f96', fontWeight: 'bold' }}>{Math.round((attachmentResult.anxiety_score / 7) * 100)}%</span>
                         </div>
-                        <Progress percent={attachmentResult.anxiety_score} strokeColor="#eb2f96" trailColor="#f0f0f0" />
+                        <Progress percent={Math.round((attachmentResult.anxiety_score / 7) * 100)} strokeColor="#eb2f96" trailColor="#f0f0f0" />
                       </div>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                           <span>回避程度</span>
-                          <span style={{ color: '#1890ff', fontWeight: 'bold' }}>{attachmentResult.avoidance_score}%</span>
+                          <span style={{ color: '#1890ff', fontWeight: 'bold' }}>{Math.round((attachmentResult.avoidance_score / 7) * 100)}%</span>
                         </div>
-                        <Progress percent={attachmentResult.avoidance_score} strokeColor="#1890ff" trailColor="#f0f0f0" />
+                        <Progress percent={Math.round((attachmentResult.avoidance_score / 7) * 100)} strokeColor="#1890ff" trailColor="#f0f0f0" />
                       </div>
                     </Card>
                   </Col>
@@ -610,11 +712,11 @@ export default function DeepProfile() {
 
         {/* Actions */}
         <div style={{ textAlign: 'center', marginTop: 32, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/comprehensive"><Button type="primary" style={{ background: '#722ed1' }}>三位一体测评</Button></Link>
-          {!hasMbti && <Link to="/mbti/test"><Button>测评MBTI</Button></Link>}
-          {!hasSbti && <Link to="/sbti/test"><Button>测评SBTI</Button></Link>}
-          {!hasAttachment && <Link to="/attachment/test"><Button>测评依恋风格</Button></Link>}
-          <Link to="/chat"><Button size="large">开始聊天</Button></Link>
+          <Link to="/comprehensive"><Button type="primary" size="large" style={{ background: '#722ed1', minWidth: 140 }}>三位一体测评</Button></Link>
+          {!hasMbti && <Link to="/mbti"><Button size="large" style={{ minWidth: 120 }}>测评MBTI</Button></Link>}
+          {!hasSbti && <Link to="/sbti/test"><Button size="large" style={{ minWidth: 120 }}>测评SBTI</Button></Link>}
+          {!hasAttachment && <Link to="/attachment/test"><Button size="large" style={{ minWidth: 140 }}>测评依恋风格</Button></Link>}
+          <Link to="/chat"><Button type="primary" size="large" style={{ background: '#722ed1', minWidth: 120 }}>开始聊天</Button></Link>
         </div>
       </div>
     </div>

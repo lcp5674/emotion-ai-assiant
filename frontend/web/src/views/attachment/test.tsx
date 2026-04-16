@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Progress, Spin, App, Slider } from 'antd'
-import { HeartOutlined } from '@ant-design/icons'
+import { HeartOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useAttachmentStore } from '../../stores'
 
@@ -106,9 +106,17 @@ export default function AttachmentTest() {
         zIndex: 100,
       }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/attachment" style={{ fontSize: 20, color: '#eb2f96', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <HeartOutlined /> 依恋风格测评
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              style={{ fontSize: 18 }}
+            />
+            <Link to="/attachment" style={{ fontSize: 18, color: '#eb2f96', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <HeartOutlined /> 依恋风格测评
+            </Link>
+          </div>
           <div>
             <span style={{ color: '#8c8c8c', marginRight: 16 }}>
               第 {currentQuestionIndex + 1} / {questions.length} 题

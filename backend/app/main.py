@@ -56,6 +56,50 @@ async def lifespan(app: FastAPI):
             await seed_assistants(db)
         finally:
             db.close()
+
+        # 从数据库加载LLM配置到内存（解决重启后配置丢失问题）
+        try:
+            from app.core.database import SessionLocal as DbSession
+            from app.models import SystemConfig
+            import os
+            loguru.logger.info("开始从数据库加载LLM配置...")
+
+            db = DbSession()
+            try:
+                # 定义需要加载的LLM配置键
+                LLM_CONFIG_KEYS = [
+                    "LLM_PROVIDER", "LLM_FAILOVER_CHAIN",
+                    "OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_BASE_URL",
+                    "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "ANTHROPIC_BASE_URL",
+                    "GLM_API_KEY", "GLM_MODEL", "GLM_BASE_URL",
+                    "QWEN_API_KEY", "QWEN_MODEL", "QWEN_BASE_URL",
+                    "MINIMAX_API_KEY", "MINIMAX_MODEL", "MINIMAX_BASE_URL",
+                    "ERNIE_API_KEY", "ERNIE_MODEL", "ERNIE_BASE_URL",
+                    "HUNYUAN_API_KEY", "HUNYUAN_MODEL", "HUNYUAN_BASE_URL",
+                    "SPARK_API_KEY", "SPARK_MODEL", "SPARK_BASE_URL",
+                    "DOUBAO_API_KEY", "DOUBAO_MODEL", "DOUBAO_BASE_URL",
+                    "SILICONFLOW_API_KEY", "SILICONFLOW_MODEL", "SILICONFLOW_BASE_URL",
+                    "VOLCENGINE_API_KEY", "VOLCENGINE_MODEL", "VOLCENGINE_BASE_URL",
+                ]
+
+                # settings 已在模块顶部导入，直接使用
+                configs = db.query(SystemConfig).filter(
+                    SystemConfig.config_key.in_(LLM_CONFIG_KEYS)
+                ).all()
+
+                for config in configs:
+                    setattr(settings, config.config_key, config.config_value)
+                    os.environ[config.config_key] = config.config_value or ""
+                    loguru.logger.info(f"加载配置: {config.config_key} = {config.config_value[:10] if config.config_value else 'None'}...")
+
+                # 重置LLM provider缓存，强制重新初始化
+                import app.services.llm.factory as llm_factory
+                llm_factory._llm_provider = None
+                loguru.logger.info("LLM配置已从数据库加载完成")
+            finally:
+                db.close()
+        except Exception as e:
+            loguru.logger.warning(f"LLM配置加载失败: {e}")
     except Exception as e:
         loguru.logger.warning(f"Database initialization skipped: {e}")
 

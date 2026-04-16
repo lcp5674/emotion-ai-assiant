@@ -23,7 +23,6 @@ export default function Login() {
       localStorage.removeItem('redirectPath')
       navigate(redirectPath)
     } catch (error: any) {
-      console.error('登录错误:', error)
       let errorMsg = '登录失败，请稍后重试'
       
       if (error.response?.data?.detail) {
@@ -48,11 +47,13 @@ export default function Login() {
       justifyContent: 'center',
       background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
     }}>
-      <Card style={{ 
-        width: 400, 
+      <Card style={{
+        width: '100%',
+        maxWidth: 400,
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         borderRadius: '12px',
-        border: 'none'
+        border: 'none',
+        margin: '0 16px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h1 style={{ fontSize: 28, color: themeColors[themeColor], marginBottom: 8, fontWeight: 700 }}>登录</h1>

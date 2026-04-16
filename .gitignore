@@ -69,3 +69,6 @@ deploy/logs/
 
 # 上传文件
 backend/uploads/
+
+# Docker data volumes
+data/

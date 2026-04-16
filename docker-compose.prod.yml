@@ -112,14 +112,12 @@ services:
       - emotion-ai-network
 
   # ============================================
-  # MinIO对象存储 - 资源限制 & 安全加固
+  # MinIO对象存储 - 简化配置
   # ============================================
   minio:
     image: minio/minio:latest
     container_name: emotion-ai-minio
     restart: unless-stopped
-    # 以 root 用户运行以创建必要目录
-    user: "0:0"
     # 资源限制
     deploy:
       resources:
@@ -129,11 +127,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 512M
-    # 安全配置
-    security_opt:
-      - no-new-privileges:true
-    tmpfs:
-      - /tmp:mode=1777
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
@@ -218,7 +211,7 @@ services:
         condition: service_started
     # 健康检查
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test: ["CMD", "sh", "-c", "wget -q --spider http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

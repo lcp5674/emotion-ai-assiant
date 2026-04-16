@@ -2,7 +2,7 @@
 数据模型包
 """
 from app.models.user import User, MemberLevel
-from app.models.mbti import MbtiQuestion, MbtiAnswer, MbtiResult, AiAssistant, MbtiDimension, MbtiType
+from app.models.mbti import MbtiQuestion, MbtiAnswer, MbtiResult, AiAssistant, MbtiDimension, MbtiType, AssistantCollection
 from app.models.chat import Conversation, Message, MessageCollection, MessageType, ConversationStatus
 from app.models.knowledge import (
     KnowledgeArticle,
@@ -18,7 +18,7 @@ from app.models.diary import EmotionDiary, MoodRecord, DiaryTag, MoodLevel, Emot
 from app.models.user_memory import UserLongTermMemory, UserMemoryInsight, UserPreference, MemoryType, MemoryImportance
 from app.models.memory_graph import KnowledgeGraph
 from app.models.content_audit import ContentAuditQueue
-from app.models.growth import Badge, UserBadge, UserLevel, ExpRecord, GrowthTask, BadgeRarity
+from app.models.growth import Badge, UserBadge, UserLevel, ExpRecord, GrowthTask, BadgeRarity, CheckIn, Reminder
 from app.models.personality import (
     AttachmentStyle,
     SBTIQuestion,
@@ -101,6 +101,8 @@ __all__ = [
     "ExpRecord",
     "GrowthTask",
     "BadgeRarity",
+    "CheckIn",
+    "Reminder",
     # SBTI和依恋风格模型
     "AttachmentStyle",
     "SBTIQuestion",

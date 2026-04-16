@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Row, Col, Tag, Input, Spin, Button, App } from 'antd'
-import { SearchOutlined, HeartOutlined, MessageOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { SearchOutlined, HeartOutlined, HeartFilled, MessageOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 
 interface Assistant {
@@ -15,6 +15,7 @@ interface Assistant {
   greeting?: string
   tags?: string
   is_recommended: boolean
+  is_favorited: boolean
 }
 
 export default function AssistantSquare() {
@@ -43,6 +44,27 @@ export default function AssistantSquare() {
       message.error('加载助手失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleFavorite = async (assistant: Assistant, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const res = await api.mbti.toggleFavorite(assistant.id)
+      // 更新本地状态
+      setAssistants(prev => prev.map(a =>
+        a.id === assistant.id ? { ...a, is_favorited: res.is_favorited } : a
+      ))
+      message.success(res.is_favorited ? '已收藏' : '已取消收藏')
+    } catch (error: any) {
+      // 检查是否是登录错误（拦截器返回的Error对象没有response属性）
+      const errorMsg = error?.message || String(error)
+      if (errorMsg.includes('登录') || errorMsg === '登录失败') {
+        message.error('请先登录')
+        navigate('/login')
+      } else {
+        message.error('操作失败')
+      }
     }
   }
 
@@ -168,13 +190,10 @@ export default function AssistantSquare() {
                   actions={[
                     <Button
                       type="text"
-                      icon={<HeartOutlined />}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        message.success('已添加到收藏')
-                      }}
+                      icon={assistant.is_favorited ? <HeartFilled style={{ color: '#ff4d4f' }} /> : <HeartOutlined />}
+                      onClick={(e) => handleToggleFavorite(assistant, e)}
                     >
-                      收藏
+                      {assistant.is_favorited ? '已收藏' : '收藏'}
                     </Button>,
                     <Button
                       type="text"

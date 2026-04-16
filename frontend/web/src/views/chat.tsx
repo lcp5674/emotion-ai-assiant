@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
-import { Input, Button, List, Spin, Empty, Drawer, App } from 'antd'
+import { useNavigate, useParams, Link, useSearchParams } from 'react-router-dom'
+import { Input, Button, List, Spin, Empty, Drawer, App, Avatar, Tag } from 'antd'
 import { SendOutlined, ArrowLeftOutlined, UserOutlined, MenuOutlined, DeleteOutlined, ReloadOutlined, HeartOutlined, TeamOutlined, BookOutlined, SmileOutlined, RocketOutlined } from '@ant-design/icons'
 import { api } from '../api/request'
 import { useAuthStore, useChatStore } from '../stores'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useTheme } from '../hooks/useTheme'
 
 const { TextArea } = Input
 
@@ -23,8 +24,11 @@ export default function Chat() {
   const navigate = useNavigate()
   const { message } = App.useApp()
   const { sessionId } = useParams()
+  const [searchParams] = useSearchParams()
   const { user } = useAuthStore()
   const { messages, setMessages, addMessage, loading, setLoading, conversations, setConversations } = useChatStore()
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   const [inputValue, setInputValue] = useState('')
   const [sending, setSending] = useState(false)
@@ -33,6 +37,64 @@ export default function Chat() {
   const [streamingMessage, setStreamingMessage] = useState('')
   const [tempMessageId, setTempMessageId] = useState<number | null>(null)
   const [showQuickReplies, setShowQuickReplies] = useState(true)
+  const [currentAssistant, setCurrentAssistant] = useState<any>(null)
+
+  // 从URL获取assistant_id并加载助手信息
+  useEffect(() => {
+    const assistantId = searchParams.get('assistant_id')
+    if (assistantId) {
+      const id = parseInt(assistantId, 10)
+      api.mbti.assistantDetail(id).then((res: any) => {
+        setCurrentAssistant(res)
+      }).catch(console.error)
+    } else {
+      setCurrentAssistant(null)
+    }
+  }, [searchParams])
+
+  // 加载所有会话（不按助手过滤）
+  const loadAllConversations = async () => {
+    try {
+      const res = await api.chat.conversations()
+      setConversations(res.list || [])
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // 根据助手ID加载该助手的历史会话
+  const loadConversationsByAssistant = async (assistantId: number) => {
+    try {
+      const res = await api.chat.conversations()
+      // 筛选出与该助手相关的会话
+      const assistantConversations = (res.list || []).filter((c: any) => c.assistant_id === assistantId)
+      setConversations(assistantConversations)
+      // 如果有该助手的会话，加载最新一个
+      if (assistantConversations.length > 0) {
+        const latestSession = assistantConversations[0]
+        setCurrentSessionId(latestSession.session_id)
+        loadHistory(latestSession.session_id)
+      } else {
+        // 没有该助手的历史会话，清空消息
+        setCurrentSessionId(undefined)
+        setMessages([])
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // 根据会话加载对应的助手信息
+  const loadAssistantForConversation = async (session: any) => {
+    if (session.assistant_id) {
+      try {
+        const res = await api.mbti.assistantDetail(session.assistant_id)
+        setCurrentAssistant(res)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+  }
 
   const quickReplies = [
     { icon: <HeartOutlined />, label: '倾诉心情', prompt: '今天我有一些心情想和你分享...' },
@@ -56,8 +118,25 @@ export default function Chat() {
       setCurrentSessionId(sessionId)
       loadHistory(sessionId)
     }
-    loadConversations()
+    // 加载所有会话（不按助手过滤）
+    loadAllConversations()
   }, [sessionId])
+
+  // 切换URL参数中的assistant_id时，重新加载助手信息
+  useEffect(() => {
+    const assistantId = searchParams.get('assistant_id')
+    if (assistantId) {
+      const id = parseInt(assistantId, 10)
+      // 加载该助手的信息
+      api.mbti.assistantDetail(id).then((res: any) => {
+        setCurrentAssistant(res)
+      }).catch(console.error)
+      // 切换助手时清空当前消息和WebSocket连接
+      setMessages([])
+      setStreamingMessage('')
+      closeWebSocket()
+    }
+  }, [searchParams])
 
   useEffect(() => {
     scrollToBottom()
@@ -112,7 +191,8 @@ export default function Chat() {
     } as any)
 
     // Connect WebSocket
-    const wsUrl = api.websocket.connect(currentSessionId)
+    const assistantId = currentAssistant?.id
+    const wsUrl = api.websocket.connect(currentSessionId, assistantId)
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
 
@@ -124,6 +204,7 @@ export default function Chat() {
       ws.send(JSON.stringify({
         content,
         session_id: currentSessionId || null,
+        assistant_id: assistantId || null,
       }))
     }
 
@@ -209,9 +290,43 @@ export default function Chat() {
     }
   }
 
+  // 深色模式颜色
+  const darkColors = {
+    chatBg: '#1a1a1a',
+    sidebarBg: '#1a1a1a',
+    headerBg: '#1a1a1a',
+    headerBorder: '#333333',
+    inputBg: isDark ? '#262626' : '#ffffff',
+    inputText: isDark ? '#ffffff' : '#262626',
+    bubbleBg: isDark ? '#2d2d2d' : '#f5f5f5',
+    bubbleText: isDark ? 'rgba(255, 255, 255, 0.95)' : '#262626',
+    userBubbleBg: '#722ed1',
+    userBubbleText: '#ffffff',
+    placeholder: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.25)',
+    timeColor: isDark ? 'rgba(255, 255, 255, 0.5)' : '#bfbfbf',
+    nameColor: isDark ? 'rgba(255, 255, 255, 0.7)' : '#8c8c8c',
+    borderColor: isDark ? '#333333' : '#f0f0f0',
+  }
+
+  // 加载指定会话的助手信息
+  const handleConversationClick = async (session: any) => {
+    // 先加载该会话的助手信息
+    if (session.assistant_id) {
+      try {
+        const res = await api.mbti.assistantDetail(session.assistant_id)
+        setCurrentAssistant(res)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    // 导航到该会话
+    navigate(`/chat/${session.session_id}`)
+    setSidebarOpen(false)
+  }
+
   const sidebarContent = (
     <>
-      <div style={{ padding: 16, borderBottom: '1px solid #f0f0f0' }}>
+      <div style={{ padding: 16, borderBottom: `1px solid ${darkColors.borderColor}` }}>
         <Link to="/">
           <Button icon={<ArrowLeftOutlined />} type="text">
             返回首页
@@ -227,41 +342,73 @@ export default function Chat() {
             dataSource={conversations}
             renderItem={(item: any) => (
               <List.Item
-                onClick={() => {
-                  navigate(`/chat/${item.session_id}`)
-                  setSidebarOpen(false)
-                }}
+                onClick={() => handleConversationClick(item)}
                 style={{
                   cursor: 'pointer',
                   padding: '12px 16px',
-                  background: currentSessionId === item.session_id ? '#f0f5ff' : 'transparent',
+                  background: currentSessionId === item.session_id ? (isDark ? '#262626' : '#f0f5ff') : 'transparent',
                 }}
               >
                 <List.Item.Meta
-                  avatar={<UserOutlined style={{ fontSize: 24, color: '#722ed1' }} />}
+                  avatar={
+                    item.assistant_avatar ? (
+                      <Avatar src={item.assistant_avatar} size={40} style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)' }} />
+                    ) : (
+                      <Avatar size={40} style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)' }}>
+                        {item.assistant_name?.[0] || '助'}
+                      </Avatar>
+                    )
+                  }
                   title={item.title || '新对话'}
-                  description={`${item.message_count} 条消息`}
+                  description={
+                    <div>
+                      <div style={{ color: isDark ? 'rgba(255,255,255,0.6)' : '#8c8c8c' }}>
+                        {item.assistant_name || '未知助手'}
+                      </div>
+                      <div style={{ fontSize: 12, color: isDark ? 'rgba(255,255,255,0.4)' : '#bfbfbf' }}>
+                        {item.message_count} 条消息
+                      </div>
+                    </div>
+                  }
                 />
               </List.Item>
             )}
           />
         )}
       </div>
-      <div style={{ padding: 16, borderTop: '1px solid #f0f0f0' }}>
-        <Link to="/assistants">
-          <Button type="primary" block style={{ background: '#722ed1' }}>
-            选择助手
-          </Button>
-        </Link>
-      </div>
+      {currentAssistant ? (
+        <div style={{ padding: 16, borderTop: `1px solid ${darkColors.borderColor}` }}>
+          <div style={{ textAlign: 'center' }}>
+            <Avatar
+              src={currentAssistant.avatar}
+              size={48}
+              style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)', marginBottom: 8 }}
+            >
+              {currentAssistant.name?.[0]}
+            </Avatar>
+            <div style={{ fontWeight: 500, marginBottom: 4 }}>{currentAssistant.name}</div>
+            {currentAssistant.mbti_type && (
+              <Tag color="purple" style={{ marginBottom: 8 }}>{currentAssistant.mbti_type}</Tag>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: 16, borderTop: `1px solid ${darkColors.borderColor}` }}>
+          <Link to="/assistants">
+            <Button type="primary" block style={{ background: '#722ed1' }}>
+              选择助手
+            </Button>
+          </Link>
+        </div>
+      )}
     </>
   )
 
   const chatHeader = (
     <div style={{
       padding: '12px 16px',
-      background: '#fff',
-      borderBottom: '1px solid #f0f0f0',
+      background: isDark ? darkColors.headerBg : '#fff',
+      borderBottom: `1px solid ${darkColors.borderColor}`,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
@@ -273,7 +420,24 @@ export default function Chat() {
           onClick={() => setSidebarOpen(true)}
         />
       )}
-      <h3 style={{ flex: 1, margin: 0 }}>与AI助手聊天</h3>
+      {currentAssistant ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+          <Avatar
+            src={currentAssistant.avatar}
+            style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)' }}
+          >
+            {currentAssistant.name?.[0]}
+          </Avatar>
+          <div>
+            <div style={{ fontWeight: 500, color: isDark ? '#fff' : '#262626' }}>{currentAssistant.name}</div>
+            {currentAssistant.mbti_type && (
+              <div style={{ fontSize: 12, color: darkColors.nameColor }}>{currentAssistant.mbti_type}</div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <h3 style={{ flex: 1, margin: 0, color: isDark ? '#fff' : '#262626' }}>与AI助手聊天</h3>
+      )}
       {messages.length > 0 && !sending && (
         <Button
           type="text"
@@ -293,8 +457,8 @@ export default function Chat() {
   const chatInput = (
     <div style={{
       padding: 12,
-      background: '#fff',
-      borderTop: '1px solid #f0f0f0',
+      background: isDark ? darkColors.headerBg : '#fff',
+      borderTop: `1px solid ${darkColors.borderColor}`,
       position: 'sticky',
       bottom: 0,
     }}>
@@ -305,7 +469,8 @@ export default function Chat() {
           onKeyPress={handleKeyPress}
           placeholder="输入你想说的话...（Enter发送，Shift+Enter换行）"
           autoSize={{ minRows: 1, maxRows: 4 }}
-          style={{ flex: 1 }}
+          style={{ flex: 1, background: darkColors.inputBg, color: darkColors.inputText, borderColor: darkColors.borderColor }}
+          className={isDark ? 'dark-input' : ''}
           disabled={sending}
         />
         <Button
@@ -320,12 +485,12 @@ export default function Chat() {
   )
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#f5f5f5' }}>
+    <div style={{ display: 'flex', height: '100vh', background: isDark ? darkColors.chatBg : '#f5f5f5' }}>
       {!isMobile && (
         <div style={{
           width: 280,
-          background: '#fff',
-          borderRight: '1px solid #f0f0f0',
+          background: isDark ? darkColors.sidebarBg : '#fff',
+          borderRight: `1px solid ${darkColors.borderColor}`,
           display: 'flex',
           flexDirection: 'column',
         }}>
@@ -366,8 +531,9 @@ export default function Chat() {
                     onClick={() => handleQuickReply(item.prompt)}
                     style={{
                       borderRadius: 20,
-                      background: '#fff',
-                      border: '1px solid #722ed130',
+                      background: isDark ? darkColors.inputBg : '#fff',
+                      border: `1px solid ${isDark ? 'rgba(114, 46, 209, 0.3)' : '#722ed130'}`,
+                      color: isDark ? '#fff' : '#262626',
                     }}
                   >
                     {item.label}
@@ -384,19 +550,72 @@ export default function Chat() {
                     display: 'flex',
                     marginBottom: 24,
                     justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    alignItems: 'flex-end',
+                    gap: 8,
                   }}
                 >
-                  <div style={{
-                    maxWidth: isMobile ? '85%' : '70%',
-                    padding: '12px 16px',
-                    borderRadius: 8,
-                    background: msg.role === 'user' ? '#722ed1' : '#fff',
-                    color: msg.role === 'user' ? '#fff' : '#262626',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    wordBreak: 'break-word',
-                  }}>
-                    {msg.content}
+                  {/* 助手消息：头像在左 */}
+                  {msg.role === 'assistant' && (
+                    <Avatar
+                      src={currentAssistant?.avatar}
+                      style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)', flexShrink: 0 }}
+                    >
+                      {currentAssistant?.name?.[0] || 'AI'}
+                    </Avatar>
+                  )}
+                  <div style={{ maxWidth: isMobile ? '80%' : '70%', width: '100%' }}>
+                    {/* 助手名称 */}
+                    {msg.role === 'assistant' && currentAssistant && (
+                      <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4 }}>{currentAssistant.name}</div>
+                    )}
+                    {/* 用户名称 */}
+                    {msg.role === 'user' && (
+                      <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4, textAlign: 'right' }}>{user?.nickname || '我'}</div>
+                    )}
+                    {/* 消息气泡 */}
+                    <div style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                      background: msg.role === 'user' ? darkColors.userBubbleBg : darkColors.bubbleBg,
+                      color: msg.role === 'user' ? darkColors.userBubbleText : darkColors.bubbleText,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                      wordBreak: 'break-word',
+                      whiteSpace: 'pre-wrap',
+                      overflowWrap: 'break-word',
+                      textAlign: 'left',
+                      minHeight: 44,
+                      lineHeight: 1.6,
+                      fontSize: 14,
+                    }}>
+                      {msg.content || '...'}
+                    </div>
+                    {/* 时间显示 */}
+                    <div style={{
+                      fontSize: 11,
+                      color: darkColors.timeColor,
+                      marginTop: 4,
+                      textAlign: msg.role === 'user' ? 'right' : 'left',
+                    }}>
+                      {new Date(msg.created_at).toLocaleString('zh-CN', {
+                        timeZone: 'Asia/Shanghai',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
                   </div>
+                  {/* 用户头像在右 */}
+                  {msg.role === 'user' && (
+                    <Avatar
+                      src={user?.avatar}
+                      style={{ background: '#722ed1', flexShrink: 0 }}
+                    >
+                      {user?.nickname?.[0] || user?.phone?.[0] || '我'}
+                    </Avatar>
+                  )}
                 </div>
               ))}
               
@@ -406,17 +625,36 @@ export default function Chat() {
                   display: 'flex',
                   marginBottom: 24,
                   justifyContent: 'flex-start',
+                  alignItems: 'flex-end',
+                  gap: 8,
                 }}>
-                  <div style={{
-                    maxWidth: isMobile ? '85%' : '70%',
-                    padding: '12px 16px',
-                    borderRadius: 8,
-                    background: '#fff',
-                    color: '#262626',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    wordBreak: 'break-word',
-                  }}>
-                    {streamingMessage}
+                  <Avatar
+                    src={currentAssistant?.avatar}
+                    style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)', flexShrink: 0 }}
+                  >
+                    {currentAssistant?.name?.[0] || 'AI'}
+                  </Avatar>
+                  <div style={{ maxWidth: isMobile ? '80%' : '70%', width: '100%' }}>
+                    {currentAssistant && (
+                      <div style={{ fontSize: 12, color: darkColors.nameColor, marginBottom: 4 }}>{currentAssistant.name}</div>
+                    )}
+                    <div style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '12px 12px 12px 4px',
+                      background: darkColors.bubbleBg,
+                      color: darkColors.bubbleText,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                      wordBreak: 'break-word',
+                      whiteSpace: 'pre-wrap',
+                      overflow: 'visible',
+                      textAlign: 'left',
+                      minHeight: 44,
+                      lineHeight: 1.6,
+                      fontSize: 14,
+                    }}>
+                      {streamingMessage}
+                    </div>
                   </div>
                 </div>
               )}
@@ -427,14 +665,21 @@ export default function Chat() {
                   display: 'flex',
                   marginBottom: 24,
                   justifyContent: 'flex-start',
+                  alignItems: 'flex-end',
+                  gap: 8,
                 }}>
+                  <Avatar
+                    src={currentAssistant?.avatar}
+                    style={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)', flexShrink: 0 }}
+                  >
+                    {currentAssistant?.name?.[0] || 'AI'}
+                  </Avatar>
                   <div style={{
-                    maxWidth: isMobile ? '85%' : '70%',
                     padding: '12px 16px',
-                    borderRadius: 8,
-                    background: '#fff',
-                    color: '#262626',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    borderRadius: '12px 12px 12px 4px',
+                    background: darkColors.bubbleBg,
+                    color: darkColors.bubbleText,
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,

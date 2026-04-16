@@ -113,6 +113,12 @@ class AiAssistant(Base):
     avatar = Column(String(500), nullable=True, comment="头像URL")
     mbti_type = Column(Enum(MbtiType), nullable=False, comment="MBTI类型")
 
+    # 三位一体支持：SBTI主题类型（逗号分隔）
+    sbti_types = Column(String(200), nullable=True, comment="SBTI主题类型,如: executing,influencing,relationship,strategic")
+
+    # 三位一体支持：依恋风格类型（逗号分隔）
+    attachment_styles = Column(String(200), nullable=True, comment="依恋风格类型,如: secure,anxious,avoidant")
+
     # 个性化配置
     personality = Column(Text, nullable=True, comment="性格描述")
     speaking_style = Column(Text, nullable=True, comment="说话风格")
@@ -132,3 +138,19 @@ class AiAssistant(Base):
 
     def __repr__(self):
         return f"<AiAssistant(id={self.id}, name={self.name}, mbti={self.mbti_type})>"
+
+
+class AssistantCollection(Base):
+    """AI助手收藏表"""
+    __tablename__ = "assistant_collections"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, comment="用户ID")
+    assistant_id = Column(Integer, ForeignKey("ai_assistants.id"), nullable=False, index=True, comment="助手ID")
+    created_at = Column(DateTime, server_default=func.now(), comment="收藏时间")
+
+    user = relationship("User", backref="assistant_collections")
+    assistant = relationship("AiAssistant", backref="collections")
+
+    def __repr__(self):
+        return f"<AssistantCollection(user_id={self.user_id}, assistant_id={self.assistant_id})>"

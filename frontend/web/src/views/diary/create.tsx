@@ -69,6 +69,10 @@ export default function DiaryCreate() {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
+  const [tags, setTags] = useState<{ id: number; name: string; color?: string }[]>([])
+  const [tagInputVisible, setTagInputVisible] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
+  const [newTagColor, setNewTagColor] = useState('#722ed1')
 
   const getMoodIcon = (score: number) => {
     if (score >= 8) return <SmileOutlined style={{ color: '#52c41a' }} />
@@ -85,6 +89,7 @@ export default function DiaryCreate() {
       form.setFieldValue('date', dayjs())
       form.setFieldValue('mood_score', 5)
     }
+    loadTags()
   }, [id])
 
   const loadDiary = async (diaryId: number) => {
@@ -98,13 +103,51 @@ export default function DiaryCreate() {
         primary_emotion: res.primary_emotion,
         content: res.content,
         category: res.category,
-        tags: res.tags,
+        tags: res.tags ? res.tags.split(',').filter(Boolean) : [],
       })
     } catch (error: any) {
       console.error(error)
       message.error(error.response?.data?.detail || '加载日记失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadTags = async () => {
+    try {
+      const res = await api.diary.listTags()
+      setTags(res || [])
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) {
+      message.warning('请输入标签名称')
+      return
+    }
+    try {
+      const res = await api.diary.createTag({ name: newTagName.trim(), color: newTagColor })
+      setTags([...tags, res])
+      form.setFieldValue('tags', [...(form.getFieldValue('tags') || []), newTagName.trim()])
+      setNewTagName('')
+      setTagInputVisible(false)
+      message.success('标签创建成功')
+    } catch (error: any) {
+      console.error(error)
+      message.error(error.response?.data?.detail || '创建标签失败')
+    }
+  }
+
+  const handleDeleteTag = async (tagId: number) => {
+    try {
+      await api.diary.deleteTag(tagId)
+      setTags(tags.filter(t => t.id !== tagId))
+      message.success('标签已删除')
+    } catch (error: any) {
+      console.error(error)
+      message.error(error.response?.data?.detail || '删除标签失败')
     }
   }
 
@@ -299,11 +342,60 @@ export default function DiaryCreate() {
                     label="标签"
                   >
                     <Select
-                      placeholder="添加标签"
+                      placeholder="选择或创建标签"
                       style={{ width: '100%' }}
-                      mode="tags"
-                      tokenSeparators={[',', ' ']}
-                    />
+                      mode="multiple"
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+                          <Divider style={{ margin: '8px 0' }} />
+                          {tagInputVisible ? (
+                            <div style={{ padding: '4px 8px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <Input
+                                placeholder="输入标签名"
+                                value={newTagName}
+                                onChange={(e) => setNewTagName(e.target.value)}
+                                style={{ flex: 1 }}
+                                autoFocus
+                              />
+                              <Button type="primary" size="small" onClick={handleCreateTag}>
+                                创建
+                              </Button>
+                              <Button size="small" onClick={() => setTagInputVisible(false)}>
+                                取消
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="link"
+                              block
+                              onClick={() => setTagInputVisible(true)}
+                              style={{ padding: '4px 8px', textAlign: 'left' }}
+                            >
+                              + 创建新标签
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    >
+                      {tags.map((tag) => (
+                        <Select.Option key={tag.id} value={tag.name}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>
+                              <span style={{
+                                display: 'inline-block',
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                backgroundColor: tag.color || '#722ed1',
+                                marginRight: 8
+                              }} />
+                              {tag.name}
+                            </span>
+                          </div>
+                        </Select.Option>
+                      ))}
+                    </Select>
                   </Form.Item>
                 </Col>
               </Row>

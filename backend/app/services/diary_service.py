@@ -49,8 +49,6 @@ class DiaryService:
     async def create_diary(self, db: Session, user_id: int, request: DiaryCreate) -> EmotionDiary:
         """创建日记"""
         try:
-            db.begin()
-            
             from datetime import datetime
             # 输入验证
             if not request.date:
@@ -64,7 +62,7 @@ class DiaryService:
 
             # 转换日期字符串为date对象
             diary_date = datetime.strptime(request.date, "%Y-%m-%d").date()
-            
+
             # 检查该日期是否已有日记
             existing = db.query(EmotionDiary).filter(
                 and_(
@@ -96,16 +94,17 @@ class DiaryService:
             )
 
             db.add(diary)
-            db.commit()
-            db.refresh(diary)
+            db.flush()  # 使用 flush 而不是 commit，让调用者管理事务
 
             # 更新标签使用计数
             if request.tags:
                 self._update_tag_usage(db, user_id, request.tags, 1)
 
             return diary
+        except ValueError:
+            # 值错误不需要回滚
+            raise
         except Exception as e:
-            db.rollback()
             raise
 
     def get_diary(self, db: Session, user_id: int, diary_id: int) -> Optional[EmotionDiary]:

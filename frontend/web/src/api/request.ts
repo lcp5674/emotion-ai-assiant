@@ -9,6 +9,14 @@ const request: AxiosInstance = axios.create({
   },
 })
 
+// 用于存储 navigate 函数，避免循环依赖
+let navigateFn: ((to: string) => void) | null = null
+
+// 导出设置 navigate 的函数
+export const setNavigate = (navigate: (to: string) => void) => {
+  navigateFn = navigate
+}
+
 /**
  * Token获取优化
  * 
@@ -47,20 +55,55 @@ request.interceptors.response.use(
     return response.data as any
   },
   async (error) => {
-    const { response } = error
+    const { response, config } = error
 
     if (response) {
       const { status, data } = response
 
+      // 检查是否是认证相关的接口（登录、注册、发送验证码等）
+      const isAuthEndpoint = config?.url && (
+        config.url.includes('/auth/login') ||
+        config.url.includes('/auth/register') ||
+        config.url.includes('/auth/send_code') ||
+        config.url.includes('/auth/reset_password')
+      )
+
       switch (status) {
         case 401:
+          // 401错误 - 判断是否需要跳转
+          // 登录接口的 401 是密码错误，不跳转，只返回错误提示
+          // 只有在已登录状态下 token 过期才需要跳转
+          if (!isAuthEndpoint) {
+            // 非认证接口，检查是否有 token，有的话说明是 token 过期，需要跳转
+            const hasToken = localStorage.getItem('access_token')
+
+            if (hasToken) {
+              // 有 token，说明是 token 过期，清理并跳转
+              try {
+                localStorage.removeItem('access_token')
+                localStorage.removeItem('refresh_token')
+                localStorage.removeItem('auth-storage')
+              } catch (e) {
+                console.warn('清理token失败')
+              }
+
+              // 跳转到登录页面
+              if (navigateFn) {
+                navigateFn('/login')
+              } else {
+                window.location.href = '/login'
+              }
+            }
+          }
+
+          // 返回错误提示
           if (data?.detail) {
             return Promise.reject(new Error(data.detail))
           }
-          return Promise.reject(new Error('登录失败'))
+          return Promise.reject(new Error('登录已过期，请重新登录'))
         case 404:
-          // 资源不存在，返回404错误
-          return Promise.reject(new Error('Not Found: 资源不存在'))
+          // 404错误不抛出，而是返回null，让调用方优雅处理"未测评"等情况
+          return null as any
         case 500:
           // 服务器错误
           return Promise.reject(new Error('Server Error: 服务器内部错误'))
@@ -125,6 +168,9 @@ export const api = {
     assistants: (params?: { mbti_type?: string; tags?: string; recommended?: boolean }): Promise<any> =>
       request.get('/mbti/assistants', { params }),
     assistantDetail: (id: number): Promise<any> => request.get(`/mbti/assistants/${id}`),
+    toggleFavorite: (assistant_id: number): Promise<{ is_favorited: boolean; message: string }> =>
+      request.post(`/mbti/assistants/${assistant_id}/favorite`),
+    favorites: (): Promise<any> => request.get('/mbti/assistants/favorites'),
   },
 
   // 对话
@@ -172,6 +218,8 @@ export const api = {
     config: (): Promise<any> => request.get('/admin/config'),
     updateConfig: (data: any): Promise<any> => request.post('/admin/config', data),
     testConnection: (): Promise<any> => request.post('/admin/test'),
+    testProvider: (provider: string): Promise<any> => request.post('/admin/test_provider', null, { params: { provider } }),
+    providerStatus: (): Promise<any> => request.get('/admin/provider_status'),
     assistants: (): Promise<any> => request.get('/admin/assistants'),
     createAssistant: (data: any): Promise<any> => request.post('/admin/assistants', data),
     updateAssistant: (id: number, data: any): Promise<any> => request.put(`/admin/assistants/${id}`, data),
@@ -233,7 +281,7 @@ export const api = {
         wsBaseUrl = `${protocol}//${wsBaseUrl.replace(/^(https?:)?\/\//, '')}`
       }
       
-      return `${wsBaseUrl}/ws/chat?${params.toString()}`
+      return `${wsBaseUrl}/api/v1/ws/chat?${params.toString()}`
     },
   },
 
@@ -282,6 +330,19 @@ export const api = {
   profile: {
     deep: (): Promise<any> => request.get('/profile/deep'),
     aiPartners: (): Promise<any> => request.get('/profile/ai-partners'),
+  },
+
+  // 每日打卡
+  checkin: {
+    daily: (note?: string): Promise<any> => request.post('/checkin', { note }),
+    todayStatus: (): Promise<any> => request.get('/checkin/today'),
+    records: (limit?: number): Promise<any> => request.get('/checkin/records', { params: { limit } }),
+    stats: (): Promise<any> => request.get('/checkin/stats'),
+    sharePoster: (): Promise<any> => request.get('/checkin/share/poster'),
+    // 提醒
+    createReminder: (data: any): Promise<any> => request.post('/checkin/reminders', data),
+    reminders: (): Promise<any> => request.get('/checkin/reminders'),
+    cancelReminder: (id: number): Promise<any> => request.delete(`/checkin/reminders/${id}`),
   },
 }
 

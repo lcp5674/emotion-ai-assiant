@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Row, Col, Progress, Spin, Empty, Badge, Button, List } from 'antd'
-import { TrophyOutlined, CrownOutlined, StarOutlined, FireOutlined, ArrowLeftOutlined, LockOutlined } from '@ant-design/icons'
+import { TrophyOutlined, CrownOutlined, StarOutlined, FireOutlined, ArrowLeftOutlined, LockOutlined, CalendarOutlined } from '@ant-design/icons'
 import { api, apiClient } from '../api/request'
 import { useAuthStore } from '../stores'
 
@@ -105,7 +105,7 @@ export default function AchievementsPage() {
               <Col xs={24} md={8}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{
-                    fontSize: 48,
+                    fontSize: 'clamp(32px, 6vw, 48px)',
                     fontWeight: 'bold',
                     color: '#722ed1',
                   }}>
@@ -131,7 +131,11 @@ export default function AchievementsPage() {
           </Card>
         )}
 
-        <Card title="我的徽章">
+        <Card title="我的徽章" extra={
+          <Link to="/checkin">
+            <Button icon={<CalendarOutlined />}>每日打卡</Button>
+          </Link>
+        }>
           {badges.length === 0 ? (
             <Empty description="还没有获得任何徽章，快去完成测评和写日记吧！" />
           ) : (

@@ -797,8 +797,87 @@ class LingyiProvider(LLMProvider):
                 yield chunk.choices[0].delta.content
 
 
+class MockProvider(LLMProvider):
+    """Mock Provider - 用于测试和开发"""
+
+    def __init__(self, api_key: str = "", model: str = "mock", **kwargs):
+        super().__init__(api_key, model, **kwargs)
+
+    async def chat(
+        self,
+        messages: list,
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        last_msg = messages[-1].get("content", "") if messages else ""
+        return f"[Mock回复] 收到您的消息: {last_msg[:50]}... 这是一个模拟回复。"
+
+    async def chat_stream(self, messages: list, temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
+        last_msg = messages[-1].get("content", "") if messages else ""
+        response = f"[Mock回复] 收到您的消息: {last_msg[:50]}... 这是一个模拟回复。"
+        for char in response:
+            yield char
+
+
+class CustomProvider(LLMProvider):
+    """自定义LLM Provider - 兼容OpenAI协议
+
+    支持任何提供OpenAI兼容API的服务商，包括：
+    - 自建的大模型服务
+    - 开源模型部署（如vLLM、Ollama等）
+    - 其他兼容OpenAI API的服务商
+    """
+
+    def __init__(self, api_key: str, model: str = "gpt-3.5-turbo", base_url: str = "https://api.openai.com/v1", **kwargs):
+        super().__init__(api_key, model, **kwargs)
+        self.base_url = base_url.rstrip('/')
+        self._client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            from openai import AsyncOpenAI
+            self._client = AsyncOpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url
+            )
+        return self._client
+
+    async def chat(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
+        )
+        return response.choices[0].message.content
+
+    async def chat_stream(self, messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 2000, **kwargs):
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+            **kwargs
+        )
+        async for chunk in response:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+
+
 # Provider映射 - 15+国内主流厂商
 PROVIDER_MAP = {
+    # Mock
+    "mock": MockProvider,
     # 国外
     "openai": OpenAIProvider,
     "anthropic": AnthropicProvider,
@@ -816,4 +895,6 @@ PROVIDER_MAP = {
     "baichuan": BaichuanProvider,       # 百川智能
     "moonshot": MoonshotProvider,       # 月之暗面
     "lingyi": LingyiProvider,           # 零一万物
+    # 自定义Provider（兼容OpenAI协议）
+    "custom": CustomProvider,
 }

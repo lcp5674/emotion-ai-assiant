@@ -243,10 +243,7 @@ async def get_result(
 ):
     """获取当前用户的SBTI测评结果"""
     if not hasattr(current_user, "sbti_result_id") or not current_user.sbti_result_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="尚未完成SBTI测评",
-        )
+        return None
 
     sbti_result = (
         db.query(SBTIResult)
@@ -255,10 +252,7 @@ async def get_result(
     )
 
     if not sbti_result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="SBTI测评结果不存在",
-        )
+        return None
 
     # 解析report_json
     report = {}

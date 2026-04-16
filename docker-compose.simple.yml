@@ -28,6 +28,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:mode=1777
+      - /var/run/mysqld:mode=1777
     env_file:
       - ./.env.docker
     environment:
@@ -188,7 +189,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "${WEB_PORT:-80}:80"
+      - "${WEB_PORT:-8080}:80"
     depends_on:
       - backend
     healthcheck:

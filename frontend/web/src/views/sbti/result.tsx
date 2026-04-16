@@ -43,39 +43,41 @@ const RadarChart = ({ data, width = 280, height = 280 }: { data: { label: string
   })
 
   return (
-    <svg width={width} height={height} style={{ display: 'block', margin: '0 auto' }}>
-      {grids.map((p, i) => (
-        <polygon key={i} points={p} fill="none" stroke="#e8e8e8" strokeWidth="1" />
-      ))}
-      {data.map((_, i) => {
-        const angle = startAngle + i * angleStep
-        return (
-          <line
-            key={i}
-            x1={centerX}
-            y1={centerY}
-            x2={centerX + radius * Math.cos(angle)}
-            y2={centerY + radius * Math.sin(angle)}
-            stroke="#e8e8e8"
-            strokeWidth="1"
-          />
-        )
-      })}
-      <polygon
-        points={points.map(p => `${p.x},${p.y}`).join(' ')}
-        fill="rgba(114, 46, 209, 0.3)"
-        stroke="#722ed1"
-        strokeWidth="2"
-      />
-      {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="4" fill="#722ed1" />
-      ))}
-      {labels.map((l, i) => (
-        <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="#595959">
-          {l.label}
-        </text>
-      ))}
-    </svg>
+    <div style={{ width: '100%', maxWidth: width, margin: '0 auto', overflow: 'hidden', aspectRatio: `${width} / ${height}` }}>
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+        {grids.map((p, i) => (
+          <polygon key={i} points={p} fill="none" stroke="#e8e8e8" strokeWidth="1" />
+        ))}
+        {data.map((_, i) => {
+          const angle = startAngle + i * angleStep
+          return (
+            <line
+              key={i}
+              x1={centerX}
+              y1={centerY}
+              x2={centerX + radius * Math.cos(angle)}
+              y2={centerY + radius * Math.sin(angle)}
+              stroke="#e8e8e8"
+              strokeWidth="1"
+            />
+          )
+        })}
+        <polygon
+          points={points.map(p => `${p.x},${p.y}`).join(' ')}
+          fill="rgba(114, 46, 209, 0.3)"
+          stroke="#722ed1"
+          strokeWidth="2"
+        />
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="4" fill="#722ed1" />
+        ))}
+        {labels.map((l, i) => (
+          <text key={i} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="#595959">
+            {l.label}
+          </text>
+        ))}
+      </svg>
+    </div>
   )
 }
 
@@ -86,35 +88,37 @@ const BarChart = ({ data, width = 350, height = 180 }: { data: { label: string; 
   const chartHeight = height - 40
 
   return (
-    <svg width={width} height={height} style={{ display: 'block', margin: '0 auto' }}>
-      {[0, 25, 50, 75, 100].map(pct => (
-        <line
-          key={pct}
-          x1="30"
-          y1={chartHeight - (pct / 100) * chartHeight}
-          x2={width - 10}
-          y2={chartHeight - (pct / 100) * chartHeight}
-          stroke="#f0f0f0"
-          strokeDasharray="4"
-        />
-      ))}
-      {data.map((d, i) => {
-        const barHeight = (d.value / maxValue) * chartHeight
-        const x = 35 + i * (barWidth + 8)
-        const y = chartHeight - barHeight
-        return (
-          <g key={i}>
-            <rect x={x} y={y} width={barWidth} height={barHeight} fill={d.color || '#722ed1'} rx="4" />
-            <text x={x + barWidth / 2} y={chartHeight + 15} textAnchor="middle" fontSize="10" fill="#8c8c8c">
-              {d.label}
-            </text>
-            <text x={x + barWidth / 2} y={y - 5} textAnchor="middle" fontSize="10" fill="#595959" fontWeight="bold">
-              {d.value}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
+    <div style={{ width: '100%', maxWidth: width, margin: '0 auto', overflow: 'hidden', aspectRatio: `${width} / ${height}` }}>
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block' }}>
+        {[0, 25, 50, 75, 100].map(pct => (
+          <line
+            key={pct}
+            x1="30"
+            y1={chartHeight - (pct / 100) * chartHeight}
+            x2={width - 10}
+            y2={chartHeight - (pct / 100) * chartHeight}
+            stroke="#f0f0f0"
+            strokeDasharray="4"
+          />
+        ))}
+        {data.map((d, i) => {
+          const barHeight = (d.value / maxValue) * chartHeight
+          const x = 35 + i * (barWidth + 8)
+          const y = chartHeight - barHeight
+          return (
+            <g key={i}>
+              <rect x={x} y={y} width={barWidth} height={barHeight} fill={d.color || '#722ed1'} rx="4" />
+              <text x={x + barWidth / 2} y={chartHeight + 15} textAnchor="middle" fontSize="10" fill="#8c8c8c">
+                {d.label}
+              </text>
+              <text x={x + barWidth / 2} y={y - 5} textAnchor="middle" fontSize="10" fill="#595959" fontWeight="bold">
+                {d.value}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
   )
 }
 

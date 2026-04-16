@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Progress, Spin, App, Slider } from 'antd'
-import { CrownOutlined } from '@ant-design/icons'
+import { CrownOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useSbtiStore } from '../../stores'
 
@@ -106,9 +106,17 @@ export default function SbtiTest() {
         zIndex: 100,
       }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/sbti" style={{ fontSize: 20, color: '#722ed1', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CrownOutlined /> SBTI测评
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+              style={{ fontSize: 18 }}
+            />
+            <Link to="/sbti" style={{ fontSize: 18, color: '#722ed1', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CrownOutlined /> SBTI测评
+            </Link>
+          </div>
           <div>
             <span style={{ color: '#8c8c8c', marginRight: 16 }}>
               第 {currentQuestionIndex + 1} / {questions.length} 题

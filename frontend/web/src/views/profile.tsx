@@ -25,8 +25,16 @@ export default function Profile() {
 
   const loadStats = async () => {
     try {
-      const res = await api.user.profile()
-      setStats(res)
+      // 并行加载用户信息和统计数据
+      const [profileRes, statsRes] = await Promise.all([
+        api.user.profile(),
+        api.user.stats()
+      ])
+      // 合并数据
+      setStats({
+        ...profileRes,
+        ...statsRes
+      })
     } catch (error) {
       console.error(error)
     } finally {
@@ -81,13 +89,13 @@ export default function Profile() {
             icon={<UserOutlined />}
             style={{ background: 'rgba(255,255,255,0.2)', marginBottom: 16 }}
           />
-          <h2 style={{ fontSize: 24, marginBottom: 8 }}>{user?.nickname || '用户'}</h2>
-          <p style={{ opacity: 0.9 }}>{user?.phone}</p>
+          <h2 style={{ fontSize: 24, marginBottom: 8 }}>{stats?.nickname || '用户'}</h2>
+          <p style={{ opacity: 0.9 }}>{stats?.phone}</p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {user?.mbti_type && (
+            {stats?.mbti_type && (
               <Tag color="purple" style={{ marginTop: 8 }}>{user.mbti_type}</Tag>
             )}
-            {user?.member_level && user.member_level !== 'free' && (
+            {stats?.member_level && stats.member_level !== 'free' && (
               <Tag color="gold" icon={<CrownOutlined />} style={{ marginTop: 8 }}>
                 {user.member_level}会员
               </Tag>
@@ -182,7 +190,7 @@ export default function Profile() {
                 {getMemberLevelText()}
               </div>
               <div style={{ color: '#8c8c8c' }}>
-                {user?.member_level === 'free' ? '点击升级会员' : '会员等级'}
+                {stats?.member_level === 'free' ? '点击升级会员' : '会员等级'}
               </div>
             </Card>
           </Col>
@@ -237,7 +245,7 @@ export default function Profile() {
                 title: '账户设置',
                 path: '/settings',
               },
-            ].concat(user?.id === 10 ? [{
+            ].concat(stats?.is_admin ? [{
                 icon: <SettingOutlined />,
                 title: '系统管理',
                 path: '/admin',
