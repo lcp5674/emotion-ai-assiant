@@ -74,7 +74,7 @@ class UserInfo(BaseModel):
     nickname: Optional[str] = None
     avatar: Optional[str] = None
     mbti_type: Optional[str] = None
-    member_level: str = "free"
+    member_level: Optional[str] = "free"
     member_expire_at: Optional[datetime] = None
     is_verified: bool = False
     is_admin: bool = False

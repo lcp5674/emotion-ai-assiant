@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Tag, Row, Col, Progress, Spin, App, List, Avatar } from 'antd'
-import { CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, RadarChartOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, RadarChartOutlined, ArrowLeftOutlined, RightOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useSbtiStore } from '../../stores'
 
@@ -166,12 +166,14 @@ export default function SbtiResult() {
   const { result, setResult } = useSbtiStore()
   const [loading, setLoading] = useState(!result)
   const [assistants, setAssistants] = useState<any[]>([])
+  const [attachmentCompleted, setAttachmentCompleted] = useState(false)
 
   useEffect(() => {
     if (!result) {
       loadResult()
     }
     loadAssistants()
+    checkAttachmentCompletion()
   }, [])
 
   const loadResult = async () => {
@@ -195,6 +197,15 @@ export default function SbtiResult() {
       setAssistants(res.list?.slice(0, 3) || [])
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  const checkAttachmentCompletion = async () => {
+    try {
+      const res = await api.attachment.result()
+      setAttachmentCompleted(!!res)
+    } catch {
+      setAttachmentCompleted(false)
     }
   }
 
@@ -453,6 +464,18 @@ export default function SbtiResult() {
 
         {/* Actions */}
         <div style={{ textAlign: 'center', marginTop: 32, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {/* 继续下一测评入口 */}
+          {!attachmentCompleted && (
+            <Button
+              type="primary"
+              size="large"
+              icon={<RightOutlined />}
+              onClick={() => navigate('/attachment/test')}
+              style={{ background: 'linear-gradient(135deg, #eb2f96 0%, #b37feb 100%)', height: 56, fontSize: 16, paddingInline: 32 }}
+            >
+              完成依恋风格测评，探索你的情感模式
+            </Button>
+          )}
           <Link to="/chat">
             <Button type="primary" size="large" style={{ background: '#722ed1' }}>
               开始聊天

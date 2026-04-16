@@ -38,6 +38,35 @@ export default function Chat() {
   const [tempMessageId, setTempMessageId] = useState<number | null>(null)
   const [showQuickReplies, setShowQuickReplies] = useState(true)
   const [currentAssistant, setCurrentAssistant] = useState<any>(null)
+  const [assessmentStatus, setAssessmentStatus] = useState<{mbti: boolean, sbti: boolean, attachment: boolean} | null>(null)
+
+  // 检查三位一体测评是否全部完成
+  useEffect(() => {
+    const checkAssessments = async () => {
+      try {
+        const [mbtiRes, sbtiRes, attachmentRes] = await Promise.allSettled([
+          api.mbti.result(),
+          api.sbti.result(),
+          api.attachment.result()
+        ])
+        const mbtiCompleted = mbtiRes.status === 'fulfilled' && !!mbtiRes.value
+        const sbtiCompleted = sbtiRes.status === 'fulfilled' && !!sbtiRes.value
+        const attachmentCompleted = attachmentRes.status === 'fulfilled' && !!attachmentRes.value
+        setAssessmentStatus({ mbti: mbtiCompleted, sbti: sbtiCompleted, attachment: attachmentCompleted })
+        
+        // 如果没有全部完成，重定向到综合测评页
+        if (!mbtiCompleted || !sbtiCompleted || !attachmentCompleted) {
+          message.warning('请先完成三位一体测评后再使用聊天功能')
+          navigate('/comprehensive')
+        }
+      } catch (error) {
+        console.error('检查测评状态失败:', error)
+        message.error('检查测评状态失败')
+        navigate('/comprehensive')
+      }
+    }
+    checkAssessments()
+  }, [navigate, message])
 
   // 从URL获取assistant_id并加载助手信息
   useEffect(() => {
@@ -483,6 +512,18 @@ export default function Chat() {
       </div>
     </div>
   )
+
+  if (assessmentStatus === null) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <Spin size="large" />
+      </div>
+    )
+  }
+
+  if (!assessmentStatus?.mbti || !assessmentStatus?.sbti || !assessmentStatus?.attachment) {
+    return null // 正在重定向
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: isDark ? darkColors.chatBg : '#f5f5f5' }}>

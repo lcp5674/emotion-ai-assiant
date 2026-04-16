@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Button, Tag, Row, Col, Progress, Spin, App, Modal, Space } from 'antd'
-import { ArrowLeftOutlined, CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, ShareAltOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, CrownOutlined, HeartOutlined, RocketOutlined, CheckCircleOutlined, ShareAltOutlined, CopyOutlined, CheckOutlined, RightOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useMbtiStore, useAuthStore } from '../../stores'
 
@@ -52,12 +52,14 @@ ${getMbtiDescription(result?.mbti_type)}
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(!result)
   const [assistants, setAssistants] = useState<any[]>([])
+  const [sbtiCompleted, setSbtiCompleted] = useState(false)
 
   useEffect(() => {
     if (!result) {
       loadResult()
     }
     loadAssistants()
+    checkSbtiCompletion()
   }, [])
 
   const loadResult = async () => {
@@ -81,6 +83,15 @@ ${getMbtiDescription(result?.mbti_type)}
       setAssistants(res.list?.slice(0, 3) || [])
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  const checkSbtiCompletion = async () => {
+    try {
+      const res = await api.sbti.result()
+      setSbtiCompleted(!!res)
+    } catch {
+      setSbtiCompleted(false)
     }
   }
 
@@ -245,18 +256,33 @@ ${getMbtiDescription(result?.mbti_type)}
 
         {/* Actions */}
         <div style={{ textAlign: 'center', marginTop: 32 }}>
-          <Space>
-            <Link to="/chat">
-              <Button type="primary" size="large" style={{ background: '#722ed1' }}>
-                开始聊天
+          <Space direction="vertical" style={{ width: '100%', maxWidth: 400 }}>
+            {/* 继续下一测评入口 */}
+            {!sbtiCompleted && (
+              <Button
+                type="primary"
+                size="large"
+                block
+                icon={<RightOutlined />}
+                onClick={() => navigate('/sbti/test')}
+                style={{ background: 'linear-gradient(135deg, #eb2f96 0%, #b37feb 100%)', height: 56, fontSize: 18 }}
+              >
+                完成SBTI测评，探索你的才干主题
               </Button>
-            </Link>
-            <Button size="large" icon={<ShareAltOutlined />} onClick={() => setShareModalVisible(true)}>
-              分享结果
-            </Button>
-            <Link to="/mbti">
-              <Button size="large">重新测试</Button>
-            </Link>
+            )}
+            <Space wrap>
+              <Link to="/chat">
+                <Button type="primary" size="large" style={{ background: '#722ed1' }}>
+                  开始聊天
+                </Button>
+              </Link>
+              <Button size="large" icon={<ShareAltOutlined />} onClick={() => setShareModalVisible(true)}>
+                分享结果
+              </Button>
+              <Link to="/mbti">
+                <Button size="large">重新测试</Button>
+              </Link>
+            </Space>
           </Space>
         </div>
 
