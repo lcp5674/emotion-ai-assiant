@@ -6,155 +6,217 @@ import asyncio
 from typing import Optional, List, Dict
 import loguru
 
-from app.core.config import settings
 from app.services.llm.providers import PROVIDER_MAP, LLMProvider
 
 _llm_provider: Optional[LLMProvider] = None
 
-# 默认的Provider降级顺序（国内优先）
-DEFAULT_FAILOVER_CHAIN = [
-    "volcengine",    # 火山引擎（字节官方）
-    "doubao",        # 豆包
-    "glm",          # 智谱GLM
-    "qwen",         # 阿里通义
-    "siliconflow",  # SiliconFlow聚合平台
-    "ernie",        # 百度文心
-    "hunyuan",      # 腾讯混元
-]
 
-
-def _get_failover_chain() -> List[str]:
+def _get_llm_config_from_db() -> Dict[str, Optional[str]]:
     """
-    获取降级Provider链
-    
-    优先级策略：
-    1. 首先尝试配置的Provider
-    2. 然后按降级链顺序尝试其他Provider
-    
+    从数据库获取LLM配置
+
     Returns:
-        Provider名称列表
+        包含所有LLM配置的字典
     """
-    # 如果配置了自定义降级链
-    custom_chain = getattr(settings, 'LLM_FAILOVER_CHAIN', None)
-    if custom_chain:
-        return [p.strip() for p in custom_chain.split(',')]
-    
-    # 使用默认降级链
-    return DEFAULT_FAILOVER_CHAIN
+    try:
+        from app.core.database import SessionLocal
+        from app.models import SystemConfig
+
+        db = SessionLocal()
+        try:
+            configs = db.query(SystemConfig).filter(
+                SystemConfig.config_key.like("LLM_%")
+            ).all() + db.query(SystemConfig).filter(
+                SystemConfig.config_key.in_([
+                    "OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_BASE_URL",
+                    "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "ANTHROPIC_BASE_URL",
+                    "GLM_API_KEY", "GLM_MODEL", "GLM_BASE_URL",
+                    "QWEN_API_KEY", "QWEN_MODEL", "QWEN_BASE_URL",
+                    "MINIMAX_API_KEY", "MINIMAX_MODEL", "MINIMAX_BASE_URL",
+                    "ERNIE_API_KEY", "ERNIE_MODEL", "ERNIE_BASE_URL",
+                    "HUNYUAN_API_KEY", "HUNYUAN_MODEL", "HUNYUAN_BASE_URL",
+                    "SPARK_API_KEY", "SPARK_MODEL", "SPARK_BASE_URL",
+                    "DOUBAO_API_KEY", "DOUBAO_MODEL", "DOUBAO_BASE_URL",
+                    "SILICONFLOW_API_KEY", "SILICONFLOW_MODEL", "SILICONFLOW_BASE_URL",
+                    "VOLCENGINE_API_KEY", "VOLCENGINE_MODEL", "VOLCENGINE_BASE_URL",
+                    "SENSETIME_API_KEY", "SENSETIME_MODEL",
+                    "BAICHUAN_API_KEY", "BAICHUAN_MODEL",
+                    "MOONSHOT_API_KEY", "MOONSHOT_MODEL",
+                    "LINGYI_API_KEY", "LINGYI_MODEL",
+                ])
+            ).all()
+
+            config_dict = {}
+            for c in configs:
+                config_dict[c.config_key] = c.config_value
+            return config_dict
+        finally:
+            db.close()
+    except Exception as e:
+        loguru.logger.warning(f"从数据库获取LLM配置失败: {e}")
+        return {}
 
 
 def _create_provider(provider_name: str) -> Optional[LLMProvider]:
     """
     根据Provider名称创建Provider实例
-    
+
     Args:
         provider_name: Provider名称
-        
+
     Returns:
         Provider实例，失败返回None
     """
     if provider_name not in PROVIDER_MAP:
         loguru.logger.warning(f"Unknown provider: {provider_name}")
         return None
-    
+
     provider_class = PROVIDER_MAP[provider_name]
-    
+
+    # 从数据库获取最新配置
+    configs = _get_llm_config_from_db()
+
     try:
-        # 各Provider初始化
+        # 各Provider初始化 - 直接从数据库读取配置
         if provider_name == "openai":
             return provider_class(
-                api_key=settings.OPENAI_API_KEY or "",
-                model=settings.OPENAI_MODEL,
-                base_url=settings.OPENAI_BASE_URL,
+                api_key=configs.get("OPENAI_API_KEY") or "",
+                model=configs.get("OPENAI_MODEL") or "gpt-3.5-turbo",
+                base_url=configs.get("OPENAI_BASE_URL") or "https://api.openai.com/v1",
             )
         elif provider_name == "anthropic":
             return provider_class(
-                api_key=settings.ANTHROPIC_API_KEY or "",
-                model=settings.ANTHROPIC_MODEL,
-                base_url=settings.ANTHROPIC_BASE_URL,
+                api_key=configs.get("ANTHROPIC_API_KEY") or "",
+                model=configs.get("ANTHROPIC_MODEL") or "claude-3-haiku",
+                base_url=configs.get("ANTHROPIC_BASE_URL") or "",
             )
         elif provider_name == "glm":
             return provider_class(
-                api_key=settings.GLM_API_KEY or "",
-                model=settings.GLM_MODEL,
-                base_url=settings.GLM_BASE_URL,
+                api_key=configs.get("GLM_API_KEY") or "",
+                model=configs.get("GLM_MODEL") or "glm-4",
+                base_url=configs.get("GLM_BASE_URL") or "",
             )
         elif provider_name == "qwen":
             return provider_class(
-                api_key=settings.QWEN_API_KEY or "",
-                model=settings.QWEN_MODEL,
-                base_url=settings.QWEN_BASE_URL,
+                api_key=configs.get("QWEN_API_KEY") or "",
+                model=configs.get("QWEN_MODEL") or "qwen-turbo",
+                base_url=configs.get("QWEN_BASE_URL") or "",
             )
         elif provider_name == "minimax":
             return provider_class(
-                api_key=settings.MINIMAX_API_KEY or "",
-                model=settings.MINIMAX_MODEL,
-                base_url=settings.MINIMAX_BASE_URL,
+                api_key=configs.get("MINIMAX_API_KEY") or "",
+                model=configs.get("MINIMAX_MODEL") or "abab5.5-chat",
+                base_url=configs.get("MINIMAX_BASE_URL") or "",
             )
         elif provider_name == "ernie":
             return provider_class(
-                api_key=settings.ERNIE_API_KEY or "",
-                model=settings.ERNIE_MODEL,
-                base_url=settings.ERNIE_BASE_URL,
+                api_key=configs.get("ERNIE_API_KEY") or "",
+                model=configs.get("ERNIE_MODEL") or "ernie-4.0-8k",
+                base_url=configs.get("ERNIE_BASE_URL") or "",
             )
         elif provider_name == "hunyuan":
             return provider_class(
-                api_key=settings.HUNYUAN_API_KEY or "",
-                model=settings.HUNYUAN_MODEL,
-                base_url=settings.HUNYUAN_BASE_URL,
+                api_key=configs.get("HUNYUAN_API_KEY") or "",
+                model=configs.get("HUNYUAN_MODEL") or "hunyuan-pro",
+                base_url=configs.get("HUNYUAN_BASE_URL") or "",
             )
         elif provider_name == "spark":
             return provider_class(
-                api_key=settings.SPARK_API_KEY or "",
-                model=settings.SPARK_MODEL,
-                base_url=settings.SPARK_BASE_URL,
+                api_key=configs.get("SPARK_API_KEY") or "",
+                model=configs.get("SPARK_MODEL") or "spark-v3.5",
+                base_url=configs.get("SPARK_BASE_URL") or "",
             )
         elif provider_name == "doubao":
             return provider_class(
-                api_key=settings.DOUBAO_API_KEY or "",
-                model=settings.DOUBAO_MODEL,
-                base_url=settings.DOUBAO_BASE_URL,
+                api_key=configs.get("DOUBAO_API_KEY") or "",
+                model=configs.get("DOUBAO_MODEL") or "doubao-pro-32k",
+                base_url=configs.get("DOUBAO_BASE_URL") or "https://ark.cn-beijing.volces.com/api/v3",
             )
         elif provider_name == "siliconflow":
             return provider_class(
-                api_key=settings.SILICONFLOW_API_KEY or "",
-                model=settings.SILICONFLOW_MODEL,
+                api_key=configs.get("SILICONFLOW_API_KEY") or "",
+                model=configs.get("SILICONFLOW_MODEL") or "Qwen/Qwen2-72B-Instruct",
             )
         elif provider_name == "volcengine":
             return provider_class(
-                api_key=getattr(settings, 'VOLCENGINE_API_KEY', None) or "",
-                model=getattr(settings, 'VOLCENGINE_MODEL', 'doubao-pro-32k'),
-                base_url=getattr(settings, 'VOLCENGINE_BASE_URL', 'https://ark.cn-beijing.volces.com/api/v3'),
+                api_key=configs.get("VOLCENGINE_API_KEY") or "",
+                model=configs.get("VOLCENGINE_MODEL") or "doubao-pro-32k",
+                base_url=configs.get("VOLCENGINE_BASE_URL") or "https://ark.cn-beijing.volces.com/api/v3",
             )
         elif provider_name == "sensetime":
             return provider_class(
-                api_key=getattr(settings, 'SENSETIME_API_KEY', None) or "",
-                model=getattr(settings, 'SENSETIME_MODEL', 'sensechat-5'),
+                api_key=configs.get("SENSETIME_API_KEY") or "",
+                model=configs.get("SENSETIME_MODEL") or "sensechat-5",
             )
         elif provider_name == "baichuan":
             return provider_class(
-                api_key=getattr(settings, 'BAICHUAN_API_KEY', None) or "",
-                model=getattr(settings, 'BAICHUAN_MODEL', 'baichuan4'),
+                api_key=configs.get("BAICHUAN_API_KEY") or "",
+                model=configs.get("BAICHUAN_MODEL") or "baichuan4",
             )
         elif provider_name == "moonshot":
             return provider_class(
-                api_key=getattr(settings, 'MOONSHOT_API_KEY', None) or "",
-                model=getattr(settings, 'MOONSHOT_MODEL', 'moonshot-v1-8k'),
+                api_key=configs.get("MOONSHOT_API_KEY") or "",
+                model=configs.get("MOONSHOT_MODEL") or "moonshot-v1-8k",
             )
         elif provider_name == "lingyi":
             return provider_class(
-                api_key=getattr(settings, 'LINGYI_API_KEY', None) or "",
-                model=getattr(settings, 'LINGYI_MODEL', 'yi-medium'),
-            )
-        elif provider_name == "mock":
-            # Mock Provider - 用于测试和开发
-            return provider_class(
-                api_key="mock",
-                model="mock",
+                api_key=configs.get("LINGYI_API_KEY") or "",
+                model=configs.get("LINGYI_MODEL") or "yi-medium",
             )
     except Exception as e:
         loguru.logger.error(f"Failed to create provider {provider_name}: {e}")
         return None
+
+
+def _get_primary_provider_name() -> str:
+    """获取主Provider名称，从数据库读取"""
+    try:
+        from app.core.database import SessionLocal
+        from app.models import SystemConfig
+
+        db = SessionLocal()
+        try:
+            config = db.query(SystemConfig).filter(
+                SystemConfig.config_key == "LLM_PROVIDER"
+            ).first()
+            if config and config.config_value:
+                return config.config_value.lower()
+        finally:
+            db.close()
+    except Exception as e:
+        loguru.logger.warning(f"获取LLM_PROVIDER失败: {e}")
+
+    return ""
+
+
+def _get_failover_chain() -> List[str]:
+    """获取降级Provider链，从数据库读取"""
+    try:
+        from app.core.database import SessionLocal
+        from app.models import SystemConfig
+
+        db = SessionLocal()
+        try:
+            config = db.query(SystemConfig).filter(
+                SystemConfig.config_key == "LLM_FAILOVER_CHAIN"
+            ).first()
+            if config and config.config_value:
+                return [p.strip() for p in config.config_value.split(",") if p.strip()]
+        finally:
+            db.close()
+    except Exception as e:
+        loguru.logger.warning(f"获取LLM_FAILOVER_CHAIN失败: {e}")
+
+    # 默认的Provider降级顺序（国内优先）
+    return [
+        "volcengine",
+        "doubao",
+        "glm",
+        "qwen",
+        "siliconflow",
+        "ernie",
+        "hunyuan",
+    ]
 
 
 def get_llm_provider() -> LLMProvider:
@@ -162,12 +224,12 @@ def get_llm_provider() -> LLMProvider:
     global _llm_provider
 
     if _llm_provider is None:
-        provider_name = settings.LLM_PROVIDER.lower() if settings.LLM_PROVIDER else ""
+        provider_name = _get_primary_provider_name()
 
         if not provider_name:
             raise ValueError(
                 "LLM_PROVIDER is not configured. "
-                "Please set LLM_PROVIDER environment variable. "
+                "Please set LLM_PROVIDER in database. "
                 f"Available providers: {list(PROVIDER_MAP.keys())}"
             )
 
@@ -175,7 +237,7 @@ def get_llm_provider() -> LLMProvider:
             raise ValueError(f"Unknown LLM provider: {provider_name}. Available providers: {list(PROVIDER_MAP.keys())}")
 
         _llm_provider = _create_provider(provider_name)
-        
+
         if _llm_provider is None:
             raise RuntimeError(f"Failed to initialize LLM provider: {provider_name}")
 
@@ -187,49 +249,33 @@ def get_llm_provider() -> LLMProvider:
 def get_llm_provider_with_failover() -> LLMProvider:
     """
     获取LLM Provider实例，支持自动降级
-    
+
     当主Provider失败时，自动尝试降级链中的其他Provider
-    
+
     Returns:
         可用的Provider实例
-        
+
     Raises:
         RuntimeError: 当所有Provider都失败时
     """
     # 首先尝试主Provider
-    primary_provider = settings.LLM_PROVIDER.lower() if settings.LLM_PROVIDER else ""
-    
+    primary_provider = _get_primary_provider_name()
+
     if primary_provider:
         provider = _create_provider(primary_provider)
         if provider:
             loguru.logger.info(f"Using primary LLM Provider: {primary_provider}")
             return provider
-    
+
     # 主Provider失败或未配置，尝试降级链
     failover_chain = _get_failover_chain()
-    
+
     for provider_name in failover_chain:
         # 检查是否已配置了该Provider的API Key
+        configs = _get_llm_config_from_db()
         api_key_attr = f"{provider_name.upper()}_API_KEY"
-        api_key = getattr(settings, api_key_attr, None)
-        
-        if not api_key:
-            # 尝试其他命名方式
-            if provider_name == "volcengine":
-                api_key = getattr(settings, "VOLCENGINE_API_KEY", None)
-            elif provider_name == "doubao":
-                api_key = getattr(settings, "DOUBAO_API_KEY", None)
-            elif provider_name == "glm":
-                api_key = getattr(settings, "GLM_API_KEY", None)
-            elif provider_name == "qwen":
-                api_key = getattr(settings, "QWEN_API_KEY", None)
-            elif provider_name == "siliconflow":
-                api_key = getattr(settings, "SILICONFLOW_API_KEY", None)
-            elif provider_name == "ernie":
-                api_key = getattr(settings, "ERNIE_API_KEY", None)
-            elif provider_name == "hunyuan":
-                api_key = getattr(settings, "HUNYUAN_API_KEY", None)
-        
+        api_key = configs.get(api_key_attr)
+
         if api_key:
             provider = _create_provider(provider_name)
             if provider:
@@ -237,7 +283,7 @@ def get_llm_provider_with_failover() -> LLMProvider:
                 return provider
             else:
                 loguru.logger.warning(f"Failed to create provider: {provider_name}, trying next...")
-    
+
     # 所有Provider都失败
     raise RuntimeError(
         f"All LLM providers failed. "

@@ -406,7 +406,6 @@ async def test_provider(
     db: Session = Depends(get_db),
 ):
     """测试降级链中单个Provider的可用性"""
-    from app.services.llm.factory import LLMWrapper
     from app.core.config import settings
 
     load_llm_config_to_memory(db)

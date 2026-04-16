@@ -466,7 +466,10 @@ class DoubaoProvider(LLMProvider):
 
     def __init__(self, api_key: str, model: str = "doubao-pro-32k", base_url: str = None, **kwargs):
         super().__init__(api_key, model, **kwargs)
-        self.base_url = base_url or "https://ark.cn-beijing.volces.com/api/v3"
+        # 去除末尾的 /chat/completions，避免重复拼接
+        self.base_url = (base_url or "https://ark.cn-beijing.volces.com/api/v3").rstrip('/')
+        if self.base_url.endswith("/chat/completions"):
+            self.base_url = self.base_url[:-len("/chat/completions")]
         self._client = None
 
     @property
@@ -562,7 +565,10 @@ class VolcengineProvider(LLMProvider):
 
     def __init__(self, api_key: str, model: str = "doubao-pro-32k", base_url: str = None, **kwargs):
         super().__init__(api_key, model, **kwargs)
-        self.base_url = base_url or "https://ark.cn-beijing.volces.com/api/v3"
+        # 去除末尾的 /chat/completions，避免重复拼接
+        self.base_url = (base_url or "https://ark.cn-beijing.volces.com/api/v3").rstrip('/')
+        if self.base_url.endswith("/chat/completions"):
+            self.base_url = self.base_url[:-len("/chat/completions")]
         self._client = None
 
     @property
