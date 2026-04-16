@@ -481,9 +481,6 @@ export default function SbtiResult() {
               开始聊天
             </Button>
           </Link>
-          <Link to="/sbti/test">
-            <Button size="large">重新测评</Button>
-          </Link>
           <Link to="/profile/deep">
             <Button size="large" type="primary" style={{ background: '#eb2f96' }}>
               查看深度画像
