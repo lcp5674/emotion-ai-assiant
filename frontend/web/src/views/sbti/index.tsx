@@ -19,11 +19,11 @@ export default function SbtiIndex() {
   const checkResult = async () => {
     try {
       const res = await api.sbti.result()
-      setHasResult(true)
+      // 只有当返回有效数据时才认为已完成测评
+      setHasResult(!!res && Object.keys(res).length > 0)
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        setHasResult(false)
-      }
+      // 任何错误都视为未完成测评
+      setHasResult(false)
     } finally {
       setLoading(false)
     }
