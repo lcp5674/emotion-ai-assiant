@@ -57,6 +57,63 @@ async def lifespan(app: FastAPI):
         finally:
             db.close()
 
+        # 初始化预设虚拟形象
+        try:
+            from app.services.animation_service import get_animation_service
+            db = SessionLocal()
+            try:
+                service = get_animation_service()
+                service.create_presets_if_not_exists(db)
+                loguru.logger.info("预设虚拟形象初始化完成")
+            finally:
+                db.close()
+        except Exception as e:
+            loguru.logger.warning(f"预设虚拟形象初始化失败: {e}")
+
+        # 初始化知识库文章
+        from app.services.rag.knowledge_init import init_knowledge_articles
+        db = SessionLocal()
+        try:
+            init_knowledge_articles(db)
+            loguru.logger.info("知识库文章初始化完成")
+        except Exception as e:
+            loguru.logger.warning(f"知识库文章初始化失败: {e}")
+        finally:
+            db.close()
+
+        # 初始化LLM默认配置到数据库
+        try:
+            from app.models import SystemConfig
+            db = SessionLocal()
+            try:
+                # 检查并初始化默认LLM配置
+                default_configs = [
+                    ("LLM_PROVIDER", "doubao", "默认LLM Provider"),
+                    ("LLM_FAILOVER_CHAIN", "volcengine,doubao,glm,qwen,siliconflow,ernie,hunyuan", "LLM降级Provider链"),
+                    ("DOUBAO_MODEL", "doubao-pro-32k", "豆包模型名称"),
+                    ("DOUBAO_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3", "豆包API地址"),
+                ]
+
+                for key, value, description in default_configs:
+                    existing = db.query(SystemConfig).filter(
+                        SystemConfig.config_key == key
+                    ).first()
+                    if not existing:
+                        new_config = SystemConfig(
+                            config_key=key,
+                            config_value=value,
+                            description=description
+                        )
+                        db.add(new_config)
+                        loguru.logger.info(f"初始化LLM配置: {key} = {value}")
+
+                db.commit()
+                loguru.logger.info("LLM默认配置初始化完成")
+            finally:
+                db.close()
+        except Exception as e:
+            loguru.logger.warning(f"LLM配置初始化失败: {e}")
+
         # 从数据库加载LLM配置到内存（解决重启后配置丢失问题）
         try:
             from app.core.database import SessionLocal as DbSession

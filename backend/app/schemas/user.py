@@ -33,19 +33,47 @@ class SmsVerifyRequest(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    """注册请求"""
+    """注册请求 - 支持多种注册方式"""
 
-    phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
-    password: str = Field(..., min_length=6, max_length=20)
-    code: str = Field(..., min_length=6, max_length=6)
+    # 手机号注册（需要验证码）
+    phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$")
+    code: Optional[str] = Field(None, min_length=6, max_length=6)  # 短信验证码
+
+    # 邮箱注册
+    email: Optional[str] = None
+
+    # 用户名注册
+    username: Optional[str] = Field(None, min_length=3, max_length=20)
+
+    password: str = Field(..., min_length=6, max_length=50)
     nickname: Optional[str] = None
+
+    @field_validator('email')
+    def validate_email_format(cls, v):
+        if v is not None and not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', v):
+            raise ValueError('邮箱格式不正确')
+        return v
+
+    @field_validator('username')
+    def validate_username_format(cls, v):
+        if v is not None:
+            if not re.match(r'^[a-zA-Z0-9_]+$', v):
+                raise ValueError('用户名只能包含字母、数字和下划线')
+            if len(v) < 3:
+                raise ValueError('用户名至少3个字符')
+        return v
+
+    def model_post_init(self, ctx):
+        # 至少需要一种标识符
+        if not any([self.phone, self.email, self.username]):
+            raise ValueError('请提供手机号、邮箱或用户名')
 
 
 class LoginRequest(BaseModel):
-    """登录请求"""
+    """登录请求 - 支持手机号、邮箱、用户名登录"""
 
-    phone: str = Field(..., pattern=r"^1[3-9]\d{9}$")
-    password: str = Field(..., min_length=6, max_length=20)
+    identifier: str = Field(..., min_length=1, description="手机号、邮箱或用户名")
+    password: str = Field(..., min_length=6, max_length=50)
 
 
 class LoginResponse(BaseModel):
@@ -71,6 +99,7 @@ class UserInfo(BaseModel):
     id: int
     phone: Optional[str] = None
     email: Optional[str] = None
+    username: Optional[str] = None
     nickname: Optional[str] = None
     avatar: Optional[str] = None
     mbti_type: Optional[str] = None

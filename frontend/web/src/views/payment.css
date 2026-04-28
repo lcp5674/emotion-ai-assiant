@@ -11,6 +11,48 @@
   padding: 16px 0;
 }
 
+.benefits-comparison {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 12px;
+}
+
+.benefits-comparison h3 {
+  text-align: center;
+  margin-bottom: 16px;
+  color: #722ed1;
+}
+
+.benefit-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 80px;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+}
+
+.benefit-row:last-child {
+  border-bottom: none;
+}
+
+.benefit-row .benefit-label {
+  color: #333;
+  font-weight: 500;
+}
+
+.benefit-row .benefit-free {
+  color: #8c8c8c;
+  text-align: center;
+}
+
+.benefit-row .benefit-vip {
+  color: #52c41a;
+  font-weight: 600;
+  text-align: center;
+}
+
 .current-membership {
   margin-bottom: 24px;
   text-align: center;

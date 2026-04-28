@@ -86,6 +86,7 @@ class AiAssistantSchema(BaseModel):
     id: int
     name: str
     avatar: Optional[str] = None
+    live2d_model_url: Optional[str] = None  # Live2D模型URL
     mbti_type: str
     sbti_types: Optional[str] = None  # SBTI主题类型,如: executing,influencing,relationship,strategic
     attachment_styles: Optional[str] = None  # 依恋风格类型,如: secure,anxious,avoidant
@@ -96,6 +97,9 @@ class AiAssistantSchema(BaseModel):
     tags: Optional[str] = None
     is_recommended: bool = False
     is_favorited: bool = False  # 当前用户是否收藏
+    match_reason: Optional[str] = None  # 推荐理由
+    match_score: Optional[float] = None  # 匹配分数 (0-100)
+    match_details: Optional[dict] = None  # 详细匹配信息
 
     class Config:
         from_attributes = True

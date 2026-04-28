@@ -38,6 +38,21 @@ LLM_CONFIG_KEYS = [
     "LINGYI_API_KEY", "LINGYI_MODEL",
 ]
 
+# 知识库配置键
+KNOWLEDGE_CONFIG_KEYS = [
+    "EMBEDDING_MODEL",
+    "EMBEDDING_DIM",
+    "CHUNK_SIZE",
+    "CHUNK_OVERLAP",
+    "VECTOR_DB_TYPE",
+    "MILVUS_HOST",
+    "MILVUS_PORT",
+    "MILVUS_COLLECTION",
+    "QDRANT_HOST",
+    "QDRANT_PORT",
+    "QDRANT_COLLECTION",
+]
+
 
 class DashboardStatsResponse(BaseModel):
     """仪表盘统计响应"""
@@ -933,4 +948,267 @@ async def get_audit_stats(
         "rejected": rejected,
         "total": pending + processing + approved + rejected,
     }
+
+
+# ============ 知识库同步管理 ============
+
+from app.schemas.knowledge import KnowledgeSyncConfig, KnowledgeSyncStatus, KnowledgeSyncResult
+from app.services.rag.knowledge_sync import get_knowledge_sync_service
+
+
+@router.get("/knowledge-sync/config", summary="获取知识库同步配置")
+async def get_knowledge_sync_config(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """获取当前知识库同步配置"""
+    # 从数据库读取配置
+    source_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_SOURCE_URL"
+    ).first()
+    enabled_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_ENABLED"
+    ).first()
+    auto_sync_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_AUTO"
+    ).first()
+    interval_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_INTERVAL"
+    ).first()
+
+    service = get_knowledge_sync_service()
+
+    return {
+        "source_url": source_config.config_value if source_config else None,
+        "enabled": enabled_config.config_value == "true" if enabled_config else True,
+        "auto_sync": auto_sync_config.config_value == "true" if auto_sync_config else False,
+        "sync_interval_hours": int(interval_config.config_value) if interval_config else 24,
+        "last_sync_time": service.last_sync_time,
+        "default_sources": service.DEFAULT_SOURCES,
+    }
+
+
+class KnowledgeSyncConfigUpdate(BaseModel):
+    source_url: Optional[str] = None
+    enabled: Optional[bool] = None
+    auto_sync: Optional[bool] = None
+    sync_interval_hours: Optional[int] = None
+
+
+@router.put("/knowledge-sync/config", summary="更新知识库同步配置")
+async def update_knowledge_sync_config(
+    config: KnowledgeSyncConfigUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """更新知识库同步配置"""
+    updates = {}
+
+    if config.source_url is not None:
+        updates["KNOWLEDGE_SYNC_SOURCE_URL"] = config.source_url
+    if config.enabled is not None:
+        updates["KNOWLEDGE_SYNC_ENABLED"] = "true" if config.enabled else "false"
+    if config.auto_sync is not None:
+        updates["KNOWLEDGE_SYNC_AUTO"] = "true" if config.auto_sync else "false"
+    if config.sync_interval_hours is not None:
+        updates["KNOWLEDGE_SYNC_INTERVAL"] = str(config.sync_interval_hours)
+
+    for key, value in updates.items():
+        existing = db.query(SystemConfig).filter(SystemConfig.config_key == key).first()
+        if existing:
+            existing.config_value = value
+        else:
+            new_config = SystemConfig(config_key=key, config_value=value)
+            db.add(new_config)
+
+    db.commit()
+
+    # 更新服务实例
+    service = get_knowledge_sync_service()
+    if config.source_url is not None:
+        service.set_source_url(config.source_url)
+
+    return {"message": "配置已更新", "changes": list(updates.keys())}
+
+
+@router.post("/knowledge-sync/trigger", summary="手动触发知识库同步")
+async def trigger_knowledge_sync(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """手动触发一次知识库同步"""
+    import asyncio
+    from datetime import datetime
+
+    service = get_knowledge_sync_service()
+
+    # 获取在线文章
+    online_articles = await service.fetch_online_articles()
+
+    result = {
+        "success": False,
+        "synced_count": 0,
+        "total_online": len(online_articles),
+        "message": "",
+    }
+
+    if not online_articles:
+        result["message"] = "没有找到在线文章或连接失败"
+        return result
+
+    # 同步到数据库
+    synced_count = service.sync_articles_to_db(db, online_articles)
+    result["synced_count"] = synced_count
+    result["success"] = True
+    result["message"] = f"成功同步 {synced_count} 篇新文章，共获取 {len(online_articles)} 篇"
+
+    # 更新最后同步时间
+    service.last_sync_time = datetime.now()
+
+    loguru.logger.info(f"管理员手动触发知识库同步: {result}")
+
+    return result
+
+
+@router.get("/knowledge-sync/status", summary="获取知识库同步状态")
+async def get_knowledge_sync_status(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """获取知识库同步状态"""
+    service = get_knowledge_sync_service()
+    local_count = service.get_local_articles_count(db)
+
+    source_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_SOURCE_URL"
+    ).first()
+    enabled_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_ENABLED"
+    ).first()
+    auto_sync_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_AUTO"
+    ).first()
+    interval_config = db.query(SystemConfig).filter(
+        SystemConfig.config_key == "KNOWLEDGE_SYNC_INTERVAL"
+    ).first()
+
+    return KnowledgeSyncStatus(
+        configured=source_config is not None,
+        enabled=enabled_config.config_value == "true" if enabled_config else True,
+        auto_sync=auto_sync_config.config_value == "true" if auto_sync_config else False,
+        sync_interval_hours=int(interval_config.config_value) if interval_config else 24,
+        last_sync_time=service.last_sync_time,
+        local_articles_count=local_count,
+        sources=service.DEFAULT_SOURCES,
+    )
+
+
+# ============ 知识库Embedding和分块配置 ============
+
+class KnowledgeBaseConfigUpdate(BaseModel):
+    embedding_model: Optional[str] = None
+    embedding_dim: Optional[int] = None
+    chunk_size: Optional[int] = None
+    chunk_overlap: Optional[int] = None
+    vector_db_type: Optional[str] = None
+    milvus_host: Optional[str] = None
+    milvus_port: Optional[int] = None
+    milvus_collection: Optional[str] = None
+    qdrant_host: Optional[str] = None
+    qdrant_port: Optional[int] = None
+    qdrant_collection: Optional[str] = None
+
+
+@router.get("/knowledge-base/config", summary="获取知识库Embedding和分块配置")
+async def get_knowledge_base_config(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """获取知识库Embedding和分块配置"""
+    from app.core.config import settings
+
+    # 从数据库读取配置
+    def get_config(key: str, default: str = None) -> Optional[str]:
+        config = db.query(SystemConfig).filter(SystemConfig.config_key == key).first()
+        return config.config_value if config else default
+
+    def get_config_int(key: str, default: int = None) -> Optional[int]:
+        config = db.query(SystemConfig).filter(SystemConfig.config_key == key).first()
+        return int(config.config_value) if config else default
+
+    return {
+        # Embedding配置
+        "embedding_model": get_config("EMBEDDING_MODEL", settings.EMBEDDING_MODEL),
+        "embedding_dim": get_config_int("EMBEDDING_DIM", settings.EMBEDDING_DIM),
+        # 分块配置
+        "chunk_size": get_config_int("CHUNK_SIZE", 500),
+        "chunk_overlap": get_config_int("CHUNK_OVERLAP", 50),
+        # 向量数据库配置
+        "vector_db_type": get_config("VECTOR_DB_TYPE", settings.VECTOR_DB_TYPE),
+        "milvus_host": get_config("MILVUS_HOST", settings.MILVUS_HOST),
+        "milvus_port": get_config_int("MILVUS_PORT", settings.MILVUS_PORT),
+        "milvus_collection": get_config("MILVUS_COLLECTION", settings.MILVUS_COLLECTION),
+        "qdrant_host": get_config("QDRANT_HOST", settings.QDRANT_HOST),
+        "qdrant_port": get_config_int("QDRANT_PORT", settings.QDRANT_PORT),
+        "qdrant_collection": get_config("QDRANT_COLLECTION", settings.QDRANT_COLLECTION),
+    }
+
+
+@router.put("/knowledge-base/config", summary="更新知识库Embedding和分块配置")
+async def update_knowledge_base_config(
+    config: KnowledgeBaseConfigUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """更新知识库Embedding和分块配置"""
+    updates = {}
+
+    if config.embedding_model is not None:
+        updates["EMBEDDING_MODEL"] = config.embedding_model
+    if config.embedding_dim is not None:
+        updates["EMBEDDING_DIM"] = str(config.embedding_dim)
+    if config.chunk_size is not None:
+        updates["CHUNK_SIZE"] = str(config.chunk_size)
+    if config.chunk_overlap is not None:
+        updates["CHUNK_OVERLAP"] = str(config.chunk_overlap)
+    if config.vector_db_type is not None:
+        updates["VECTOR_DB_TYPE"] = config.vector_db_type
+    if config.milvus_host is not None:
+        updates["MILVUS_HOST"] = config.milvus_host
+    if config.milvus_port is not None:
+        updates["MILVUS_PORT"] = str(config.milvus_port)
+    if config.milvus_collection is not None:
+        updates["MILVUS_COLLECTION"] = config.milvus_collection
+    if config.qdrant_host is not None:
+        updates["QDRANT_HOST"] = config.qdrant_host
+    if config.qdrant_port is not None:
+        updates["QDRANT_PORT"] = str(config.qdrant_port)
+    if config.qdrant_collection is not None:
+        updates["QDRANT_COLLECTION"] = config.qdrant_collection
+
+    for key, value in updates.items():
+        existing = db.query(SystemConfig).filter(SystemConfig.config_key == key).first()
+        if existing:
+            existing.config_value = value
+        else:
+            new_config = SystemConfig(config_key=key, config_value=value)
+            db.add(new_config)
+
+    db.commit()
+
+    # 更新settings内存
+    from app.core.config import settings
+    for key, value in updates.items():
+        if hasattr(settings, key):
+            # 类型转换
+            if key in ["EMBEDDING_DIM", "CHUNK_SIZE", "CHUNK_OVERLAP", "MILVUS_PORT", "QDRANT_PORT"]:
+                value = int(value)
+            setattr(settings, key, value)
+        os.environ[key] = str(value)
+
+    # 重置向量存储实例（下次使用时重新初始化）
+    import app.services.rag.vectorstore as vectorstore_module
+    vectorstore_module._vector_store = None
+
+    return {"message": "知识库配置已更新", "changes": list(updates.keys())}
 

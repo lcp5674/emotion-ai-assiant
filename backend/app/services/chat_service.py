@@ -244,8 +244,11 @@ class ChatService:
         limit: int = 20,
         offset: int = 0,
     ) -> List[Conversation]:
-        """获取用户对话列表"""
-        return db.query(Conversation).filter(
+        """获取用户对话列表（使用joinedload避免N+1查询）"""
+        from sqlalchemy.orm import joinedload
+        return db.query(Conversation).options(
+            joinedload(Conversation.assistant)
+        ).filter(
             Conversation.user_id == user_id,
         ).order_by(desc(Conversation.updated_at)).offset(offset).limit(limit).all()
 
@@ -308,6 +311,30 @@ class ChatService:
             return False
 
         conversation.status = ConversationStatus.CLOSED
+        db.commit()
+        return True
+
+    def delete_conversation(
+        self,
+        db: Session,
+        user_id: int,
+        session_id: str,
+    ) -> bool:
+        """删除对话及其所有消息"""
+        conversation = db.query(Conversation).filter(
+            Conversation.session_id == session_id,
+            Conversation.user_id == user_id,
+        ).first()
+        if not conversation:
+            return False
+
+        # 删除对话的所有消息
+        db.query(Message).filter(
+            Message.conversation_id == conversation.id
+        ).delete()
+
+        # 删除对话
+        db.delete(conversation)
         db.commit()
         return True
 

@@ -224,55 +224,41 @@ async def get_ai_partners(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """根据用户的人格画像获取推荐的AI伴侣列表"""
-    # 获取用户的MBTI和依恋风格
-    user_mbti = current_user.mbti_type
-    user_attachment_style = None
-    
-    if current_user.attachment_result_id:
-        attachment_result = db.query(AttachmentResult).filter(
-            AttachmentResult.id == current_user.attachment_result_id
-        ).first()
-        if attachment_result:
-            user_attachment_style = attachment_result.attachment_style.value if hasattr(attachment_result.attachment_style, 'value') else str(attachment_result.attachment_style)
-    
-    # 获取推荐的AI助手
-    query = db.query(AiAssistant).filter(AiAssistant.is_active == True)
-    
-    # 如果有MBTI，优先推荐匹配类型
-    if user_mbti:
-        query = query.order_by(AiAssistant.mbti_type == user_mbti, AiAssistant.is_recommended == True, AiAssistant.sort_order)
-    else:
-        query = query.order_by(AiAssistant.is_recommended == True, AiAssistant.sort_order)
-    
-    assistants = query.limit(6).all()
-    
+    """根据用户的人格画像（MBTI + SBTI + 依恋风格）获取推荐的AI伴侣列表"""
+    # 使用mbti_service的综合匹配算法获取推荐助手
+    from app.services.mbti_service import get_mbti_service
+    mbti_service = get_mbti_service()
+
+    # 获取高匹配度助手（85%以上），如果没有会自动创建定制化助手
+    scored_assistants = mbti_service.get_high_match_recommended_assistants(
+        db=db,
+        user_id=current_user.id,
+        min_match_score=85.0
+    )
+
+    # 限制返回数量
+    scored_assistants = scored_assistants[:6]
+
     # 构建响应
     partners = []
-    for assistant in assistants:
-        # 生成匹配原因
-        match_reasons = []
-        if user_mbti and assistant.mbti_type == user_mbti:
-            match_reasons.append(f"与您同为{user_mbti}型人格")
-        if assistant.is_recommended:
-            match_reasons.append("官方推荐")
-        if assistant.tags:
-            match_reasons.append(f"擅长{assistant.tags.split(',')[0]}")
-        
+    for item in scored_assistants:
+        assistant = item["assistant"]
+
         # 解析标签
         tags = assistant.tags.split(',') if assistant.tags else []
-        
+
         partners.append(AiPartnerItem(
             id=assistant.id,
             name=assistant.name,
             avatar=assistant.avatar,
             mbti_type=assistant.mbti_type.value if hasattr(assistant.mbti_type, 'value') else str(assistant.mbti_type),
             personality=assistant.personality,
-            attachment_style=None,  # AI助手暂无此字段
-            match_reason="、".join(match_reasons) if match_reasons else "综合匹配",
+            attachment_style=None,
+            match_reason=item["match_reason"],
+            match_score=item["match_score"],
             tags=tags,
         ))
-    
+
     return AiPartnerListResponse(
         total=len(partners),
         list=partners,

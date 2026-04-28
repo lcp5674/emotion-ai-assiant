@@ -2,6 +2,7 @@
    心灵伴侣AI 全局样式 - 基于设计系统
    ========================================== */
 
+/* 使用国内镜像加载字体 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
 
 * {
@@ -201,6 +202,47 @@ body {
   }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(114, 46, 209, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(114, 46, 209, 0.6);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .fade-in {
   animation: fadeIn var(--duration-normal) var(--easing-out);
 }
@@ -278,7 +320,7 @@ body {
 }
 
 /* ============================================
-   深色模式适配 - 全面升级版
+   深色模式适配 - 简洁清晰版本
    ============================================ */
 
 /* 基础深色模式设置 */
@@ -289,21 +331,17 @@ body {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* 通用深色模式背景适配 - 覆盖所有内联白色/浅色背景 */
+/* 浅色背景适配 - 保持简洁 */
 .dark [style*="background: #fff"],
 .dark [style*="background:#fff"],
 .dark [style*="background: #ffffff"],
 .dark [style*="background:#ffffff"],
 .dark [style*="background: white"],
 .dark [style*="background:white"],
-.dark [style*="background: '#fff'"],
-.dark [style*="background:'#fff'"],
-.dark [style*="background: '#ffffff'"],
-.dark [style*="background:'#ffffff'"],
-.dark [style*="backgroundColor: '#fff'"],
-.dark [style*="backgroundColor:'#fff'"],
-.dark [style*="backgroundColor: '#ffffff'"],
-.dark [style*="backgroundColor:'#ffffff'"],
+.dark [style*="backgroundColor: #fff"],
+.dark [style*="backgroundColor:#fff"],
+.dark [style*="backgroundColor: #ffffff"],
+.dark [style*="backgroundColor:#ffffff"],
 .dark [style*="backgroundColor: white"],
 .dark [style*="backgroundColor:white"],
 .dark [style*="background-color: #fff"],
@@ -361,26 +399,12 @@ body {
   background-color: #1a1a1a !important;
 }
 
-/* 通用深色模式文字适配 - 覆盖所有内联深色文字 */
+/* 通用深色模式文字适配 */
 .dark [style*="color: #1f2937"],
 .dark [style*="color:#1f2937"],
-.dark [style*="color: #262626"],
-.dark [style*="color:#262626"],
-.dark [style*="color: #333333"],
-.dark [style*="color:#333333"],
-.dark [style*="color: #000"],
-.dark [style*="color:#000"],
-.dark [style*="color: #000000"],
-.dark [style*="color:#000000"],
-.dark [style*="color: black"],
-.dark [style*="color:black"],
-.dark [style*="color: '#1f2937'"],
-.dark [style*="color:'#1f2937'"],
-.dark [style*="color: '#262626'"],
-.dark [style*="color:'#262626'"],
-.dark [style*="color: '#333333'"],
-.dark [style*="color:'#333333'"] {
-  color: rgba(255, 255, 255, 0.95) !important;
+.dark [style*="color: rgb(31, 41, 55)"],
+.dark [style*="color:rgb(31,41,55)"] {
+  color: #ffffff !important;
 }
 
 /* 次要文字适配 */
@@ -389,16 +413,12 @@ body {
 .dark [style*="color: #8c8c8c"],
 .dark [style*="color:#8c8c8c"],
 .dark [style*="color: #9ca3af"],
-.dark [style*="color:#9ca3af"],
-.dark [style*="color: #6b7280"],
-.dark [style*="color:#6b7280"] {
+.dark [style*="color:#9ca3af"] {
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
 /* Header 深色模式适配 */
-.dark header,
-.dark [style*="background: rgba(255, 255, 255"] header,
-.dark header[style*="background"] {
+.dark header {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
   border-bottom: 1px solid #333 !important;
 }
@@ -411,35 +431,11 @@ body {
 .dark header p,
 .dark header div,
 .dark header a,
-.dark header button,
-.dark .header-title,
-.dark header [style*="color: #1f2937"],
-.dark header [style*="color:#1f2937"] {
+.dark header button {
   color: #ffffff !important;
 }
 
-/* Header 按钮悬停适配 */
-.dark header button:hover,
-.dark header [onmouseenter],
-.dark header [style*="cursor: pointer"] {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
 /* 白色按钮深色模式适配 */
-.dark [style*="background: #fff"],
-.dark [style*="background:#fff"],
-.dark [style*="background: white"],
-.dark [style*="background:white"],
-.dark [style*="backgroundColor: #fff"],
-.dark [style*="backgroundColor:#fff"],
-.dark [style*="backgroundColor: white"],
-.dark [style*="backgroundColor:white"] {
-  background-color: #262626 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  border-color: #333333 !important;
-}
-
-/* 白色按钮文字适配 */
 .dark [style*="background: #fff"] [style*="color"],
 .dark [style*="background:#fff"] [style*="color"],
 .dark [style*="background: white"] [style*="color"],
@@ -451,228 +447,24 @@ body {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* 按钮悬停状态深色适配 */
-.dark [style*="background: #fff"]:hover,
-.dark [style*="background:#fff"]:hover,
-.dark [style*="background: white"]:hover,
-.dark [style*="background:white"]:hover,
-.dark [style*="backgroundColor: #fff"]:hover,
-.dark [style*="backgroundColor:#fff"]:hover,
-.dark [style*="backgroundColor: white"]:hover,
-.dark [style*="backgroundColor:white"]:hover {
-  background-color: #333333 !important;
-}
-
-/* section 背景适配 - 首页成长进度和核心功能区域 */
+/* Section 背景适配 */
+.dark section,
 .dark section[style*="background: #f8f9ff"],
 .dark section[style*="background:#f8f9ff"],
-.dark section[style*="background: '#f8f9ff'"],
-.dark section[style*="background:\"#f8f9ff\""],
 .dark section[style*="background: #fafafa"],
 .dark section[style*="background:#fafafa"],
-.dark section[style*="background: '#fafafa'"],
-.dark section[style*="background:\"#fafafa\""],
 .dark section[style*="background: #fff"],
 .dark section[style*="background:#fff"],
-.dark section[style*="background: '#fff'"],
-.dark section[style*="background:\"#fff\""],
-.dark section[style*="background: linear-gradient"],
-.dark section[style*="background:linear-gradient"],
+.dark section[style*="background: linear-gradient(180deg, #f8fafc"],
+.dark section[style*="background:linear-gradient(180deg, #f8fafc"],
 .dark section[style*="background: #f8fafc"],
 .dark section[style*="background:#f8fafc"],
-.dark section[style*="background: '#f8fafc'"],
-.dark section[style*="background:\"#f8fafc\""] {
+.dark section[style*="background: linear-gradient"],
+.dark section[style*="background:radial-gradient"] {
   background: #0f0f0f !important;
 }
 
-/* section 内的文字颜色确保可见 */
-.dark section h1,
-.dark section h2,
-.dark section h3,
-.dark section h4,
-.dark section p,
-.dark section span {
-  color: #ffffff !important;
-}
-
-/* 所有文字在深色模式下使用浅色 - 最高优先级 */
-.dark div,
-.dark span,
-.dark p,
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6,
-.dark li,
-.dark label,
-.dark td,
-.dark th,
-.dark input,
-.dark textarea,
-.dark select {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* 标题和重要文字保持纯白 */
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4 {
-  color: #ffffff !important;
-}
-
-/* 次要文字使用稍暗的白色 */
-.dark .text-muted,
-.dark .text-secondary,
-.dark p[style*="opacity"],
-.dark span[style*="opacity"],
-.dark .subtitle,
-.dark .desc {
-  color: rgba(255, 255, 255, 0.7) !important;
-}
-
-/* 所有渐变卡片背景在深色模式下降低亮度 */
-.dark [style*="linear-gradient"] {
-  filter: brightness(0.6) saturate(1.1);
-}
-
-/* 所有白色文字在深色渐变上添加阴影 */
-.dark [style*="linear-gradient"] h1,
-.dark [style*="linear-gradient"] h2,
-.dark [style*="linear-gradient"] h3,
-.dark [style*="linear-gradient"] h4,
-.dark [style*="linear-gradient"] p,
-.dark [style*="linear-gradient"] span,
-.dark [style*="linear-gradient"] div {
-  color: #ffffff !important;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* 渐变背景卡片专项处理 - MBTI紫色 */
-.dark [style*="linear-gradient(135deg, #6366f1"],
-.dark [style*="linear-gradient(135deg,#6366f1"] {
-  filter: brightness(0.45) saturate(1.3) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* 渐变背景卡片专项处理 - SBTI粉色 */
-.dark [style*="linear-gradient(135deg, #f472b6"],
-.dark [style*="linear-gradient(135deg,#f472b6"] {
-  filter: brightness(0.45) saturate(1.3) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* 渐变背景卡片专项处理 - 依恋风格绿色 */
-.dark [style*="linear-gradient(135deg, #34d399"],
-.dark [style*="linear-gradient(135deg,#34d399"] {
-  filter: brightness(0.45) saturate(1.3) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* 渐变背景卡片专项处理 - 主紫色渐变 */
-.dark [style*="linear-gradient(135deg, #722ed1"],
-.dark [style*="linear-gradient(135deg,#722ed1"] {
-  filter: brightness(0.5) saturate(1.2) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* 渐变背景卡片专项处理 - 黄色/橙色渐变 */
-.dark [style*="linear-gradient(135deg, #fff7e6"],
-.dark [style*="linear-gradient(135deg,#fff7e6"],
-.dark [style*="linear-gradient(135deg, #ffd591"] {
-  filter: brightness(0.5) saturate(0.9) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* 渐变背景卡片专项处理 - 粉紫色渐变 */
-.dark [style*="linear-gradient(135deg, #eb2f96"] {
-  filter: brightness(0.5) saturate(1.2) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* 按钮文字在深色渐变上可见 */
-.dark button,
-.dark [style*="background: 'linear-gradient"] {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* 白色背景区域在深色模式下变暗 */
-.dark .bg-white,
-.dark [style*="background: '#fff'"],
-.dark [style*="background:#fff"],
-.dark [style*="background: #fff"],
-.dark [style*="background: white"],
-.dark [style*="background:'#fff'"],
-.dark [style*="background:\"#fff\""] {
-  background-color: #1a1a1a !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-.dark [style*="background: '#f8f9ff'"],
-.dark [style*="background:#f8f9ff"],
-.dark [style*="background: '#f0f4ff'"],
-.dark [style*="background:#f0f4ff"],
-.dark [style*="background: '#f8fafc'"],
-.dark [style*="background:#f8fafc"],
-.dark [style*="background: '#fafafa'"],
-.dark [style*="background:#fafafa"] {
-  background-color: #1a1a1a !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* 头像和圆形背景处理 */
-.dark [style*="border-radius: '50%'"],
-.dark [style*="border-radius: \"50%\""],
-.dark [style*="border-radius:50%"] {
-  filter: brightness(0.9);
-}
-
-/* Header深色适配 */
-.dark header,
-.dark [style*="background: linear-gradient"] header {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
-}
-
-.dark header h1,
-.dark header h2,
-.dark header h3,
-.dark header h4,
-.dark header span,
-.dark header p,
-.dark header div,
-.dark .header-title {
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Footer深色适配 */
-.dark footer,
-.dark [style*="background: '#fff'"] footer {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
-}
-
-.dark footer h1,
-.dark footer h2,
-.dark footer h3,
-.dark footer h4,
-.dark footer p,
-.dark footer span,
-.dark footer div {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* Ant Design组件深色适配 */
-.dark .ant-layout {
-  background-color: #0f0f0f !important;
-}
-
-.dark .ant-layout-header,
-.dark .ant-layout-footer {
-  background-color: #1a1a2e !important;
-}
-
+/* Ant Design 组件深色适配 */
 .dark .ant-card {
   background-color: #1a1a1a !important;
   border-color: #333333 !important;
@@ -685,19 +477,6 @@ body {
 
 .dark .ant-card-body {
   background-color: #1a1a1a !important;
-}
-
-.dark .ant-modal-content {
-  background-color: #1a1a1a !important;
-}
-
-.dark .ant-modal-header {
-  background-color: #1a1a1a !important;
-  border-bottom-color: #333333 !important;
-}
-
-.dark .ant-modal-footer {
-  border-top-color: #333333 !important;
 }
 
 .dark .ant-btn-primary {
@@ -740,18 +519,6 @@ body {
   background-color: #262626 !important;
 }
 
-/* 确保卡片内所有文字在深色模式下可见 */
-.dark .ant-card p,
-.dark .ant-card span,
-.dark .ant-card h1,
-.dark .ant-card h2,
-.dark .ant-card h3,
-.dark .ant-card h4,
-.dark .ant-card div {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* 列表和菜单深色适配 */
 .dark .ant-menu {
   background-color: transparent !important;
 }
@@ -765,10 +532,13 @@ body {
 }
 
 .dark .ant-dropdown-menu-item {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Tab标签页深色适配 */
+.dark .ant-dropdown-menu-item:hover {
+  background-color: #262626 !important;
+}
+
 .dark .ant-tabs-nav {
   background-color: #1a1a1a !important;
 }
@@ -781,14 +551,12 @@ body {
   color: #ffffff !important;
 }
 
-/* 标签深色适配 */
 .dark .ant-tag {
   background-color: #262626 !important;
   border-color: #333333 !important;
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* 链接 */
 .dark a {
   color: #b37feb !important;
 }
@@ -797,7 +565,6 @@ body {
   color: #d4a5ff !important;
 }
 
-/* 表格深色适配 */
 .dark .ant-table {
   background-color: #1a1a1a !important;
 }
@@ -818,12 +585,10 @@ body {
   background-color: #262626 !important;
 }
 
-/* 进度条和滑块 */
 .dark .ant-progress-text {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* 分页 */
 .dark .ant-pagination {
   color: rgba(255, 255, 255, 0.9) !important;
 }
@@ -837,55 +602,6 @@ body {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* 模态框内按钮 */
-.dark .ant-modal-content button {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* 输入框前缀和后缀 */
-.dark .ant-input-prefix,
-.dark .ant-input-suffix {
-  color: rgba(255, 255, 255, 0.7) !important;
-}
-
-/* 星级评分 */
-.dark .ant-rate-star {
-  color: #333333 !important;
-}
-
-.dark .ant-rate-star-filled {
-  color: #ffd591 !important;
-}
-
-/* 开关 */
-.dark .ant-switch {
-  background-color: #333333 !important;
-}
-
-.dark .ant-switch-checked {
-  background-color: #722ed1 !important;
-}
-
-/* 时间线 */
-.dark .ant-timeline-item-content {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* 折叠面板 */
-.dark .ant-collapse {
-  background-color: #1a1a1a !important;
-  border-color: #333333 !important;
-}
-
-.dark .ant-collapse-header {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.dark .ant-collapse-content {
-  background-color: #1a1a1a !important;
-}
-
-/* 警告提示 */
 .dark .ant-alert {
   background-color: #262626 !important;
   border-color: #333333 !important;
@@ -899,102 +615,53 @@ body {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* 骨架屏 */
-.dark .ant-skeleton {
-  background-color: #262626 !important;
-}
-
-.dark .ant-skeleton-content .ant-skeleton-title,
-.dark .ant-skeleton-content .ant-skeleton-paragraph > li {
-  background-color: #333333 !important;
-}
-
-/* 空状态 */
-.dark .ant-empty-description {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-/* 下拉菜单深色模式适配 */
-.dark .ant-dropdown-menu,
-.dark [class*="dropdown-menu"],
-.dark [class*="DropDownMenu"] {
-  background-color: #1a1a1a !important;
-  border-color: #333333 !important;
-}
-
-.dark .ant-dropdown-menu-item,
-.dark .ant-dropdown-menu-item span,
-.dark .ant-dropdown-menu-item div,
-.dark [class*="dropdown-menu"] [class*="item"],
-.dark [class*="dropdown-menu"] span,
-.dark [class*="dropdown-menu"] div {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-.dark .ant-dropdown-menu-item:hover,
-.dark [class*="dropdown-menu"] [class*="item"]:hover {
-  background-color: #262626 !important;
-}
-
-/* 英雄区域浅色渐变背景适配 */
-.dark [style*="background: linear-gradient"][style*="05"],
-.dark [style*="background:linear-gradient"][style*="05"],
-.dark [style*="background: linear-gradient"][style*="10"],
-.dark [style*="background:linear-gradient"][style*="10"] {
-  background: linear-gradient(135deg, rgba(26, 26, 46, 0.3) 0%, rgba(22, 33, 62, 0.5) 100%) !important;
-}
-
-/* Hero Section 背景元素径向渐变适配 */
-.dark [style*="background: radial-gradient"],
-.dark [style*="background:radial-gradient"] {
-  opacity: 0.3 !important;
-}
-
-/* 卡片边框适配 */
-.dark [style*="border: 1px solid"],
-.dark [style*="border:1px solid"] {
-  border-color: #333333 !important;
-}
-
-/* 确保所有 div 在深色模式下有合适的背景 */
-.dark div[style*="background"]:not([style*="background: transparent"]):not([style*="background:transparent"]):not([style*="linear-gradient"]):not([style*="radial-gradient"]) {
+.dark .ant-modal-content {
   background-color: #1a1a1a !important;
 }
 
-/* 聊天页面特殊适配 */
-.dark [style*="background: #f5f5f5"],
-.dark [style*="background:#f5f5f5"] {
-  background-color: #0f0f0f !important;
+.dark .ant-modal-header {
+  background-color: #1a1a1a !important;
+  border-bottom-color: #333333 !important;
 }
 
-.dark [style*="background: #f0f5ff"],
-.dark [style*="background:#f0f5ff"] {
-  background-color: #262626 !important;
+.dark .ant-modal-footer {
+  border-top-color: #333333 !important;
 }
 
-/* 聊天消息气泡适配 */
-.dark [style*="background: #fff"][style*="color: #262626"],
-.dark [style*="background:#fff"][style*="color:#262626"] {
-  background-color: #262626 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+.dark .ant-modal-title {
+  color: #ffffff !important;
 }
 
-/* 边框颜色适配 */
-.dark [style*="border: 1px solid #f0f0f0"],
-.dark [style*="border:1px solid #f0f0f0"],
-.dark [style*="border-bottom: 1px solid #f0f0f0"],
-.dark [style*="border-bottom:1px solid #f0f0f0"],
-.dark [style*="border-top: 1px solid #f0f0f0"],
-.dark [style*="border-top:1px solid #f0f0f0"],
-.dark [style*="border-right: 1px solid #f0f0f0"],
-.dark [style*="border-right:1px solid #f0f0f0"] {
-  border-color: #333333 !important;
+.dark .ant-drawer-content {
+  background-color: #1a1a1a !important;
 }
 
-/* 快速回复按钮适配 */
-.dark [style*="border: 1px solid #722ed130"],
-.dark [style*="border:1px solid #722ed130"] {
-  border-color: rgba(114, 46, 209, 0.3) !important;
+.dark .ant-drawer-header {
+  background-color: #1a1a1a !important;
+  border-bottom-color: #333333 !important;
+}
+
+.dark .ant-drawer-title {
+  color: #ffffff !important;
+}
+
+.dark .ant-drawer-close {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Footer 深色适配 */
+.dark footer {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+}
+
+.dark footer h1,
+.dark footer h2,
+.dark footer h3,
+.dark footer h4,
+.dark footer p,
+.dark footer span,
+.dark footer div {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 /* 滚动条美化 */
@@ -1016,508 +683,157 @@ body {
   background: #444444 !important;
 }
 
-/* ============================================
-   增强暗黑模式覆盖 - 修复遗漏的白色区域
-   ============================================ */
-
-/* 带引号的白色/浅色背景覆盖 */
-.dark [style*="background: '#fff'"],
-.dark [style*="background:\"#fff\""],
-.dark [style*="background:'#fff'"],
-.dark [style*="background:\"#fff\""],
-.dark [style*="background: '#ffffff'"],
-.dark [style*="background:\"#ffffff\""],
-.dark [style*="background: '#fafafa'"],
-.dark [style*="background:\"#fafafa\""],
-.dark [style*="background: '#f5f5f5'"],
-.dark [style*="background:\"#f5f5f5\""],
-.dark [style*="background: '#f8f9ff'"],
-.dark [style*="background:\"#f8f9ff\""],
-.dark [style*="background: '#f0f4ff'"],
-.dark [style*="background:\"#f0f4ff\""] {
-  background-color: #1a1a1a !important;
+/* Article Content Markdown Styles */
+.article-content {
+  line-height: 1.8 !important;
+  font-size: 16px !important;
 }
 
-/* 驼峰命名 backgroundColor 覆盖 */
-.dark [style*="backgroundColor: '#fff'"],
-.dark [style*="backgroundColor:\"#fff\""],
-.dark [style*="backgroundColor: '#ffffff'"],
-.dark [style*="backgroundColor:\"#ffffff\""],
-.dark [style*="backgroundColor: '#fafafa'"],
-.dark [style*="backgroundColor:\"#fafafa\""],
-.dark [style*="backgroundColor: '#f5f5f5'"],
-.dark [style*="backgroundColor:\"#f5f5f5\""],
-.dark [style*="backgroundColor: '#f0f5ff'"],
-.dark [style*="backgroundColor:\"#f0f5ff\""],
-.dark [style*="backgroundColor: '#f8f9ff'"],
-.dark [style*="backgroundColor:\"#f8f9ff\""],
-.dark [style*="backgroundColor: '#f6ffed'"],
-.dark [style*="backgroundColor:\"#f6ffed\""],
-.dark [style*="backgroundColor: '#fff7e6'"],
-.dark [style*="backgroundColor:\"#fff7e6\""] {
-  background-color: #1a1a1a !important;
+.article-content h1 {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  margin: 24px 0 16px !important;
+  color: #1f2937 !important;
 }
 
-/* 修复 #f0f5ff 浅蓝紫色背景（选中态、hover态） */
-.dark [style*="background: #f0f5ff"],
-.dark [style*="background:#f0f5ff"],
-.dark [style*="background: '#f0f5ff'"],
-.dark [style*="background:\"#f0f5ff\""] {
-  background-color: #262626 !important;
+.article-content h2 {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  margin: 20px 0 14px !important;
+  color: #1f2937 !important;
 }
 
-/* 修复 #f6ffed 浅绿色背景（日记/成功状态） */
-.dark [style*="background: #f6ffed"],
-.dark [style*="background:#f6ffed"],
-.dark [style*="background: '#f6ffed'"],
-.dark [style*="background:\"#f6ffed\""] {
-  background-color: #1a2e1a !important;
+.article-content h3 {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  margin: 18px 0 12px !important;
+  color: #374151 !important;
 }
 
-/* 修复 #fff7e6 浅黄色/橙色背景 */
-.dark [style*="background: #fff7e6"],
-.dark [style*="background:#fff7e6"],
-.dark [style*="background: '#fff7e6'"],
-.dark [style*="background:\"#fff7e6\""] {
-  background-color: #2e2a1a !important;
+.article-content h4, .article-content h5, .article-content h6 {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  margin: 16px 0 10px !important;
+  color: #4b5563 !important;
 }
 
-/* 修复 #d9f7be 浅绿色背景 */
-.dark [style*="background: #d9f7be"],
-.dark [style*="background:#d9f7be"],
-.dark [style*="background: '#d9f7be'"],
-.dark [style*="background:\"#d9f7be\""] {
-  background-color: #1a2e1a !important;
+.article-content p {
+  margin: 12px 0 !important;
+  line-height: 1.8 !important;
 }
 
-/* 修复聊天消息气泡 - AI消息白色背景变暗色 */
-.dark [style*="background: '#fff'"][style*="color: '#262626'"],
-.dark [style*="background:#fff"][style*="color:#262626"],
-.dark [style*="background: '#fff'"][style*="color: \"#262626\""],
-.dark [style*="background: \"#fff\""][style*="color: \"#262626\""],
-.dark [style*="backgroundColor: '#fff'"][style*="color: '#262626'"],
-.dark [style*="backgroundColor:#fff"][style*="color:#262626"],
-.dark div[style*="background: rgb(255, 255, 255)"],
-.dark div[style*="background:#fff"] {
-  background-color: #262626 !important;
+.article-content ul, .article-content ol {
+  margin: 12px 0 !important;
+  padding-left: 24px !important;
+}
+
+.article-content li {
+  margin: 6px 0 !important;
+  line-height: 1.6 !important;
+}
+
+.article-content blockquote {
+  margin: 16px 0 !important;
+  padding: 12px 16px !important;
+  border-left: 4px solid #722ed1 !important;
+  background: #f8f5ff !important;
+  color: #6b7280 !important;
+}
+
+.article-content code {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+  background: #f3f4f6 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 14px !important;
+}
+
+.article-content pre {
+  background: #1f2937 !important;
+  color: #e5e7eb !important;
+  padding: 16px !important;
+  border-radius: 8px !important;
+  overflow-x: auto !important;
+  margin: 16px 0 !important;
+}
+
+.article-content pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+
+.article-content a {
+  color: #722ed1 !important;
+  text-decoration: none !important;
+}
+
+.article-content a:hover {
+  text-decoration: underline !important;
+}
+
+.article-content img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px !important;
+  margin: 16px 0 !important;
+}
+
+.article-content table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 16px 0 !important;
+}
+
+.article-content th, .article-content td {
+  border: 1px solid #e5e7eb !important;
+  padding: 10px 14px !important;
+  text-align: left !important;
+}
+
+.article-content th {
+  background: #f9fafb !important;
+  font-weight: 600 !important;
+}
+
+.article-content hr {
+  border: none !important;
+  border-top: 1px solid #e5e7eb !important;
+  margin: 24px 0 !important;
+}
+
+/* Dark mode article content */
+.dark .article-content h1,
+.dark .article-content h2,
+.dark .article-content h3 {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* 修复边框颜色 - #f0f0f0 变 #333333 */
-.dark [style*="border: 1px solid #f0f0f0"],
-.dark [style*="border:1px solid #f0f0f0"],
-.dark [style*="border: '#f0f0f0'"],
-.dark [style*="border:\"#f0f0f0\""],
-.dark [style*="border-color: #f0f0f0"],
-.dark [style*="border-color:#f0f0f0"],
-.dark [style*="border-color: '#f0f0f0'"],
-.dark [style*="border-color:\"#f0f0f0\""] {
-  border-color: #333333 !important;
-}
-
-/* 修复边框颜色 - #d9d9d9 变 #444444 */
-.dark [style*="border-color: #d9d9d9"],
-.dark [style*="border-color:#d9d9d9"],
-.dark [style*="border-color: '#d9d9d9'"],
-.dark [style*="border-color:\"#d9d9d9\""] {
-  border-color: #444444 !important;
-}
-
-/* ============================================
-   增强字体对比度 - 暗黑模式下更清晰的文字
-   ============================================ */
-
-/* 主要文字增强对比度 */
-.dark [style*="color: rgba(255, 255, 255, 0.95)"],
-.dark [style*="color:rgba(255,255,255,0.95)"] {
-  color: #ffffff !important;
-}
-
-/* 次要文字增强对比度 */
-.dark [style*="color: rgba(255, 255, 255, 0.7)"],
-.dark [style*="color:rgba(255,255,255,0.7)"],
-.dark [style*="color: rgba(255, 255, 255, 0.6)"],
-.dark [style*="color:rgba(255,255,255,0.6)"] {
+.dark .article-content p,
+.dark .article-content li {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-/* 修复灰色系文字颜色 */
-.dark [style*="color: #8c8c8c"],
-.dark [style*="color:#8c8c8c"],
-.dark [style*="color: '#8c8c8c'"],
-.dark [style*="color:\"#8c8c8c\""] {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-
-.dark [style*="color: #6b7280"],
-.dark [style*="color:#6b7280"],
-.dark [style*="color: '#6b7280'"],
-.dark [style*="color:\"#6b7280\""] {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-
-.dark [style*="color: #9ca3af"],
-.dark [style*="color:#9ca3af"],
-.dark [style*="color: '#9ca3af'"],
-.dark [style*="color:\"#9ca3af\""] {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-/* 修复 input/textarea/select 的占位符文字 */
-.dark input::placeholder,
-.dark textarea::placeholder,
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: rgba(255, 255, 255, 0.4) !important;
-}
-
-/* Ant Design 输入框增强 */
-.dark .ant-input,
-.dark .ant-input-textarea textarea,
-.dark .ant-select-selection-item {
-  color: #ffffff !important;
-}
-
-/* ============================================
-   特殊组件暗黑模式覆盖
-   ============================================ */
-
-/* 聊天输入框容器 */
-.dark [style*="background: '#fff'"][style*="position: sticky"],
-.dark [style*="background:#fff"][style*="position:sticky"],
-.dark [style*="background: '#fff'"][style*="border-top"] {
-  background-color: #1a1a1a !important;
-}
-
-/* 聊天侧边栏容器 */
-.dark [style*="width: 280"][style*="background: '#fff'"],
-.dark [style*="width: 280"][style*="background:\"#fff\""] {
-  background-color: #1a1a1a !important;
-}
-
-/* 快捷回复按钮 */
-.dark button[style*="background: '#fff'"],
-.dark button[style*="background:#fff"],
-.dark button[style*="background: white"] {
-  background-color: #262626 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  border-color: #333333 !important;
-}
-
-/* 模态框背景修复 */
-.dark .ant-modal-root .ant-modal-mask,
-.dark .ant-modal-mask {
-  background-color: rgba(0, 0, 0, 0.75) !important;
-}
-
-/* Drawer 抽屉组件 */
-.dark .ant-drawer-content {
-  background-color: #1a1a1a !important;
-}
-
-.dark .ant-drawer-header {
-  background-color: #1a1a1a !important;
-  border-bottom-color: #333333 !important;
-}
-
-.dark .ant-drawer-title {
-  color: #ffffff !important;
-}
-
-.dark .ant-drawer-close {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* List 列表组件 */
-.dark .ant-list-item {
-  border-bottom-color: #333333 !important;
-}
-
-.dark .ant-list-item-meta-title {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-.dark .ant-list-item-meta-description {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-
-/* Empty 空状态组件 */
-.dark .ant-empty-description {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-/* Spin 加载组件 */
-.dark .ant-spin-text {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Badge 徽章组件 */
-.dark .ant-badge-status-text {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* Statistic 统计组件 */
-.dark .ant-statistic-title {
+.dark .article-content blockquote {
+  background: #262626 !important;
+  border-left-color: #722ed1 !important;
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
-.dark .ant-statistic-content {
-  color: #ffffff !important;
+.dark .article-content code {
+  background: #262626 !important;
 }
 
-/* Timeline 时间线组件 */
-.dark .ant-timeline-item-label {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-
-/* Steps 步骤条组件 */
-.dark .ant-steps-item-description {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-
-.dark .ant-steps-item-title {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* Comment 评论组件 */
-.dark .ant-comment-content-author-name {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-.dark .ant-comment-content-author-time {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.dark .ant-comment-content-detail p {
-  color: rgba(255, 255, 255, 0.85) !important;
-}
-
-/* Card 卡片内的描述文字 */
-.dark .ant-card-meta-description {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-
-/* Tabs 标签页内容区 */
-.dark .ant-tabs-content-holder {
-  background-color: #0f0f0f !important;
-}
-
-.dark .ant-tabs-tabpane {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* ============================================
-   全页面暗黑模式增强覆盖
-   ============================================ */
-
-/* 确保所有 section 背景完全变暗 - 首页核心区域 */
-body.dark section[style*="background"],
-body.dark section[style*="background"] {
-  background-color: #0f0f0f !important;
-  background-image: none !important;
-}
-
-/* 明确覆盖首页有问题区域的 section */
-body.dark section[style*="#f8f9ff"],
-body.dark section[style*="#fafafa"],
-body.dark section[style*="#fff"],
-body.dark section[style*="#f8fafc"],
-body.dark section[style*="#f0f4ff"],
-body.dark section[style*="linear-gradient(180deg, #f8fafc"],
-body.dark section[style*="linear-gradient(135deg, #f8f9ff"] {
-  background-color: #0f0f0f !important;
-  background-image: none !important;
-}
-
-/* 覆盖 div 元素的 #f5f5f5 背景（各页面的主容器） */
-body.dark div[style*="minHeight"][style*="#f5f5f5"],
-body.dark [style*="minHeight: '100vh'"][style*="background: #f5f5f5"],
-body.dark div[style*="#f5f5f5"] {
-  background-color: #0f0f0f !important;
-}
-
-/* 签到页橙色渐变头部覆盖 */
-body.dark header[style*="#fa8c16"],
-body.dark header[style*="#faad14"],
-body.dark [style*="linear-gradient(135deg, #fa8c16"],
-body.dark [style*="linear-gradient(135deg,#fa8c16"] {
-  background: linear-gradient(135deg, #4a3520 0%, #5a4020 100%) !important;
-  filter: brightness(0.6) saturate(0.8) !important;
-}
-
-/* 签到页打卡按钮橙色渐变覆盖 */
-body.dark [style*="linear-gradient(135deg, #52c41a 0%, #73d13d 100%)"] {
-  background: linear-gradient(135deg, #2d5016 0%, #3d6620 100%) !important;
-  filter: brightness(0.7) saturate(0.9) !important;
-}
-
-/* 综合测评页渐变背景覆盖 */
-body.dark [style*="linear-gradient(135deg, #722ed1 0%, #eb2f96"],
-body.dark [style*="linear-gradient(135deg,#722ed1 0%,#eb2f96"],
-body.dark [style*="linear-gradient(135deg, #6366f1 0%, #a855f7"],
-body.dark [style*="linear-gradient(135deg, #f472b6 0%, #ec4899"],
-body.dark [style*="linear-gradient(135deg, #34d399 0%, #14b8a6"] {
-  filter: brightness(0.5) saturate(0.8) !important;
-}
-
-/* 综合测评页 #f0f5ff 渐变背景 */
-body.dark [style*="linear-gradient(135deg, #f0f5ff 0%, #f5f5f5 100%)"] {
+.dark .article-content pre {
   background: #0f0f0f !important;
 }
 
-/* 首页卡片内圆形渐变图标背景 */
-body.dark [style*="linear-gradient(135deg, #6366f1 0%, #a855f7 100%)"][style*="border-radius: '20px'"],
-body.dark [style*="linear-gradient(135deg, #f472b6 0%, #ec4899 100%)"][style*="border-radius: '20px'"],
-body.dark [style*="linear-gradient(135deg, #34d399 0%, #14b8a6 100%)"][style*="border-radius: '20px'"] {
-  filter: brightness(0.6) saturate(0.9) !important;
-}
-
-/* 修复首页 Hero 区域渐变 */
-body.dark [style*="linear-gradient(180deg, #f8fafc 0%, #fff 100%)"] {
-  background: #0f0f0f !important;
-}
-
-/* 修复首页底部分享区域渐变 */
-body.dark [style*="linear-gradient(135deg, #1f2937 0%, #111827 100%)"] {
-  filter: brightness(0.8) saturate(1.2) !important;
-}
-
-/* 修复橙色警告/打卡区域 */
-body.dark [style*="#fef3c7"] {
-  background-color: #2d2608 !important;
-}
-
-/* 修复白色 Card 背景 */
-body.dark .ant-card[style*="background"] {
-  background-color: #1a1a1a !important;
-}
-
-/* 确保 Ant Card 组件在任何情况下都是深色背景 */
-body.dark .ant-card {
-  background-color: #1a1a1a !important;
-  border-color: #333333 !important;
-}
-
-body.dark .ant-card-head {
-  background-color: #262626 !important;
-  border-bottom-color: #333333 !important;
-}
-
-body.dark .ant-card-body {
-  background-color: #1a1a1a !important;
-}
-
-/* 修复 Ant Card 内文字颜色 */
-body.dark .ant-card h1,
-body.dark .ant-card h2,
-body.dark .ant-card h3,
-body.dark .ant-card h4,
-body.dark .ant-card p,
-body.dark .ant-card span,
-body.dark .ant-card div {
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* ==========================================
-   聊天界面暗色模式修复
-   ========================================== */
-
-/* 聊天主容器背景 - #f5f5f5 -> #1a1a1a */
-body.dark div[style*="height: '100vh'"][style*="background: #f5f5f5"],
-body.dark div[style*="background: #f5f5f5"][style*="display: flex"][style*="height: 100vh"],
-body.dark [style*="display: 'flex'"][style*="height: 100vh"][style*="background: #f5f5f5"] {
-  background: #1a1a1a !important;
-}
-
-/* 聊天页面整体背景 */
-body.dark div[style*="background: '#f5f5f5'"],
-body.dark div[style*="background: \"#f5f5f5\""],
-body.dark div[style*="background:#f5f5f5"] {
-  background: #1a1a1a !important;
-}
-
-/* 助手消息气泡 - 浅色背景#f5f5f5配深色文字#262626 -> 深色背景配浅色文字 */
-body.dark div[style*="border-radius: 12px 12px 12px 4px"][style*="background: #f5f5f5"],
-body.dark div[style*="background: #f5f5f5"][style*="color: #262626"],
-body.dark div[style*="background:#f5f5f5"][style*="color:#262626"],
-body.dark div[style*="background: '#f5f5f5'"][style*="color: '#262626'"] {
-  background: #2d2d2d !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* 助手消息气泡（流式输出时） */
-body.dark div[style*="border-radius: '12px 12px 12px 4px'"][style*="background: #f5f5f5"],
-body.dark div[style*="background: #f5f5f5"][style*="border-radius: 12px 12px 12px 4px"] {
-  background: #2d2d2d !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* 用户消息气泡 - 紫色背景配白色文字（保持不变） */
-body.dark div[style*="border-radius: 12px 12px 4px 12px"][style*="background: #722ed1"],
-body.dark div[style*="background:#722ed1"] {
-  background: #722ed1 !important;
-  color: #ffffff !important;
-}
-
-/* 聊天输入框背景 */
-body.dark textarea[style*="flex: 1"],
-body.dark textarea[style*="background: #fff"] {
+.dark .article-content th {
   background: #262626 !important;
   color: rgba(255, 255, 255, 0.95) !important;
-  border-color: #404040 !important;
 }
 
-/* 聊天时间戳文字 */
-body.dark div[style*="color: #bfbfbf"],
-body.dark div[style*="color:#bfbfbf"],
-body.dark div[style*="color: '#bfbfbf'"] {
-  color: rgba(255, 255, 255, 0.5) !important;
-}
-
-/* 聊天侧边栏背景 */
-body.dark div[style*="width: 280"][style*="background: #fff"],
-body.dark div[style*="background: #fff"][style*="border-right: 1px solid #f0f0f0"] {
-  background: #1a1a1a !important;
+.dark .article-content th,
+.dark .article-content td {
   border-color: #333333 !important;
-}
-
-/* 聊天标题栏背景 */
-body.dark div[style*="background: #fff"][style*="border-bottom: 1px solid #f0f0f0"],
-body.dark div[style*="padding: 12px 16px"][style*="background: #fff"] {
-  background: #1a1a1a !important;
-  border-color: #333333 !important;
-}
-
-/* 快速回复按钮 */
-body.dark button[style*="background: #fff"],
-body.dark button[style*="background:#fff"],
-body.dark button[style*="background: '#fff'"] {
-  background: #262626 !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  border-color: #404040 !important;
-}
-
-/* 加载动画点点 */
-body.dark span[style*="background: #722ed1"][style*="animation"] {
-  background: #b37feb !important;
-}
-
-/* 聊天页面输入框深色模式修复 */
-body.dark textarea.ant-input,
-body.dark .ant-input-textarea textarea {
-  background-color: #262626 !important;
-  color: #ffffff !important;
-  border-color: #404040 !important;
-}
-
-body.dark textarea.ant-input::placeholder,
-body.dark .ant-input-textarea textarea::placeholder {
-  color: rgba(255, 255, 255, 0.5) !important;
-}
-
-/* 确保输入框在任何情况下都有正确的背景色 */
-body.dark .chat-input-container textarea {
-  background-color: #262626 !important;
-  color: #ffffff !important;
 }

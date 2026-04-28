@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Card, Row, Col, Progress, Spin, Empty, Badge, Button, List } from 'antd'
+import { Card, Row, Col, Progress, Spin, Empty, Badge, Button, List, Modal } from 'antd'
 import { TrophyOutlined, CrownOutlined, StarOutlined, FireOutlined, ArrowLeftOutlined, LockOutlined, CalendarOutlined } from '@ant-design/icons'
 import { api, apiClient } from '../api/request'
+import confetti from 'canvas-confetti'
 import { useAuthStore } from '../stores'
 
 interface Badge {
@@ -22,6 +23,29 @@ interface UserLevel {
   title: string
   current_exp: number
   max_exp: number
+  next_level?: number | null
+  exp_to_next_level?: number
+  progress_percent?: number
+  current_level?: number
+}
+
+
+export const celebrateBadgeUnlock = (badge) => {
+  const duration = 3000
+  const end = Date.now() + duration
+  const frame = () => {
+    confetti({particleCount: 3, angle: 60, spread: 70, origin: {x: 0, y: 0.7}, colors: ["#ffd700", "#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4"]})
+    confetti({particleCount: 3, angle: 120, spread: 70, origin: {x: 1, y: 0.7}, colors: ["#ffd700", "#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4"]})
+    if (Date.now() < end) requestAnimationFrame(frame)
+  }
+  frame()
+  Modal.success({
+    title: <div style={{textAlign: "center"}}><span style={{fontSize: 48}}>{badge.icon}</span><div style={{marginTop: 8, fontSize: 24, color: "#fa8c16"}}>🎉 徽章解锁！🎉</div></div>,
+    content: <div style={{textAlign: "center", padding: "16px 0"}}><h2 style={{color: "#722ed1", marginBottom: 8}}>{badge.name}</h2><p style={{color: "#666"}}>{badge.description}</p><div style={{marginTop: 16, padding: 12, background: "#f6ffed", borderRadius: 8, color: "#52c41a", fontWeight: 600}}>+50 经验值已到账！</div></div>,
+    okText: "太棒了！",
+    okButtonProps: {style: {background: "#722ed1", borderColor: "#722ed1", fontWeight: 600}},
+    width: 360
+  })
 }
 
 export default function AchievementsPage() {
@@ -35,6 +59,18 @@ export default function AchievementsPage() {
     fetchAchievements()
   }, [])
 
+  const [emotionIntensity, setEmotionIntensity] = useState(0)
+
+  const celebrationShown = useRef(false)
+
+  const [prevBadges, setPrevBadges] = useState<Set<number>>(new Set())
+  const [prevEmotion, setPrevEmotion] = useState("neutral")
+
+
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const detectionIntervalRef = null
+
   const fetchAchievements = async () => {
     try {
       const [badgesRes, levelRes] = await Promise.all([
@@ -43,6 +79,19 @@ export default function AchievementsPage() {
       ])
       setBadges(badgesRes || [])
       setUserLevel(levelRes)
+
+      if (!celebrationShown.current) {
+        const currentBadgeIds = new Set<number>((badgesRes || []).filter(b => b.is_earned).map(b => b.id))
+        const newBadges = (badgesRes || []).filter(b => b.is_earned && !prevBadges.has(b.id))
+        if (newBadges.length > 0) {
+          celebrationShown.current = true
+          const newestBadge = newBadges[0]
+          setTimeout(() => {
+            celebrateBadgeUnlock({name: newestBadge.name, icon: newestBadge.icon, description: newestBadge.description})
+          }, 500)
+        }
+        setPrevBadges(new Set<number>(currentBadgeIds))
+      }
     } catch (error) {
       console.error('获取成就失败', error)
     } finally {
@@ -109,21 +158,21 @@ export default function AchievementsPage() {
                     fontWeight: 'bold',
                     color: '#722ed1',
                   }}>
-                    {userLevel.level}
+                    {userLevel.current_level}
                   </div>
-                  <div style={{ color: '#8c8c8c' }}>Lv.{userLevel.level}</div>
+                  <div style={{ color: '#8c8c8c' }}>Lv.{userLevel.current_level}</div>
                 </div>
               </Col>
               <Col xs={24} md={16}>
                 <div>
                   <div style={{ marginBottom: 8 }}>
-                    <strong>{userLevel.title}</strong>
+                    <strong>{userLevel.title || '新手'}</strong>
                   </div>
                   <Progress
-                    percent={Math.round((userLevel.current_exp / userLevel.max_exp) * 100)}
+                    percent={userLevel?.progress_percent ?? (userLevel?.max_exp ? Math.round(((userLevel.current_exp || 0) / userLevel.max_exp) * 100) : 0)}
                     strokeColor="#722ed1"
                     trailColor="#f0f0f0"
-                    format={() => `${userLevel.current_exp}/${userLevel.max_exp} 经验`}
+                    format={() => `${userLevel?.current_exp || 0}/${userLevel?.max_exp || 100} 经验`}
                   />
                 </div>
               </Col>

@@ -1,5 +1,5 @@
 """
-短信服务 - 支持阿里云短信和Mock模式
+短信服务 - 支持阿里云短信、Spug推送和Mock模式
 """
 from typing import Optional
 import loguru
@@ -16,12 +16,14 @@ class SmsService:
     async def send_verify_code(self, phone: str, code: str) -> bool:
         """
         发送验证码短信
-        
+
         Returns:
             bool: 发送是否成功
         """
         if self.provider == "alibaba":
             return await self._send_alibaba(phone, code)
+        elif self.provider == "spug":
+            return await self._send_spug(phone, code)
         else:
             return await self._send_mock(phone, code)
 
@@ -29,6 +31,20 @@ class SmsService:
         """Mock模式，仅记录日志"""
         loguru.logger.warning(f"[Mock SMS] 发送验证码至 {phone}: {code}")
         return True
+
+    async def _send_spug(self, phone: str, code: str) -> bool:
+        """通过Spug推送发送验证码"""
+        try:
+            from app.services.spug_notifier import send_verification_code
+            success = await send_verification_code(phone, code)
+            if success:
+                loguru.logger.info(f"[Spug] 验证码发送成功: {phone}")
+            else:
+                loguru.logger.error(f"[Spug] 验证码发送失败: {phone}")
+            return success
+        except Exception as e:
+            loguru.logger.error(f"[Spug] 验证码发送异常: {e}")
+            return await self._send_mock(phone, code)
 
     async def _send_alibaba(self, phone: str, code: str) -> bool:
         """阿里云短信"""
@@ -56,7 +72,7 @@ class SmsService:
 
             response = client.do_action_with_exception(request)
             response_dict = eval(response.decode())
-            
+
             if response_dict.get("Code") == "OK":
                 loguru.logger.info(f"短信发送成功: {phone}")
                 return True

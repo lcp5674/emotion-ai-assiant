@@ -5,12 +5,24 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import timedelta
 import loguru
+import random
+import string
 
 from app.core.config import settings
 from app.core.security import verify_password, create_access_token, create_refresh_token, get_password_hash
 from app.models import User
 from app.schemas.user import RegisterRequest as UserCreate, LoginResponse
 from app.services.sms_service import get_sms_service
+
+
+def generate_nickname() -> str:
+    """生成随机昵称"""
+    adjectives = ["心灵", "星光", "月光", "阳光", "彩虹", "清风", "白云", "彩云", "星辰", "流云"]
+    animals = ["旅客", "行者", "漫步者", "旅行者", "追光者", "寻梦者", "听风者", "望星者", "云游者", "静思者"]
+    adj = random.choice(adjectives)
+    animal = random.choice(animals)
+    number = ''.join(random.choices(string.digits, k=4))
+    return f"{adj}{animal}{number}"
 
 
 class AuthService:
@@ -34,7 +46,7 @@ class AuthService:
         user = User(
             phone=user_create.phone,
             password_hash=hashed_password,
-            nickname=f"用户{user_create.phone[-4:]}",
+            nickname=generate_nickname(),
             is_active=True,
         )
         
@@ -87,7 +99,7 @@ class AuthService:
             # 自动创建用户
             user = User(
                 phone=phone,
-                nickname=f"用户{phone[-4:]}",
+                nickname=generate_nickname(),
                 is_active=True,
             )
             self.db.add(user)

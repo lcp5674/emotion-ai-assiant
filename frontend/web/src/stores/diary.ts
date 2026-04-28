@@ -53,6 +53,7 @@ interface DiaryStats {
   categories: Record<string, number>
   this_month_count: number
   last_month_count: number
+  period_count: number
 }
 
 interface MoodTrendPoint {

@@ -1,0 +1,93 @@
+/**
+ * Live2D Canvas Styles - 响应式布局
+ */
+.live2d-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 200px;
+  min-height: 200px;
+  overflow: visible;
+}
+
+.live2d-canvas canvas {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.live2d-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 20px;
+  width: 100%;
+  height: 100%;
+}
+
+.live2d-loading-text {
+  margin-top: 16px;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+.live2d-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 77, 79, 0.05);
+  border-radius: 20px;
+  width: 100%;
+  height: 100%;
+}
+
+.live2d-error-content {
+  text-align: center;
+  color: #f5222d;
+}
+
+.live2d-error-hint {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-top: 8px;
+}
+
+.live2d-name-tag {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(114, 46, 209, 0.9) 0%, rgba(235, 47, 150, 0.9) 100%);
+  color: white;
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(114, 46, 209, 0.3);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* 模型交互光标 */
+.live2d-canvas canvas {
+  cursor: pointer;
+}
+
+/* 加载动画 */
+@keyframes live2d-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.live2d-loading .ant-spin {
+  animation: live2d-pulse 1.5s ease-in-out infinite;
+}

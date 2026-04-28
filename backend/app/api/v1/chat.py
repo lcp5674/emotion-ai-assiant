@@ -273,6 +273,25 @@ async def close_conversation(
     return {"message": "对话已关闭"}
 
 
+@router.delete("/conversations/{session_id}", summary="删除对话")
+async def delete_conversation(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """删除对话及其所有消息"""
+    chat_service = get_chat_service()
+    success = chat_service.delete_conversation(db, current_user.id, session_id)
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=_("对话不存在"),
+        )
+
+    return {"message": "对话已删除"}
+
+
 @router.put("/title/{session_id}", summary="更新对话标题")
 async def update_conversation_title(
     session_id: str,

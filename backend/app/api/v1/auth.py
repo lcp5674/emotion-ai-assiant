@@ -28,25 +28,37 @@ from app.schemas.user import (
     ResetPasswordRequest,
 )
 from app.api.deps import get_current_user
+from app.services.auth_service import generate_nickname
 from app.services.sms_service import get_sms_service
 from app.core.i18n import _
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
 
-@router.post("/test_login", summary="测试登录（自动创建账号）")
+@router.post("/test_login", summary="测试登录（自动创建账号，仅开发环境）")
 async def test_login(
     request: SmsSendRequest,
     db: Session = Depends(get_db),
 ):
-    """测试登录：使用手机号直接登录，不存在则自动创建"""
+    """测试登录：使用手机号直接登录，不存在则自动创建
+    
+    ⚠️ 仅在 DEBUG=True 时可用，不应存在于生产环境
+    """
+    from app.core.config import settings
+    if not settings.DEBUG:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="该接口仅在开发环境可用",
+        )
+    
     phone = request.phone
 
     user = db.query(User).filter(User.phone == phone).first()
     if not user:
+        # 仅开发环境使用默认密码，生产环境应使用随机密码并通过短信发送
         user = User(
             phone=phone,
-            nickname=f"用户{phone[-4:]}",
+            nickname=generate_nickname(),
             password_hash=get_password_hash("test123456"),
             is_active=True,
             is_verified=True,
@@ -54,7 +66,7 @@ async def test_login(
         db.add(user)
         db.commit()
         db.refresh(user)
-        loguru.logger.info(f"自动创建测试用户: {phone}")
+        loguru.logger.warning(f"[SECURITY] 自动创建测试用户: {phone} - 仅开发环境")
 
     if not user.is_active:
         raise HTTPException(
@@ -103,49 +115,76 @@ async def register(
     request: RegisterRequest,
     db: Session = Depends(get_db),
 ):
-    """用户注册"""
-    # 输入验证
-    if not request.phone or len(request.phone) != 11:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=_("手机号格式错误"),
-        )
+    """用户注册 - 支持手机号、邮箱、用户名注册"""
+    # 验证必填字段
     if not request.password or len(request.password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=_("密码长度至少6位"),
         )
-    if not request.code or len(request.code) != 6:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=_("验证码格式错误"),
-        )
 
-    redis_client = await get_redis()
-    key = f"sms:code:{request.phone}"
-    stored_code = await redis_client.get(key)
-    if not stored_code or stored_code != request.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=_("验证码错误或已过期"),
-        )
-    await redis_client.delete(key)
+    # 手机号注册需要验证码
+    if request.phone:
+        if not request.code or len(request.code) != 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_("验证码格式错误"),
+            )
 
-    # 检查用户是否已存在
-    existing_user = db.query(User).filter(User.phone == request.phone).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=_("该手机号已注册"),
-        )
+        redis_client = await get_redis()
+        key = f"sms:code:{request.phone}"
+        stored_code = await redis_client.get(key)
+        if not stored_code or stored_code != request.code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_("验证码错误或已过期"),
+            )
+        await redis_client.delete(key)
+
+        # 检查手机号是否已存在
+        existing_user = db.query(User).filter(User.phone == request.phone).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_("该手机号已注册"),
+            )
+
+    # 邮箱注册
+    if request.email:
+        # 检查邮箱是否已存在
+        existing_user = db.query(User).filter(User.email == request.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_("该邮箱已注册"),
+            )
+
+    # 用户名注册
+    if request.username:
+        # 检查用户名是否已存在
+        existing_user = db.query(User).filter(User.username == request.username).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=_("该用户名已被使用"),
+            )
+
+    # 确定昵称
+    nickname = request.nickname
+    if not nickname:
+        if request.username:
+            nickname = request.username
+        else:
+            nickname = generate_nickname()
 
     # 创建用户
     user = User(
         phone=request.phone,
-        nickname=request.nickname or f"用户{request.phone[-4:]}"
-        if request.phone
-        else "用户",
+        email=request.email,
+        username=request.username,
+        nickname=nickname,
         password_hash=get_password_hash(request.password),
+        is_verified=bool(request.phone or request.email),  # 手机或邮箱验证过的用户标记为已验证
     )
     db.add(user)
     db.commit()
@@ -167,17 +206,31 @@ async def login(
     request: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    user = db.query(User).filter(User.phone == request.phone).first()
+    identifier = request.identifier.strip()
+    password = request.password
+
+    # 根据identifier类型查找用户
+    user = None
+    if '@' in identifier:
+        # 邮箱登录
+        user = db.query(User).filter(User.email == identifier).first()
+    elif identifier.isdigit() and len(identifier) == 11:
+        # 手机号登录
+        user = db.query(User).filter(User.phone == identifier).first()
+    else:
+        # 用户名登录
+        user = db.query(User).filter(User.username == identifier).first()
+
     if not user or not user.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=_("手机号或密码错误"),
+            detail=_("账号或密码错误"),
         )
 
-    if not verify_password(request.password, user.password_hash):
+    if not verify_password(password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=_("手机号或密码错误"),
+            detail=_("账号或密码错误"),
         )
 
     if not user.is_active:

@@ -142,26 +142,33 @@ export default function ComprehensiveTest() {
                   {testStatuses.mbti.completed ? <CheckCircleOutlined /> : <UserOutlined />}
                 </div>
                 <h3 style={{ marginBottom: 8 }}>MBTI人格测评</h3>
-                <p style={{ color: '#8c8c8c', fontSize: 13, marginBottom: 16 }}>
+                <p style={{ color: '#8c8c8c', fontSize: 13, marginBottom: 16, minHeight: 40 }}>
                   16种人格类型，发现你的性格优势
                 </p>
-                {testStatuses.mbti.completed ? (
-                  <div>
-                    <Tag color="purple" style={{ marginBottom: 12 }}>{testStatuses.mbti.result?.mbti_type}</Tag>
-                    <Button block onClick={() => navigate('/mbti/result')}>
-                      查看结果
-                    </Button>
+                {/* MBTI Result - Tag and Button */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  {testStatuses.mbti.completed && (
+                    <Tag color="purple" style={{ margin: 0 }}>
+                      {testStatuses.mbti.result?.mbti_type}
+                    </Tag>
+                  )}
+                  <div style={{ height: 32 }}>
+                    {testStatuses.mbti.completed ? (
+                      <Button onClick={() => navigate('/mbti/result')}>
+                        查看结果
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="primary"
+                        style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', border: 'none' }}
+                        onClick={() => navigate('/mbti')}
+                      >
+                        开始测试
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <Button 
-                    type="primary"
-                    block
-                    style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', border: 'none' }}
-                    onClick={() => navigate('/mbti')}
-                  >
-                    开始测试
-                  </Button>
-                )}
+                </div>
+
               </div>
             </Card>
           </Col>
@@ -191,28 +198,32 @@ export default function ComprehensiveTest() {
                   {testStatuses.sbti.completed ? <CheckCircleOutlined /> : <CrownOutlined />}
                 </div>
                 <h3 style={{ marginBottom: 8 }}>SBTI恋爱风格</h3>
-                <p style={{ color: '#8c8c8c', fontSize: 13, marginBottom: 16 }}>
+                <p style={{ color: '#8c8c8c', fontSize: 13, marginBottom: 16, minHeight: 40 }}>
                   34种恋爱类型，解读你的恋爱模式
                 </p>
-                {testStatuses.sbti.completed ? (
-                  <div>
-                    <Tag color="magenta" style={{ marginBottom: 12 }}>
+                {/* SBTI Result - Tag and Button */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  {testStatuses.sbti.completed && (
+                    <Tag color="magenta" style={{ margin: 0 }}>
                       {testStatuses.sbti.result?.top5_themes?.[0] || '已完成'}
                     </Tag>
-                    <Button block onClick={() => navigate('/sbti/result')}>
-                      查看结果
-                    </Button>
+                  )}
+                  <div style={{ height: 32 }}>
+                    {testStatuses.sbti.completed ? (
+                      <Button onClick={() => navigate('/sbti/result')}>
+                        查看结果
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="primary"
+                        style={{ background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)', border: 'none' }}
+                        onClick={() => navigate('/sbti')}
+                      >
+                        开始测试
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <Button 
-                    type="primary"
-                    block
-                    style={{ background: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)', border: 'none' }}
-                    onClick={() => navigate('/sbti')}
-                  >
-                    开始测试
-                  </Button>
-                )}
+                </div>
               </div>
             </Card>
           </Col>
@@ -242,28 +253,32 @@ export default function ComprehensiveTest() {
                   {testStatuses.attachment.completed ? <CheckCircleOutlined /> : <HeartOutlined />}
                 </div>
                 <h3 style={{ marginBottom: 8 }}>依恋风格测评</h3>
-                <p style={{ color: '#8c8c8c', fontSize: 13, marginBottom: 16 }}>
+                <p style={{ color: '#8c8c8c', fontSize: 13, marginBottom: 16, minHeight: 40 }}>
                   4种依恋类型，认识你的依恋模式
                 </p>
-                {testStatuses.attachment.completed ? (
-                  <div>
-                    <Tag color="green" style={{ marginBottom: 12 }}>
+                {/* Attachment Result - Tag and Button */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  {testStatuses.attachment.completed && (
+                    <Tag color="green" style={{ margin: 0 }}>
                       {testStatuses.attachment.result?.style || '已完成'}
                     </Tag>
-                    <Button block onClick={() => navigate('/attachment/result')}>
-                      查看结果
-                    </Button>
+                  )}
+                  <div style={{ height: 32 }}>
+                    {testStatuses.attachment.completed ? (
+                      <Button onClick={() => navigate('/attachment/result')}>
+                        查看结果
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="primary"
+                        style={{ background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)', border: 'none' }}
+                        onClick={() => navigate('/attachment')}
+                      >
+                        开始测试
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <Button 
-                    type="primary"
-                    block
-                    style={{ background: 'linear-gradient(135deg, #34d399 0%, #14b8a6 100%)', border: 'none' }}
-                    onClick={() => navigate('/attachment')}
-                  >
-                    开始测试
-                  </Button>
-                )}
+                </div>
               </div>
             </Card>
           </Col>
@@ -313,16 +328,10 @@ export default function ComprehensiveTest() {
 
         {/* Navigation */}
         <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center', gap: 16 }}>
-          <Link to="/">
-            <Button>返回首页</Button>
-          </Link>
-          <Link to="/profile/deep">
-            <Button type="primary" style={{ background: '#722ed1' }}>
-              查看深度画像
-            </Button>
-          </Link>
+          <Button onClick={() => navigate('/')}>返回首页</Button>
         </div>
       </div>
     </div>
   )
 }
+

@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 
 from app.core.database import get_db
 from app.api.deps import get_current_user
@@ -41,7 +42,7 @@ async def create_diary(
     try:
         diary = await diary_service.create_diary(db, current_user.id, request)
         db.commit()  # 显式提交事务
-        return DiaryDetailSchema.from_orm(diary)
+        return DiaryDetailSchema.model_validate(diary)
 
     except ValueError as e:
         db.rollback()
@@ -61,13 +62,14 @@ async def create_diary(
 
 @router.get("/stats", summary="获取日记统计", response_model=DiaryStatsResponse)
 async def get_stats(
+    time_range: str = Query("month", description="时间范围: week/month/quarter/year"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """获取日记统计数据"""
     diary_service = get_diary_service()
 
-    stats = diary_service.get_stats(db, current_user.id)
+    stats = diary_service.get_stats(db, current_user.id, time_range)
 
     return DiaryStatsResponse(
         total_count=stats["total_count"],
@@ -79,21 +81,22 @@ async def get_stats(
         categories=stats["categories"],
         this_month_count=stats["this_month_count"],
         last_month_count=stats["last_month_count"],
+        period_count=stats["period_count"],
     )
 
 
 @router.get("/trend", summary="获取心情趋势", response_model=MoodTrendResponse)
 async def get_mood_trend(
-    time_range: str = Query("week", description="时间范围: week/month/quarter/year"),
+    time_range: str = Query("week", description="时间范围: week/month/quarter/year/all"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """获取心情变化趋势"""
-    valid_ranges = {"week", "month", "quarter", "year"}
+    valid_ranges = {"week", "month", "quarter", "year", "all"}
     if time_range not in valid_ranges:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{time_range} 不是有效的时间范围，应使用 week/month/quarter/year",
+            detail=f"{time_range} 不是有效的时间范围，应使用 week/month/quarter/year/all",
         )
 
     diary_service = get_diary_service()
@@ -153,7 +156,7 @@ async def get_diary_by_date(
             detail="该日期没有日记记录",
         )
 
-    return DiaryDetailSchema.from_orm(diary)
+    return DiaryDetailSchema.model_validate(diary)
 
 
 @router.get("/list", summary="获取日记列表", response_model=DiaryListResponse)
@@ -207,49 +210,8 @@ async def list_diaries(
         page=query.page,
         page_size=query.page_size,
         has_next=has_next,
-        data=[DiarySummarySchema.from_orm(d) for d in diaries],
+        data=[DiarySummarySchema.model_validate(d) for d in diaries],
     )
-
-
-@router.put("/{diary_id}", summary="更新日记", response_model=DiaryDetailSchema)
-async def update_diary(
-    diary_id: int,
-    request: DiaryUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """更新日记内容"""
-    diary_service = get_diary_service()
-
-    diary = await diary_service.update_diary(db, current_user.id, diary_id, request)
-
-    if not diary:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="日记不存在",
-        )
-
-    return DiaryDetailSchema.from_orm(diary)
-
-
-@router.delete("/{diary_id}", summary="删除日记")
-async def delete_diary(
-    diary_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """删除日记（软删除）"""
-    diary_service = get_diary_service()
-
-    success = diary_service.delete_diary(db, current_user.id, diary_id)
-
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="日记不存在",
-        )
-
-    return {"message": "日记已删除"}
 
 
 # ============ 心情记录 ============
@@ -265,7 +227,7 @@ async def create_mood_record(
 
     try:
         record = diary_service.create_mood_record(db, current_user.id, request)
-        return MoodRecordSchema.from_orm(record)
+        return MoodRecordSchema.model_validate(record)
 
     except Exception as e:
         raise HTTPException(
@@ -315,7 +277,7 @@ async def list_mood_records(
         limit,
     )
 
-    return [MoodRecordSchema.from_orm(r) for r in records]
+    return [MoodRecordSchema.model_validate(r) for r in records]
 
 
 # ============ 标签管理 ============
@@ -331,7 +293,7 @@ async def create_tag(
 
     try:
         tag = diary_service.create_tag(db, current_user.id, request)
-        return DiaryTagSchema.from_orm(tag)
+        return DiaryTagSchema.model_validate(tag)
 
     except ValueError as e:
         raise HTTPException(
@@ -354,7 +316,7 @@ async def list_tags(
     diary_service = get_diary_service()
     tags = diary_service.list_tags(db, current_user.id)
 
-    return [DiaryTagSchema.from_orm(t) for t in tags]
+    return [DiaryTagSchema.model_validate(t) for t in tags]
 
 
 @router.put("/tags/{tag_id}", summary="更新标签", response_model=DiaryTagSchema)
@@ -375,7 +337,7 @@ async def update_tag(
             detail="标签不存在",
         )
 
-    return DiaryTagSchema.from_orm(tag)
+    return DiaryTagSchema.model_validate(tag)
 
 
 @router.delete("/tags/{tag_id}", summary="删除标签")
@@ -504,6 +466,48 @@ async def get_terms_of_service():
 
 # ============ 日记详情（放在最后，避免拦截其他路由）============
 
+# PUT和DELETE路由也放在最后，避免拦截隐私政策等服务条款路由
+@router.put("/{diary_id}", summary="更新日记", response_model=DiaryDetailSchema)
+async def update_diary(
+    diary_id: int,
+    request: DiaryUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """更新日记内容"""
+    diary_service = get_diary_service()
+
+    diary = await diary_service.update_diary(db, current_user.id, diary_id, request)
+
+    if not diary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="日记不存在",
+        )
+
+    return DiaryDetailSchema.model_validate(diary)
+
+
+@router.delete("/{diary_id}", summary="删除日记")
+async def delete_diary(
+    diary_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """删除日记（软删除）"""
+    diary_service = get_diary_service()
+
+    success = diary_service.delete_diary(db, current_user.id, diary_id)
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="日记不存在",
+        )
+
+    return {"message": "日记已删除"}
+
+
 @router.get("/{diary_id}", summary="获取日记详情", response_model=DiaryDetailSchema)
 async def get_diary(
     diary_id: int,
@@ -520,4 +524,4 @@ async def get_diary(
             detail="日记不存在",
         )
 
-    return DiaryDetailSchema.from_orm(diary)
+    return DiaryDetailSchema.model_validate(diary)

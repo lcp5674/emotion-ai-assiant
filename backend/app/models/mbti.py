@@ -111,6 +111,7 @@ class AiAssistant(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(50), nullable=False, comment="助手名称")
     avatar = Column(String(500), nullable=True, comment="头像URL")
+    live2d_model_url = Column(String(500), nullable=True, comment="Live2D模型文件URL")
     mbti_type = Column(Enum(MbtiType), nullable=False, comment="MBTI类型")
 
     # 三位一体支持：SBTI主题类型（逗号分隔）
@@ -135,6 +136,9 @@ class AiAssistant(Base):
 
     created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), comment="更新时间")
+
+    # 关联虚拟形象
+    avatar_info = relationship("AiAvatar", back_populates="assistant", uselist=False)
 
     def __repr__(self):
         return f"<AiAssistant(id={self.id}, name={self.name}, mbti={self.mbti_type})>"

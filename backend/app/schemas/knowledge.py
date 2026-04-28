@@ -2,7 +2,7 @@
 知识库相关Schema
 """
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 
 
@@ -81,3 +81,30 @@ class ArticleCollectionRequest(BaseModel):
 class ArticleLikeRequest(BaseModel):
     """点赞文章请求"""
     article_id: int
+
+
+class KnowledgeSyncConfig(BaseModel):
+    """知识库同步配置"""
+    source_url: Optional[str] = None
+    enabled: bool = True
+    auto_sync: bool = False
+    sync_interval_hours: int = 24
+
+
+class KnowledgeSyncStatus(BaseModel):
+    """知识库同步状态"""
+    configured: bool
+    enabled: bool
+    auto_sync: bool
+    sync_interval_hours: int
+    last_sync_time: Optional[datetime] = None
+    local_articles_count: int
+    sources: Dict[str, str] = {}
+
+
+class KnowledgeSyncResult(BaseModel):
+    """知识库同步结果"""
+    success: bool
+    synced_count: int
+    total_online: int
+    message: str

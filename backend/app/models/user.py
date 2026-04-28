@@ -24,6 +24,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     phone = Column(String(20), unique=True, index=True, nullable=True, comment="手机号")
     email = Column(String(255), unique=True, index=True, nullable=True, comment="邮箱")
+    username = Column(String(50), unique=True, index=True, nullable=True, comment="用户名")
     nickname = Column(String(50), nullable=True, comment="昵称")
     avatar = Column(String(500), nullable=True, comment="头像URL")
     password_hash = Column(String(255), nullable=True, comment="密码哈希")

@@ -50,14 +50,14 @@ const MOOD_OPTIONS: MoodOption[] = [
 ]
 
 const EMOTION_OPTIONS: EmotionOption[] = [
-  { value: 'happy', label: '开心', icon: '😊', color: '#52c41a' },
-  { value: 'sad', label: '难过', icon: '😢', color: '#ff4d4f' },
-  { value: 'angry', label: '生气', icon: '😠', color: '#fa541c' },
-  { value: 'calm', label: '平静', icon: '😌', color: '#1890ff' },
-  { value: 'excited', label: '兴奋', icon: '🎉', color: '#faad14' },
-  { value: 'anxious', label: '焦虑', icon: '😰', color: '#fa8c16' },
-  { value: 'confused', label: '困惑', icon: '😕', color: '#722ed1' },
-  { value: 'surprised', label: '惊讶', icon: '😮', color: '#eb2f96' },
+  { value: 'happy', label: '开心', icon: '😊', color: '#FFD700' },
+  { value: 'sad', label: '难过', icon: '😢', color: '#A29BFE' },
+  { value: 'angry', label: '生气', icon: '😠', color: '#FF4757' },
+  { value: 'calm', label: '平静', icon: '😌', color: '#74B9FF' },
+  { value: 'excited', label: '兴奋', icon: '🎉', color: '#FF6B6B' },
+  { value: 'anxious', label: '焦虑', icon: '😰', color: '#FD79A8' },
+  { value: 'confused', label: '困惑', icon: '😕', color: '#00CEC9' },
+  { value: 'surprised', label: '惊讶', icon: '😮', color: '#EB2F96' },
 ]
 
 const CATEGORIES = ['工作', '学习', '生活', '情感', '健康', '其他']
@@ -306,6 +306,7 @@ export default function DiaryCreate() {
               <Form.Item
                 name="content"
                 label="日记内容"
+                rules={[{ required: true, message: '请输入日记内容' }, { min: 10, message: '日记内容至少10个字符' }]}
               >
                 <TextArea
                   rows={8}

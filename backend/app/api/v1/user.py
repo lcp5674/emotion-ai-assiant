@@ -70,7 +70,10 @@ async def get_user_stats(
     db: Session = Depends(get_db),
 ):
     """获取用户统计数据"""
+    from datetime import date, timedelta
     from app.models import Conversation, MbtiResult
+    from app.models.growth import CheckIn
+    from sqlalchemy import func, desc
 
     # 对话数
     conversation_count = db.query(Conversation).filter(
@@ -81,6 +84,42 @@ async def get_user_stats(
     mbti_test_count = db.query(MbtiResult).filter(
         MbtiResult.user_id == current_user.id
     ).count()
+
+    # 今日情绪分（从今天的日记计算，检查EmotionDiary表）
+    today = date.today()
+    from app.models.diary import EmotionDiary
+    today_diaries = db.query(EmotionDiary).filter(
+        EmotionDiary.user_id == current_user.id,
+        EmotionDiary.date == today,
+        EmotionDiary.is_deleted == False
+    ).all()
+    
+    if today_diaries:
+        # 计算今日平均心情分数 (从日记的mood_score 1-10 转换为 1-100)
+        total_score = sum(r.mood_score * 10 for r in today_diaries)
+        today_emotion = total_score // len(today_diaries)
+        # 判断趋势（与昨天对比）
+        yesterday = today - timedelta(days=1)
+        yesterday_diaries = db.query(EmotionDiary).filter(
+            EmotionDiary.user_id == current_user.id,
+            EmotionDiary.date == yesterday,
+            EmotionDiary.is_deleted == False
+        ).all()
+        if yesterday_diaries:
+            yesterday_score = sum(r.mood_score * 10 for r in yesterday_diaries) // len(yesterday_diaries)
+            trend = "up" if today_emotion > yesterday_score else "down" if today_emotion < yesterday_score else "stable"
+        else:
+            trend = "up" if today_emotion >= 60 else "down"
+    else:
+        today_emotion = None
+        trend = "stable"
+
+    # 连续使用天数（从打卡记录获取当前连续天数）
+    latest_checkin = db.query(CheckIn).filter(
+        CheckIn.user_id == current_user.id
+    ).order_by(desc(CheckIn.check_in_date)).first()
+    
+    consecutive_days = latest_checkin.streak_days if latest_checkin else 1
 
     # 会员状态
     member_info = None
@@ -94,6 +133,9 @@ async def get_user_stats(
         "conversation_count": conversation_count,
         "mbti_test_count": mbti_test_count,
         "member": member_info,
+        "today_emotion": today_emotion,
+        "emotion_trend": trend,
+        "consecutive_days": consecutive_days,
     }
 
 

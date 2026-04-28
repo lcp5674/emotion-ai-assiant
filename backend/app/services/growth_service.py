@@ -45,14 +45,64 @@ class GrowthService:
         "login_daily": 2,    # 每日登录获得2经验
         "badge_unlock": 50,  # 解锁徽章获得50经验
         "task_complete": 30, # 完成任务获得30经验
+        "checkin": 3,        # 每日打卡获得3经验
     }
 
-    # 默认徽章数据
+    # 等级称号配置
+    LEVEL_TITLES = {
+        1: "心灵初学者",
+        2: "情感萌芽",
+        3: "情绪观察者",
+        4: "自我探索者",
+        5: "情感记录者",
+        6: "心灵成长者",
+        7: "内在探索者",
+        8: "情感达人",
+        9: "心灵导师",
+        10: "智慧行者",
+        11: "情感大师",
+        12: "内在导师",
+        13: "心灵守护者",
+        14: "情感哲学家",
+        15: "智慧导师",
+        16: "心灵引路人",
+        17: "情感顾问",
+        18: "内在成长者",
+        19: "心灵旅者",
+        20: "情感圣人",
+    }
+
+    # 等级所需经验配置
+    LEVEL_EXP_CONFIG = {
+        1: {"exp": 0, "title": "心灵初学者", "description": "刚刚开始情感探索之旅"},
+        2: {"exp": 100, "title": "情感萌芽", "description": "开始关注自己的情绪变化"},
+        3: {"exp": 300, "title": "情绪观察者", "description": "能够觉察自己的情绪波动"},
+        4: {"exp": 600, "title": "自我探索者", "description": "开始深入了解自己的内心"},
+        5: {"exp": 1000, "title": "情感记录者", "description": "坚持记录每日心情"},
+        6: {"exp": 1500, "title": "心灵成长者", "description": "在情感认知上有明显进步"},
+        7: {"exp": 2100, "title": "内在探索者", "description": "持续进行自我探索"},
+        8: {"exp": 2800, "title": "情感达人", "description": "对情绪有较深的理解"},
+        9: {"exp": 3600, "title": "心灵导师", "description": "能够自我调节情绪"},
+        10: {"exp": 4500, "title": "智慧行者", "description": "拥有成熟的情感认知"},
+        11: {"exp": 5500, "title": "情感大师", "description": "情绪管理游刃有余"},
+        12: {"exp": 6600, "title": "内在导师", "description": "能够引导他人情感成长"},
+        13: {"exp": 7800, "title": "心灵守护者", "description": "守护自己和他人的心灵"},
+        14: {"exp": 9100, "title": "情感哲学家", "description": "对情感有深刻洞察"},
+        15: {"exp": 10500, "title": "智慧导师", "description": "以智慧引领心灵成长"},
+        16: {"exp": 12000, "title": "心灵引路人", "description": "帮助他人找到内心平静"},
+        17: {"exp": 13600, "title": "情感顾问", "description": "提供专业的情感建议"},
+        18: {"exp": 15300, "title": "内在成长者", "description": "持续精进的内心修行"},
+        19: {"exp": 17100, "title": "心灵旅者", "description": "心灵的探索永不止步"},
+        20: {"exp": 19000, "title": "情感圣人", "description": "达到情感智慧的巅峰"},
+    }
+
+# 默认徽章数据 - 创意设计
     DEFAULT_BADGES = [
         {
             "badge_code": "first_chat",
-            "name": "第一次倾诉",
-            "description": "完成第一次对话",
+            "name": "🌟 初遇之光",
+            "description": "第一次与AI敞开心扉",
+            "icon": "🌟",
             "rarity": BadgeRarity.COMMON.value,
             "category": "入门",
             "condition_type": "conversation_count",
@@ -62,8 +112,9 @@ class GrowthService:
         },
         {
             "badge_code": "first_diary",
-            "name": "心情记录者",
+            "name": "📝 心情起点",
             "description": "写下第一篇情感日记",
+            "icon": "📝",
             "rarity": BadgeRarity.COMMON.value,
             "category": "入门",
             "condition_type": "diary_count",
@@ -73,8 +124,9 @@ class GrowthService:
         },
         {
             "badge_code": "seven_days",
-            "name": "坚持一周",
+            "name": "🌈 七日彩虹",
             "description": "连续七天记录心情",
+            "icon": "🌈",
             "rarity": BadgeRarity.RARE.value,
             "category": "活跃",
             "condition_type": "login_streak",
@@ -84,8 +136,9 @@ class GrowthService:
         },
         {
             "badge_code": "chat_10",
-            "name": "倾诉达人",
-            "description": "完成10次对话",
+            "name": "💬 心灵捕手",
+            "description": "完成10次深度对话",
+            "icon": "💬",
             "rarity": BadgeRarity.RARE.value,
             "category": "活跃",
             "condition_type": "conversation_count",
@@ -95,8 +148,9 @@ class GrowthService:
         },
         {
             "badge_code": "diary_10",
-            "name": "日记爱好者",
-            "description": "写下10篇情感日记",
+            "name": "📚 日记大师",
+            "description": "累计写下10篇日记",
+            "icon": "📚",
             "rarity": BadgeRarity.RARE.value,
             "category": "活跃",
             "condition_type": "diary_count",
@@ -105,9 +159,22 @@ class GrowthService:
             "is_hidden": False,
         },
         {
+            "badge_code": "chat_50",
+            "name": "🎭 情感专家",
+            "description": "完成50次深度交流",
+            "icon": "🎭",
+            "rarity": BadgeRarity.RARE.value,
+            "category": "成就",
+            "condition_type": "conversation_count",
+            "condition_value": 50,
+            "hint": "完成50次对话即可解锁",
+            "is_hidden": False,
+        },
+        {
             "badge_code": "chat_100",
-            "name": "深度交流",
-            "description": "完成100次对话",
+            "name": "👑 灵魂伴侣",
+            "description": "完成100次深度对话",
+            "icon": "👑",
             "rarity": BadgeRarity.EPIC.value,
             "category": "成就",
             "condition_type": "conversation_count",
@@ -117,8 +184,9 @@ class GrowthService:
         },
         {
             "badge_code": "thirty_days",
-            "name": "一月坚持",
-            "description": "连续三十天记录心情",
+            "name": "⏰ 时光行者",
+            "description": "连续三十天坚持记录",
+            "icon": "⏰",
             "rarity": BadgeRarity.EPIC.value,
             "category": "成就",
             "condition_type": "login_streak",
@@ -127,9 +195,58 @@ class GrowthService:
             "is_hidden": False,
         },
         {
+            "badge_code": "hundred_days",
+            "name": "🏆 百日英雄",
+            "description": "连续一百天坚持",
+            "icon": "🏆",
+            "rarity": BadgeRarity.LEGENDARY.value,
+            "category": "传奇",
+            "condition_type": "login_streak",
+            "condition_value": 100,
+            "hint": "连续一百天访问即可解锁",
+            "is_hidden": False,
+        },
+        {
+            "badge_code": "mbti_complete",
+            "name": "🔮 自我探索者",
+            "description": "完成MBTI性格测评",
+            "icon": "🔮",
+            "rarity": BadgeRarity.RARE.value,
+            "category": "测评",
+            "condition_type": "mbti_completed",
+            "condition_value": 1,
+            "hint": "完成MBTI测评即可解锁",
+            "is_hidden": False,
+        },
+        {
+            "badge_code": "sbti_complete",
+            "name": "🎯 优势发现者",
+            "description": "完成SBTI才能测评",
+            "icon": "🎯",
+            "rarity": BadgeRarity.RARE.value,
+            "category": "测评",
+            "condition_type": "sbti_completed",
+            "condition_value": 1,
+            "hint": "完成SBTI测评即可解锁",
+            "is_hidden": False,
+        },
+        {
+            "badge_code": "attachment_complete",
+            "name": "💕 依恋探索者",
+            "description": "完成依恋风格测评",
+            "icon": "💕",
+            "rarity": BadgeRarity.RARE.value,
+            "category": "测评",
+            "condition_type": "attachment_completed",
+            "condition_value": 1,
+            "hint": "完成依恋风格测评即可解锁",
+            "is_hidden": False,
+        },
+        {
             "badge_code": "vip_member",
-            "name": "VIP会员",
+            "name": "💎 守护天使",
             "description": "成为VIP会员支持我们",
+            "icon": "💎",
             "rarity": BadgeRarity.LEGENDARY.value,
             "category": "会员",
             "condition_type": "member_level",
@@ -149,7 +266,18 @@ class GrowthService:
         for badge_data in self.DEFAULT_BADGES:
             existing = db.query(Badge).filter(Badge.badge_code == badge_data["badge_code"]).first()
             if not existing:
-                badge = Badge(**badge_data)
+                badge = Badge(
+                    badge_code=badge_data["badge_code"],
+                    name=badge_data["name"],
+                    description=badge_data["description"],
+                    icon=badge_data.get("icon", ""),
+                    rarity=badge_data["rarity"],
+                    category=badge_data["category"],
+                    condition_type=badge_data["condition_type"],
+                    condition_value=badge_data["condition_value"],
+                    hint=badge_data["hint"],
+                    is_hidden=badge_data["is_hidden"],
+                )
                 db.add(badge)
 
         db.commit()

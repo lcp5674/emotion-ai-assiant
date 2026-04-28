@@ -3,8 +3,8 @@
  * 明确告知用户数据隐私政策，增强信任
  */
 import { useEffect, useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { Card, Typography, Divider, List, Tag, Space, Button } from 'antd'
-import { Link } from 'react-router-dom'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import { apiClient } from '../../api/request'
 import './index.css'
@@ -12,6 +12,7 @@ import './index.css'
 const { Title, Paragraph, Text } = Typography
 
 export default function PrivacyPage() {
+  const navigate = useNavigate()
   const [privacy, setPrivacy] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -22,7 +23,7 @@ export default function PrivacyPage() {
   const fetchPrivacy = async () => {
     try {
       const res = await apiClient.get('/diary/privacy-policy')
-      setPrivacy(res.data)
+      setPrivacy(res)
     } catch (error) {
       console.error('获取隐私政策失败', error)
     } finally {
@@ -46,9 +47,7 @@ export default function PrivacyPage() {
   return (
     <div className="privacy-container">
       <div style={{ marginBottom: 16 }}>
-        <Link to="/">
-          <Button icon={<ArrowLeftOutlined />}>返回首页</Button>
-        </Link>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>返回</Button>
       </div>
       <Card className="privacy-card" loading={loading}>
         {privacy && (

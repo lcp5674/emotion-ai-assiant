@@ -172,9 +172,9 @@ export default function MbtiTest() {
           <p style={{ fontSize: 16, color: '#6b7280', marginBottom: 32 }}>
             抱歉，MBTI测试服务暂时无法使用，请稍后再试
           </p>
-          <Link to="/">
-            <Button
+          <Button
               type="primary"
+              onClick={() => navigate(-1)}
               style={{ 
                 background: `linear-gradient(135deg, ${themeColors[themeColor]} 0%, ${themeColors[themeColor]}dd 100%)`,
                 border: 'none',
@@ -182,9 +182,8 @@ export default function MbtiTest() {
                 padding: '0 24px'
               }}
             >
-              返回首页
+              返回
             </Button>
-          </Link>
         </Card>
       </div>
     )

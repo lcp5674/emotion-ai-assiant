@@ -60,6 +60,7 @@ from app.models.feedback import (
 )
 from app.models.user_login import UserLogin
 from app.models.user_profile import UserProfile
+from app.models.avatar import AiAvatar, AnimationState
 
 __all__ = [
     "User",
@@ -141,4 +142,7 @@ __all__ = [
     # user
     "UserLogin",
     "UserProfile",
+    # avatar
+    "AiAvatar",
+    "AnimationState",
 ]

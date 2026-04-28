@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Card, Tabs, Form, Input, Select, Button, Table, Tag, Modal, Switch, Space, Popconfirm, Spin, App } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, ReloadOutlined, ArrowLeftOutlined, ApiOutlined } from '@ant-design/icons'
+import { Card, Tabs, Form, Input, Select, Button, Table, Tag, Modal, Switch, Space, Popconfirm, Spin, App, Alert, Descriptions, Divider, InputNumber } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, ReloadOutlined, ArrowLeftOutlined, ApiOutlined, SyncOutlined, CloudSyncOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/request'
 
@@ -82,6 +82,7 @@ interface Assistant {
   expertise?: string
   greeting?: string
   tags?: string[]
+  live2d_model_url?: string  // Live2D模型文件URL
   is_active: boolean
   is_recommended?: boolean
   is_favorited?: boolean
@@ -89,10 +90,9 @@ interface Assistant {
 }
 
 const PROVIDERS = [
-  { value: 'mock', label: 'Mock (开发测试)' },
+  { value: 'volcengine', label: '字节火山引擎' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic Claude' },
-  { value: 'volcengine', label: '字节火山引擎' },
   { value: 'doubao', label: '字节豆包' },
   { value: 'glm', label: '智谱 GLM' },
   { value: 'qwen', label: '阿里通义千问' },
@@ -127,8 +127,47 @@ const FAILOVER_CHAIN_OPTIONS = [
   { value: 'custom', label: '自定义' },
 ]
 
+const MBTI_TYPES = [
+  { value: 'ISTJ', label: 'ISTJ - 物流师', category: '分析师' },
+  { value: 'ISFJ', label: 'ISFJ - 守卫者', category: '守护者' },
+  { value: 'INFJ', label: 'INFJ - 提倡者', category: '理想主义者' },
+  { value: 'INTJ', label: 'INTJ - 建筑师', category: '分析师' },
+  { value: 'ISTP', label: 'ISTP - 鉴赏家', category: '行动者' },
+  { value: 'ISFP', label: 'ISFP - 探险家', category: '行动者' },
+  { value: 'INFP', label: 'INFP - 调停者', category: '理想主义者' },
+  { value: 'INTP', label: 'INTP - 逻辑学家', category: '分析师' },
+  { value: 'ESTP', label: 'ESTP - 企业家', category: '行动者' },
+  { value: 'ESFP', label: 'ESFP - 表演者', category: '行动者' },
+  { value: 'ENFP', label: 'ENFP - 竞选者', category: '理想主义者' },
+  { value: 'ENTP', label: 'ENTP - 辩论家', category: '分析师' },
+  { value: 'ESTJ', label: 'ESTJ - 总经理', category: '守护者' },
+  { value: 'ESFJ', label: 'ESFJ - 执政官', category: '守护者' },
+  { value: 'ENFJ', label: 'ENFJ - 主人公', category: '理想主义者' },
+  { value: 'ENTJ', label: 'ENTJ - 指挥官', category: '分析师' },
+]
+
+const SBTI_THEME_OPTIONS = [
+  { value: 'executing', label: '执行者 - 目标导向、决策果断、结果导向' },
+  { value: 'influencing', label: '影响者 - 影响他人、激励团队、善于表达' },
+  { value: 'relationship', label: '关系建立 - 关注他人、合作共赢、建立信任' },
+  { value: 'strategic', label: '战略思考 - 长远规划、创新思维、问题解决' },
+  { value: 'analytical', label: '分析者 - 数据驱动、逻辑严谨、追求精准' },
+  { value: 'creative', label: '创意者 - 创新思维、艺术感、突破常规' },
+  { value: 'supportive', label: '支持者 - 乐于助人、同理心强、关怀他人' },
+  { value: 'challenge', label: '挑战者 - 敢于冒险、竞争意识、追求卓越' },
+  { value: 'collaborative', label: '协作者 - 团队合作、善于协调、资源整合' },
+  { value: 'independent', label: '独立者 - 自主决策、自律性强、独自解决问题' },
+]
+
+const ATTACHMENT_STYLE_OPTIONS = [
+  { value: 'secure', label: '安全型 - 信任他人、积极寻求亲密、情感稳定' },
+  { value: 'anxious', label: '焦虑型 - 担心被抛弃、过度依赖、情绪波动' },
+  { value: 'avoidant', label: '回避型 - 避免亲密、独立自主、情感距离' },
+  { value: 'disorganized', label: '混乱型 - 矛盾心理、行为不稳定、难以预测' },
+  { value: 'fearful', label: '恐惧型 - 害怕亲密回避社交、自我保护强' },
+]
+
 const MODELS: Record<string, { value: string; label: string }[]> = {
-  mock: [{ value: 'mock-gpt-4', label: 'Mock GPT-4' }],
   openai: [
     { value: 'gpt-4o', label: 'GPT-4o' },
     { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
@@ -210,9 +249,49 @@ export default function Admin() {
   const [providerStatus, setProviderStatus] = useState<{provider: string; has_api_key: boolean; model: string; base_url: string}[]>([])
   const [providerStatusLoading, setProviderStatusLoading] = useState(false)
 
+  // 知识库同步状态
+  const [knowledgeSyncConfig, setKnowledgeSyncConfig] = useState<any>({
+    source_url: null,
+    enabled: true,
+    auto_sync: false,
+    sync_interval_hours: 24,
+    last_sync_time: null,
+    default_sources: {},
+  })
+  const [knowledgeSyncStatus, setKnowledgeSyncStatus] = useState<any>({
+    configured: false,
+    enabled: true,
+    auto_sync: false,
+    sync_interval_hours: 24,
+    last_sync_time: null,
+    local_articles_count: 0,
+    sources: {},
+  })
+  const [knowledgeSyncLoading, setKnowledgeSyncLoading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+
+  // 知识库Embedding和分块配置
+  const [knowledgeBaseConfig, setKnowledgeBaseConfig] = useState<any>({
+    embedding_model: 'BAAI/bge-large-zh-v1.5',
+    embedding_dim: 1024,
+    chunk_size: 500,
+    chunk_overlap: 50,
+    vector_db_type: 'milvus',
+    milvus_host: 'localhost',
+    milvus_port: 19530,
+    milvus_collection: 'emotion_knowledge',
+    qdrant_host: 'localhost',
+    qdrant_port: 6333,
+    qdrant_collection: 'emotion_knowledge',
+  })
+  const [knowledgeBaseLoading, setKnowledgeBaseLoading] = useState(false)
+
   useEffect(() => {
     loadConfig()
     loadAssistants()
+    loadKnowledgeSyncConfig()
+    loadKnowledgeSyncStatus()
+    loadKnowledgeBaseConfig()
   }, [])
 
   const loadConfig = async () => {
@@ -238,6 +317,118 @@ export default function Admin() {
       console.error(error)
     } finally {
       setProviderStatusLoading(false)
+    }
+  }
+
+  // 知识库同步相关函数
+  const loadKnowledgeSyncConfig = async () => {
+    try {
+      setKnowledgeSyncLoading(true)
+      const res = await api.admin.knowledgeSyncConfig()
+      setKnowledgeSyncConfig(res || {
+        source_url: null,
+        enabled: true,
+        auto_sync: false,
+        sync_interval_hours: 24,
+        last_sync_time: null,
+        default_sources: {},
+      })
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setKnowledgeSyncLoading(false)
+    }
+  }
+
+  const loadKnowledgeSyncStatus = async () => {
+    try {
+      const res = await api.admin.knowledgeSyncStatus()
+      setKnowledgeSyncStatus(res || {
+        configured: false,
+        enabled: true,
+        auto_sync: false,
+        sync_interval_hours: 24,
+        last_sync_time: null,
+        local_articles_count: 0,
+        sources: {},
+      })
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  // 知识库Embedding和分块配置
+  const loadKnowledgeBaseConfig = async () => {
+    try {
+      setKnowledgeBaseLoading(true)
+      const res = await api.admin.knowledgeBaseConfig()
+      setKnowledgeBaseConfig(res || {
+        embedding_model: 'BAAI/bge-large-zh-v1.5',
+        embedding_dim: 1024,
+        chunk_size: 500,
+        chunk_overlap: 50,
+        vector_db_type: 'milvus',
+        milvus_host: 'localhost',
+        milvus_port: 19530,
+        milvus_collection: 'emotion_knowledge',
+        qdrant_host: 'localhost',
+        qdrant_port: 6333,
+        qdrant_collection: 'emotion_knowledge',
+      })
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setKnowledgeBaseLoading(false)
+    }
+  }
+
+  const handleSaveKnowledgeBaseConfig = async () => {
+    try {
+      setKnowledgeBaseLoading(true)
+      await api.admin.updateKnowledgeBaseConfig(knowledgeBaseConfig)
+      message.success('知识库配置已保存')
+    } catch (error) {
+      console.error(error)
+      message.error('保存失败')
+    } finally {
+      setKnowledgeBaseLoading(false)
+    }
+  }
+
+  const handleSaveKnowledgeSyncConfig = async () => {
+    try {
+      setSyncing(true)
+      await api.admin.updateKnowledgeSyncConfig({
+        source_url: knowledgeSyncConfig.source_url || null,
+        enabled: knowledgeSyncConfig.enabled,
+        auto_sync: knowledgeSyncConfig.auto_sync,
+        sync_interval_hours: knowledgeSyncConfig.sync_interval_hours,
+      })
+      message.success('知识库同步配置已保存')
+      loadKnowledgeSyncStatus()
+    } catch (error) {
+      console.error(error)
+      message.error('保存失败')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handleTriggerSync = async () => {
+    try {
+      setSyncing(true)
+      const res = await api.admin.triggerKnowledgeSync()
+      if (res.success) {
+        message.success(res.message || '同步成功')
+      } else {
+        message.warning(res.message || '同步完成但无新内容')
+      }
+      loadKnowledgeSyncStatus()
+    } catch (error: any) {
+      console.error(error)
+      message.error('同步失败: ' + (error?.response?.data?.detail || error?.message || '未知错误'))
+    } finally {
+      setSyncing(false)
     }
   }
 
@@ -428,6 +619,8 @@ export default function Admin() {
     form.setFieldsValue({
       ...record,
       tags: record.tags || [],
+      sbti_types: record.sbti_types ? record.sbti_types.split(',').filter(Boolean) : [],
+      attachment_styles: record.attachment_styles ? record.attachment_styles.split(',').filter(Boolean) : [],
     })
     setModalOpen(true)
   }
@@ -449,8 +642,8 @@ export default function Admin() {
       const submitData = {
         ...values,
         tags: values.tags?.join(',') || '',
-        sbti_types: values.sbti_types || '',
-        attachment_styles: values.attachment_styles || '',
+        sbti_types: Array.isArray(values.sbti_types) ? values.sbti_types.join(',') : (values.sbti_types || ''),
+        attachment_styles: Array.isArray(values.attachment_styles) ? values.attachment_styles.join(',') : (values.attachment_styles || ''),
       }
       if (editingAssistant) {
         await api.admin.updateAssistant(editingAssistant.id, submitData)
@@ -1071,6 +1264,334 @@ export default function Admin() {
                 </div>
               ),
             },
+            {
+              key: 'knowledge_sync',
+              label: '知识库同步',
+              children: (
+                <div>
+                  <Spin spinning={knowledgeSyncLoading}>
+                    <Alert
+                      type="info"
+                      showIcon
+                      message="知识库联网同步功能"
+                      description="从公开的免费心理知识API自动获取内容，包括励志名言、生活建议和正能量语录。支持管理员手动触发同步或配置自动同步。"
+                      style={{ marginBottom: 16 }}
+                    />
+
+                    <Descriptions bordered column={1} size="small" style={{ marginBottom: 16 }}>
+                      <Descriptions.Item label="本地文章数量">
+                        <Tag color="blue">{knowledgeSyncStatus.local_articles_count || 0}</Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="最后同步时间">
+                        {knowledgeSyncStatus.last_sync_time
+                          ? new Date(knowledgeSyncStatus.last_sync_time).toLocaleString('zh-CN')
+                          : '从未同步'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="同步状态">
+                        <Tag color={knowledgeSyncStatus.enabled ? 'green' : 'orange'}>
+                          {knowledgeSyncStatus.enabled ? '已启用' : '已禁用'}
+                        </Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="自动同步">
+                        <Tag color={knowledgeSyncStatus.auto_sync ? 'green' : 'default'}>
+                          {knowledgeSyncStatus.auto_sync ? '已启用' : '未启用'}
+                        </Tag>
+                        {knowledgeSyncStatus.auto_sync && (
+                          <span style={{ marginLeft: 8, color: '#888' }}>
+                            (每 {knowledgeSyncStatus.sync_interval_hours || 24} 小时)
+                          </span>
+                        )}
+                      </Descriptions.Item>
+                    </Descriptions>
+
+                    <Divider>默认数据源 (免费公开API)</Divider>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <Descriptions column={1} size="small">
+                        <Descriptions.Item label="ZenQuotes API">
+                          <code style={{ fontSize: 12 }}>https://zenquotes.io/api/random</code>
+                          <Tag color="green" style={{ marginLeft: 8 }}>励志名言</Tag>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Advice Slip API">
+                          <code style={{ fontSize: 12 }}>https://api.adviceslip.com/advice</code>
+                          <Tag color="blue" style={{ marginLeft: 8 }}>生活建议</Tag>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Affirmations API">
+                          <code style={{ fontSize: 12 }}>https://www.affirmations.cool/</code>
+                          <Tag color="purple" style={{ marginLeft: 8 }}>正能量语录</Tag>
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </div>
+
+                    <Divider>同步配置</Divider>
+
+                    <Form layout="vertical" style={{ maxWidth: 600 }}>
+                      <Form.Item label="自定义数据源URL (可选)">
+                        <Input
+                          placeholder="留空则使用上述所有默认源"
+                          value={knowledgeSyncConfig.source_url || ''}
+                          onChange={(e) => setKnowledgeSyncConfig({
+                            ...knowledgeSyncConfig,
+                            source_url: e.target.value || null
+                          })}
+                        />
+                        <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                          如果配置了自定义URL，则只从该URL获取数据
+                        </div>
+                      </Form.Item>
+
+                      <Form.Item label="同步间隔 (小时)">
+                        <InputNumber
+                          min={1}
+                          max={168}
+                          value={knowledgeSyncConfig.sync_interval_hours || 24}
+                          onChange={(value) => setKnowledgeSyncConfig({
+                            ...knowledgeSyncConfig,
+                            sync_interval_hours: value || 24
+                          })}
+                          style={{ width: 200 }}
+                        />
+                        <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                          设置自动同步的间隔时间（1-168小时）
+                        </div>
+                      </Form.Item>
+
+                      <Form.Item>
+                        <Space>
+                          <Button
+                            type="primary"
+                            icon={<SyncOutlined />}
+                            onClick={handleTriggerSync}
+                            loading={syncing}
+                          >
+                            立即同步
+                          </Button>
+                          <Button
+                            icon={<SaveOutlined />}
+                            onClick={handleSaveKnowledgeSyncConfig}
+                            loading={syncing}
+                          >
+                            保存配置
+                          </Button>
+                          <Button
+                            icon={<ReloadOutlined />}
+                            onClick={() => {
+                              loadKnowledgeSyncConfig()
+                              loadKnowledgeSyncStatus()
+                            }}
+                          >
+                            刷新状态
+                          </Button>
+                        </Space>
+                      </Form.Item>
+                    </Form>
+                  </Spin>
+                </div>
+              ),
+            },
+            {
+              key: 'knowledge_base_embedding',
+              label: '知识库配置',
+              children: (
+                <div>
+                  <Spin spinning={knowledgeBaseLoading}>
+                    <Alert
+                      type="info"
+                      showIcon
+                      message="知识库Embedding和分块配置"
+                      description="配置RAG知识库使用的Embedding模型和文本分块参数。这些设置影响知识检索的质量和准确性。"
+                      style={{ marginBottom: 16 }}
+                    />
+
+                    <Divider>Embedding配置</Divider>
+
+                    <Form layout="vertical" style={{ maxWidth: 700 }}>
+                      <Form.Item label="Embedding模型">
+                        <Select
+                          value={knowledgeBaseConfig.embedding_model}
+                          onChange={(value) => setKnowledgeBaseConfig({
+                            ...knowledgeBaseConfig,
+                            embedding_model: value
+                          })}
+                          style={{ width: '100%' }}
+                        >
+                          <Select.Option value="BAAI/bge-large-zh-v1.5">BAAI/bge-large-zh-v1.5 (推荐)</Select.Option>
+                          <Select.Option value="BAAI/bge-base-zh-v1.5">BAAI/bge-base-zh-v1.5</Select.Option>
+                          <Select.Option value="text-embedding-ada-002">OpenAI text-embedding-ada-002</Select.Option>
+                          <Select.Option value="m3e-base">M3E Base</Select.Option>
+                        </Select>
+                        <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                          中文优化模型，适合心理知识库的语义检索
+                        </div>
+                      </Form.Item>
+
+                      <Form.Item label="Embedding维度">
+                        <InputNumber
+                          value={knowledgeBaseConfig.embedding_dim}
+                          onChange={(value) => setKnowledgeBaseConfig({
+                            ...knowledgeBaseConfig,
+                            embedding_dim: value || 1024
+                          })}
+                          min={128}
+                          max={4096}
+                          step={128}
+                          style={{ width: 200 }}
+                        />
+                        <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                          BAAI/bge-large-zh-v1.5 为 1024 维，BAAI/bge-base-zh-v1.5 为 768 维
+                        </div>
+                      </Form.Item>
+
+                      <Divider>文本分块配置</Divider>
+
+                      <Form.Item label="分块大小 (Chunk Size)">
+                        <InputNumber
+                          value={knowledgeBaseConfig.chunk_size}
+                          onChange={(value) => setKnowledgeBaseConfig({
+                            ...knowledgeBaseConfig,
+                            chunk_size: value || 500
+                          })}
+                          min={100}
+                          max={2000}
+                          step={50}
+                          style={{ width: 200 }}
+                        />
+                        <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                          每个文本块的最大字符数。较小适合精确检索，较大适合保持上下文
+                        </div>
+                      </Form.Item>
+
+                      <Form.Item label="分块重叠 (Chunk Overlap)">
+                        <InputNumber
+                          value={knowledgeBaseConfig.chunk_overlap}
+                          onChange={(value) => setKnowledgeBaseConfig({
+                            ...knowledgeBaseConfig,
+                            chunk_overlap: value || 50
+                          })}
+                          min={0}
+                          max={500}
+                          step={10}
+                          style={{ width: 200 }}
+                        />
+                        <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>
+                          相邻文本块之间的重叠字符数，帮助保持检索的连续性
+                        </div>
+                      </Form.Item>
+
+                      <Divider>向量数据库配置</Divider>
+
+                      <Form.Item label="向量数据库类型">
+                        <Select
+                          value={knowledgeBaseConfig.vector_db_type}
+                          onChange={(value) => setKnowledgeBaseConfig({
+                            ...knowledgeBaseConfig,
+                            vector_db_type: value
+                          })}
+                          style={{ width: '100%' }}
+                        >
+                          <Select.Option value="milvus">Milvus</Select.Option>
+                          <Select.Option value="qdrant">Qdrant</Select.Option>
+                          <Select.Option value="memory">内存存储 (开发测试)</Select.Option>
+                        </Select>
+                      </Form.Item>
+
+                      {knowledgeBaseConfig.vector_db_type === 'milvus' && (
+                        <>
+                          <Form.Item label="Milvus 主机">
+                            <Input
+                              value={knowledgeBaseConfig.milvus_host}
+                              onChange={(e) => setKnowledgeBaseConfig({
+                                ...knowledgeBaseConfig,
+                                milvus_host: e.target.value
+                              })}
+                              placeholder="localhost"
+                            />
+                          </Form.Item>
+                          <Form.Item label="Milvus 端口">
+                            <InputNumber
+                              value={knowledgeBaseConfig.milvus_port}
+                              onChange={(value) => setKnowledgeBaseConfig({
+                                ...knowledgeBaseConfig,
+                                milvus_port: value || 19530
+                              })}
+                              min={1}
+                              max={65535}
+                              style={{ width: 200 }}
+                            />
+                          </Form.Item>
+                          <Form.Item label="Milvus Collection名称">
+                            <Input
+                              value={knowledgeBaseConfig.milvus_collection}
+                              onChange={(e) => setKnowledgeBaseConfig({
+                                ...knowledgeBaseConfig,
+                                milvus_collection: e.target.value
+                              })}
+                              placeholder="emotion_knowledge"
+                            />
+                          </Form.Item>
+                        </>
+                      )}
+
+                      {knowledgeBaseConfig.vector_db_type === 'qdrant' && (
+                        <>
+                          <Form.Item label="Qdrant 主机">
+                            <Input
+                              value={knowledgeBaseConfig.qdrant_host}
+                              onChange={(e) => setKnowledgeBaseConfig({
+                                ...knowledgeBaseConfig,
+                                qdrant_host: e.target.value
+                              })}
+                              placeholder="localhost"
+                            />
+                          </Form.Item>
+                          <Form.Item label="Qdrant 端口">
+                            <InputNumber
+                              value={knowledgeBaseConfig.qdrant_port}
+                              onChange={(value) => setKnowledgeBaseConfig({
+                                ...knowledgeBaseConfig,
+                                qdrant_port: value || 6333
+                              })}
+                              min={1}
+                              max={65535}
+                              style={{ width: 200 }}
+                            />
+                          </Form.Item>
+                          <Form.Item label="Qdrant Collection名称">
+                            <Input
+                              value={knowledgeBaseConfig.qdrant_collection}
+                              onChange={(e) => setKnowledgeBaseConfig({
+                                ...knowledgeBaseConfig,
+                                qdrant_collection: e.target.value
+                              })}
+                              placeholder="emotion_knowledge"
+                            />
+                          </Form.Item>
+                        </>
+                      )}
+
+                      <Form.Item>
+                        <Space>
+                          <Button
+                            type="primary"
+                            icon={<SaveOutlined />}
+                            onClick={handleSaveKnowledgeBaseConfig}
+                            loading={knowledgeBaseLoading}
+                          >
+                            保存配置
+                          </Button>
+                          <Button
+                            icon={<ReloadOutlined />}
+                            onClick={loadKnowledgeBaseConfig}
+                          >
+                            重置
+                          </Button>
+                        </Space>
+                      </Form.Item>
+                    </Form>
+                  </Spin>
+                </div>
+              ),
+            },
           ]}
         />
       </Card>
@@ -1088,14 +1609,33 @@ export default function Admin() {
           <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="请输入助手名称" />
           </Form.Item>
-          <Form.Item name="mbti_type" label="MBTI类型" rules={[{ required: true, message: '请输入MBTI类型' }]}>
-            <Input placeholder="如: ENFP, INFP" />
+          <Form.Item name="mbti_type" label="MBTI类型" rules={[{ required: true, message: '请选择MBTI类型' }]}>
+            <Select
+              placeholder="选择MBTI类型"
+              showSearch
+              allowClear
+              optionFilterProp="label"
+              dropdownRender={menu => menu}
+              options={MBTI_TYPES.map(m => ({ value: m.value, label: m.label }))}
+            />
           </Form.Item>
-          <Form.Item name="sbti_types" label="SBTI主题类型" tooltip="逗号分隔的主题类型，如: executing,influencing,relationship,strategic">
-            <Input placeholder="如: executing,influencing,relationship" />
+          <Form.Item name="sbti_types" label="SBTI主题类型">
+            <Select
+              mode="multiple"
+              placeholder="选择SBTI主题"
+              allowClear
+              optionFilterProp="label"
+              options={SBTI_THEME_OPTIONS.map(s => ({ value: s.value, label: s.label }))}
+            />
           </Form.Item>
-          <Form.Item name="attachment_styles" label="依恋风格类型" tooltip="逗号分隔的风格类型，如: secure,anxious,avoidant">
-            <Input placeholder="如: secure,anxious" />
+          <Form.Item name="attachment_styles" label="依恋风格类型">
+            <Select
+              mode="multiple"
+              placeholder="选择依恋风格"
+              allowClear
+              optionFilterProp="label"
+              options={ATTACHMENT_STYLE_OPTIONS.map(a => ({ value: a.value, label: a.label }))}
+            />
           </Form.Item>
           <Form.Item name="personality" label="人格描述">
             <Input.TextArea rows={2} placeholder="请描述助手的人格特点" />
@@ -1108,6 +1648,36 @@ export default function Admin() {
           </Form.Item>
           <Form.Item name="greeting" label="问候语">
             <Input.TextArea rows={2} placeholder="请输入开场问候语" />
+          </Form.Item>
+          <Form.Item
+            name="live2d_model_url"
+            label="Live2D模型URL"
+            tooltip="填写Live2D模型的在线URL，如: https://example.com/model/Haru.model3.json"
+          >
+            <Input.Group compact>
+              <Input
+                style={{ width: 'calc(100% - 100px)' }}
+                placeholder="https://example.com/model/Haru.model3.json"
+              />
+              <Button onClick={async () => {
+                const url = form.getFieldValue('live2d_model_url')
+                if (!url) {
+                  message.warning('请先输入Live2D模型URL')
+                  return
+                }
+                try {
+                  message.loading('正在测试Live2D模型连通性并下载...', 0)
+                  const response = await fetch(url, { method: 'HEAD' })
+                  if (response.ok) {
+                    message.success('Live2D模型配置成功！模型文件可访问')
+                  } else {
+                    message.error('模型文件不可访问')
+                  }
+                } catch (error) {
+                  message.error('连接失败，请检查URL是否正确')
+                }
+              }}>测试</Button>
+            </Input.Group>
           </Form.Item>
           <Form.Item name="is_recommended" label="推荐" valuePropName="checked">
             <Switch checkedChildren="推荐" unCheckedChildren="普通" />

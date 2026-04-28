@@ -88,9 +88,7 @@ export default function KnowledgeCollections() {
         {/* Back */}
         <div style={{ marginBottom: 16 }}>
           <Link to="/">
-            <Button icon={<ArrowLeftOutlined />} type="text">
-              返回首页
-            </Button>
+            <Button icon={<ArrowLeftOutlined />} type="text">返回首页</Button>
           </Link>
         </div>
 

@@ -17,6 +17,51 @@ from app.services.payment_service import get_wechat_pay_service
 router = APIRouter(prefix="/payment", tags=["支付"])
 
 
+def _activate_member(db: Session, order: MemberOrder, user: User) -> None:
+    """激活会员的公共逻辑（带事务锁防止并发重复支付）"""
+    from datetime import timedelta
+    
+    order.status = "paid"
+    order.paid_at = datetime.now()
+    user.member_level = MemberLevel[order.level.upper()]
+    
+    if user.member_expire_at and user.member_expire_at > datetime.now():
+        user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
+    else:
+        user.member_expire_at = datetime.now() + timedelta(days=order.duration)
+    
+    db.commit()
+
+
+def _activate_member_with_lock(db: Session, order_no: str) -> bool:
+    """使用 FOR UPDATE 锁激活会员，返回是否成功激活"""
+    from datetime import timedelta
+    
+    # 使用 FOR UPDATE 锁定订单记录，防止并发重复支付
+    order = db.query(MemberOrder).filter(
+        MemberOrder.order_no == order_no
+    ).with_for_update().first()
+    
+    if not order or order.status == "paid":
+        return False
+    
+    user = db.query(User).filter(User.id == order.user_id).first()
+    if not user:
+        return False
+    
+    order.status = "paid"
+    order.paid_at = datetime.now()
+    user.member_level = MemberLevel[order.level.upper()]
+    
+    if user.member_expire_at and user.member_expire_at > datetime.now():
+        user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
+    else:
+        user.member_expire_at = datetime.now() + timedelta(days=order.duration)
+    
+    db.commit()
+    return True
+
+
 @router.get("/plans", summary="获取会员套餐列表")
 async def get_member_plans(
     current_user: User = Depends(get_current_user),
@@ -128,29 +173,18 @@ async def wechat_notify(
     pay_service = get_wechat_pay_service()
     notify_data = await pay_service.parse_notify(body, headers)
 
+    # 验证失败时返回错误响应，而不是成功
     if not notify_data:
-        return {"code": "SUCCESS", "message": "OK"}
+        loguru.logger.error(f"[SECURITY] 微信支付回调验证失败")
+        return {"code": "FAIL", "message": "验证失败"}
 
     if notify_data.get("status") == "paid":
         order_no = notify_data["order_no"]
-        order = db.query(MemberOrder).filter(MemberOrder.order_no == order_no).first()
-
-        if order and order.status != "paid":
-            order.status = "paid"
-            order.paid_at = datetime.now()
-
-            user = db.query(User).filter(User.id == order.user_id).first()
-            if user:
-                user.member_level = MemberLevel[order.level.upper()]
-
-                from datetime import timedelta
-                if user.member_expire_at and user.member_expire_at > datetime.now():
-                    user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
-                else:
-                    user.member_expire_at = datetime.now() + timedelta(days=order.duration)
-
-            db.commit()
+        success = _activate_member_with_lock(db, order_no)
+        if success:
             loguru.logger.info(f"订单 {order_no} 支付成功")
+        else:
+            loguru.logger.warning(f"订单 {order_no} 激活失败或已支付")
 
     return {"code": "SUCCESS", "message": "OK"}
 
@@ -198,18 +232,9 @@ async def mock_pay_complete(
     if order.status == "paid":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="订单已支付")
 
-    order.status = "paid"
-    order.paid_at = datetime.now()
-
-    current_user.member_level = MemberLevel[order.level.upper()]
-
-    from datetime import timedelta as td
-    if current_user.member_expire_at and current_user.member_expire_at > datetime.now():
-        current_user.member_expire_at = current_user.member_expire_at + td(days=order.duration)
-    else:
-        current_user.member_expire_at = datetime.now() + td(days=order.duration)
-
-    db.commit()
+    success = _activate_member_with_lock(db, order_no)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="订单激活失败")
 
     return {"message": "支付成功", "level": order.level}
 
@@ -269,23 +294,8 @@ async def stripe_success(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="支付验证失败")
 
     order_no = result.get("order_no")
-    order = db.query(MemberOrder).filter(MemberOrder.order_no == order_no).first()
-
-    if order and order.status != "paid":
-        order.status = "paid"
-        order.paid_at = datetime.now()
-
-        user = db.query(User).filter(User.id == order.user_id).first()
-        if user:
-            user.member_level = MemberLevel[order.level.upper()]
-
-            from datetime import timedelta
-            if user.member_expire_at and user.member_expire_at > datetime.now():
-                user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
-            else:
-                user.member_expire_at = datetime.now() + timedelta(days=order.duration)
-
-        db.commit()
+    success = _activate_member_with_lock(db, order_no)
+    if success:
         loguru.logger.info(f"Stripe订单 {order_no} 支付成功")
 
     return {"message": "支付成功", "redirect_url": "/payment/success"}
@@ -310,23 +320,8 @@ async def stripe_webhook(
     result = await stripe_service.handle_webhook(payload, signature)
     if result and result.get("status") == "paid":
         order_no = result.get("order_no")
-        order = db.query(MemberOrder).filter(MemberOrder.order_no == order_no).first()
-
-        if order and order.status != "paid":
-            order.status = "paid"
-            order.paid_at = datetime.now()
-
-            user = db.query(User).filter(User.id == order.user_id).first()
-            if user:
-                user.member_level = MemberLevel[order.level.upper()]
-
-                from datetime import timedelta
-                if user.member_expire_at and user.member_expire_at > datetime.now():
-                    user.member_expire_at = user.member_expire_at + timedelta(days=order.duration)
-                else:
-                    user.member_expire_at = datetime.now() + timedelta(days=order.duration)
-
-            db.commit()
+        success = _activate_member_with_lock(db, order_no)
+        if success:
             loguru.logger.info(f"Stripe webhook订单 {order_no} 支付成功")
 
     return {"received": True}

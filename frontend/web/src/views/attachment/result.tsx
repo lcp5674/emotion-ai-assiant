@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Card, Button, Tag, Row, Col, Progress, Spin, App, List } from 'antd'
-import { HeartOutlined, CheckCircleOutlined, BulbOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { Card, Button, Tag, Row, Col, Progress, Spin, App, List, Avatar } from 'antd'
+import { HeartOutlined, CheckCircleOutlined, BulbOutlined, ArrowLeftOutlined, RobotOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
 import { useAttachmentStore } from '../../stores'
 
@@ -10,11 +10,13 @@ export default function AttachmentResult() {
   const { message } = App.useApp()
   const { result, setResult } = useAttachmentStore()
   const [loading, setLoading] = useState(!result)
+  const [assistants, setAssistants] = useState<any[]>([])
 
   useEffect(() => {
     if (!result) {
       loadResult()
     }
+    loadAssistants()
   }, [])
 
   const loadResult = async () => {
@@ -29,6 +31,15 @@ export default function AttachmentResult() {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAssistants = async () => {
+    try {
+      const res = await api.mbti.recommendedAssistants()
+      setAssistants(res.list?.slice(0, 3) || [])
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -99,9 +110,9 @@ export default function AttachmentResult() {
 
       <div className="container" style={{ marginTop: -20 }}>
         <div style={{ marginBottom: 16 }}>
-          <Link to="/attachment">
-            <Button icon={<ArrowLeftOutlined />}>返回测试</Button>
-          </Link>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/comprehensive')}>
+            返回测评
+          </Button>
         </div>
 
         {/* Dimension Scores */}
@@ -191,6 +202,69 @@ export default function AttachmentResult() {
                 </p>
               </div>
             </div>
+          </Card>
+        )}
+
+        {/* Recommended Assistants */}
+        {assistants.length > 0 && (
+          <Card
+            style={{ marginTop: 24 }}
+            headStyle={{ background: 'linear-gradient(135deg, #eb2f96 0%, #b37feb 100%)', color: '#fff' }}
+            title={<span style={{ color: '#fff' }}><RobotOutlined style={{ marginRight: 8 }} />为你精准推荐的AI助手</span>}
+          >
+            <Row gutter={[16, 16]}>
+              {assistants.map((assistant: any) => (
+                <Col xs={24} sm={8} key={assistant.id}>
+                  <Card
+                    hoverable
+                    onClick={() => navigate(`/chat?assistant_id=${assistant.id}`)}
+                    style={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}
+                    bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+                  >
+                    <Avatar
+                      size={64}
+                      src={assistant.avatar}
+                      style={{
+                        background: 'linear-gradient(135deg, #eb2f96 0%, #b37feb 100%)',
+                        margin: '0 auto 16px',
+                        fontSize: 28,
+                      }}
+                    >
+                      {assistant.name?.[0]}
+                    </Avatar>
+                    <h4>{assistant.name}</h4>
+                    <Tag color="purple">{assistant.mbti_type}</Tag>
+                    {assistant.match_score && (
+                      <div style={{ marginTop: 8 }}>
+                        <Tag color={assistant.match_score >= 70 ? 'green' : assistant.match_score >= 50 ? 'orange' : 'blue'}>
+                          匹配度 {assistant.match_score}%
+                        </Tag>
+                      </div>
+                    )}
+                    <p style={{
+                      marginTop: 12,
+                      color: '#595959',
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      flex: 1,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}>
+                      {assistant.match_reason || assistant.personality?.slice(0, 60)}
+                    </p>
+                    <Button
+                      type="primary"
+                      size="small"
+                      style={{ marginTop: 12, background: '#eb2f96' }}
+                    >
+                      开始聊天
+                    </Button>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
           </Card>
         )}
 

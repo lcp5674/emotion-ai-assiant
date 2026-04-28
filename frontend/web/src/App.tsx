@@ -66,12 +66,8 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/crisis" element={<CrisisPage />} />
 
-      {/* 首页 - 需要登录 */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Home />
-        </ProtectedRoute>
-      } />
+      {/* 首页 - 公开可访问 */}
+      <Route path="/" element={<Home />} />
 
       {/* 知识库 - 需要登录 */}
       <Route path="/knowledge" element={
@@ -224,6 +220,7 @@ function AppRoutes() {
 
 export default function App() {
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
   // 设置全局 navigate 函数，用于 401 时跳转到登录页
   useEffect(() => {

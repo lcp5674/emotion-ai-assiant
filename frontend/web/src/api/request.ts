@@ -18,15 +18,21 @@ export const setNavigate = (navigate: (to: string) => void) => {
 }
 
 /**
- * Token获取优化
+ * Token获取和安全说明
  * 
- * 当前从localStorage读取Token存在XSS风险。
- * 建议后续迁移到：
- * 1. 后端设置 httpOnly Cookie（推荐）
- * 2. 使用 useAuthStore().access_token（需要zustand支持）
+ * ⚠️ 安全警告：
+ * 1. 当前从localStorage读取Token存在XSS风险
+ * 2. WebSocket Token通过URL参数传递，会被记录在日志中
  * 
- * 当前保留localStorage以兼容现有架构。
+ * 推荐迁移方案：
+ * 1. 后端设置 httpOnly Cookie（推荐）- Token自动随请求发送
+ * 2. WebSocket使用子协议进行认证 - 连接建立后发送认证消息
+ * 
+ * 当前保留localStorage以兼容现有架构，生产环境应尽快迁移
  */
+
+// 当前方案：使用 localStorage + URL参数（存在安全风险，待迁移）
+// 迁移后方案：httpOnly Cookie + WebSocket子协议认证
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
@@ -70,37 +76,34 @@ request.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // 401错误 - 判断是否需要跳转
-          // 登录接口的 401 是密码错误，不跳转，只返回错误提示
-          // 只有在已登录状态下 token 过期才需要跳转
+          // 401错误 - 直接跳转到登录页面
+          // 登录接口的 401 是密码错误，不跳转
+          // 其他接口的 401 说明未登录或token过期，需要跳转
           if (!isAuthEndpoint) {
-            // 非认证接口，检查是否有 token，有的话说明是 token 过期，需要跳转
-            const hasToken = localStorage.getItem('access_token')
-
-            if (hasToken) {
-              // 有 token，说明是 token 过期，清理并跳转
-              try {
-                localStorage.removeItem('access_token')
-                localStorage.removeItem('refresh_token')
-                localStorage.removeItem('auth-storage')
-              } catch (e) {
-                console.warn('清理token失败')
-              }
-
-              // 跳转到登录页面
-              if (navigateFn) {
-                navigateFn('/login')
-              } else {
-                window.location.href = '/login'
-              }
+            // 清理 token
+            try {
+              localStorage.removeItem('access_token')
+              localStorage.removeItem('refresh_token')
+              localStorage.removeItem('auth-storage')
+            } catch (e) {
+              console.warn('清理token失败')
             }
+
+            // 跳转到登录页面
+            if (navigateFn) {
+              navigateFn('/login')
+            } else {
+              window.location.href = '/login'
+            }
+            // 返回 rejected promise 阻止后续处理
+            return Promise.reject(new Error('Unauthorized: Token expired or invalid'))
           }
 
-          // 返回错误提示
+          // 登录接口返回密码错误提示
           if (data?.detail) {
             return Promise.reject(new Error(data.detail))
           }
-          return Promise.reject(new Error('登录已过期，请重新登录'))
+          return Promise.reject(new Error('登录失败，请检查账号密码'))
         case 404:
           // 404错误不抛出，而是返回null，让调用方优雅处理"未测评"等情况
           return null as any
@@ -127,9 +130,18 @@ export const api = {
   auth: {
     sendCode: (phone: string): Promise<any> =>
       request.post('/auth/send_code', { phone }),
-    register: (data: { phone: string; password: string; code: string; nickname?: string }): Promise<any> =>
+    // 注册 - 支持手机号、邮箱、用户名
+    register: (data: {
+      phone?: string;
+      email?: string;
+      username?: string;
+      password: string;
+      code?: string;
+      nickname?: string;
+    }): Promise<any> =>
       request.post('/auth/register', data),
-    login: (data: { phone: string; password: string }): Promise<any> =>
+    // 登录 - 支持用户名、手机号、邮箱
+    login: (data: { identifier: string; password: string }): Promise<any> =>
       request.post('/auth/login', data),
     refresh: (refresh_token: string): Promise<any> =>
       request.post('/auth/refresh', { refresh_token }),
@@ -167,6 +179,8 @@ export const api = {
     result: (): Promise<any> => request.get('/mbti/result'),
     assistants: (params?: { mbti_type?: string; tags?: string; recommended?: boolean }): Promise<any> =>
       request.get('/mbti/assistants', { params }),
+    recommendedAssistants: (): Promise<any> =>
+      request.get('/mbti/assistants/recommended'),
     assistantDetail: (id: number): Promise<any> => request.get(`/mbti/assistants/${id}`),
     toggleFavorite: (assistant_id: number): Promise<{ is_favorited: boolean; message: string }> =>
       request.post(`/mbti/assistants/${assistant_id}/favorite`),
@@ -187,13 +201,15 @@ export const api = {
       request.post('/chat/collect', { message_id }),
     close: (session_id: string): Promise<any> =>
       request.post(`/chat/close/${session_id}`),
+    delete: (session_id: string): Promise<any> =>
+      request.delete(`/chat/conversations/${session_id}`),
     updateTitle: (session_id: string, title: string): Promise<any> =>
       request.put(`/chat/title/${session_id}`, { title }),
   },
 
   // 知识库
   knowledge: {
-    articles: (params?: { category?: string; page?: number; page_size?: number }): Promise<any> =>
+    articles: (params?: { category?: string; tags?: string; page?: number; page_size?: number }): Promise<any> =>
       request.get('/knowledge/articles', { params }),
     articleDetail: (id: number): Promise<any> => request.get(`/knowledge/articles/${id}`),
     banners: (position: string = 'home'): Promise<any> =>
@@ -224,6 +240,14 @@ export const api = {
     createAssistant: (data: any): Promise<any> => request.post('/admin/assistants', data),
     updateAssistant: (id: number, data: any): Promise<any> => request.put(`/admin/assistants/${id}`, data),
     deleteAssistant: (id: number): Promise<any> => request.delete(`/admin/assistants/${id}`),
+    // 知识库同步
+    knowledgeSyncConfig: (): Promise<any> => request.get('/admin/knowledge-sync/config'),
+    updateKnowledgeSyncConfig: (data: any): Promise<any> => request.put('/admin/knowledge-sync/config', data),
+    triggerKnowledgeSync: (): Promise<any> => request.post('/admin/knowledge-sync/trigger'),
+    knowledgeSyncStatus: (): Promise<any> => request.get('/admin/knowledge-sync/status'),
+    // 知识库Embedding和分块配置
+    knowledgeBaseConfig: (): Promise<any> => request.get('/admin/knowledge-base/config'),
+    updateKnowledgeBaseConfig: (data: any): Promise<any> => request.put('/admin/knowledge-base/config', data),
   },
 
   // 情感日记
@@ -246,7 +270,7 @@ export const api = {
     deleteTag: (id: number): Promise<any> => request.delete(`/diary/tags/${id}`),
 
     // 统计和分析
-    stats: (): Promise<any> => request.get('/diary/stats'),
+    stats: (time_range: string = 'month'): Promise<any> => request.get('/diary/stats', { params: { time_range } }),
     trend: (time_range: string = 'week'): Promise<any> => request.get('/diary/trend', { params: { time_range } }),
     analyze: (id: number): Promise<any> => request.post(`/diary/analyze/${id}`),
 
@@ -330,6 +354,27 @@ export const api = {
   profile: {
     deep: (): Promise<any> => request.get('/profile/deep'),
     aiPartners: (): Promise<any> => request.get('/profile/ai-partners'),
+  },
+
+  // 虚拟形象
+  avatar: {
+    config: (): Promise<any> => request.get('/avatar/config'),
+    get: (assistantId: number): Promise<any> => request.get(`/avatar/${assistantId}`),
+    animate: (data: {
+      assistant_id?: number
+      message?: string
+      response?: string
+      emotion?: string
+      force_expression?: string
+      force_motion?: string
+    }): Promise<any> => request.post('/avatar/animate', data),
+    animateForAssistant: (assistantId: number, data: {
+      message?: string
+      response?: string
+      emotion?: string
+      force_expression?: string
+      force_motion?: string
+    }): Promise<any> => request.post(`/avatar/animate/${assistantId}`, data),
   },
 
   // 每日打卡

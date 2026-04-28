@@ -193,7 +193,7 @@ export default function SbtiResult() {
 
   const loadAssistants = async () => {
     try {
-      const res = await api.mbti.assistants({ recommended: true })
+      const res = await api.mbti.recommendedAssistants()
       setAssistants(res.list?.slice(0, 3) || [])
     } catch (error) {
       console.error(error)
@@ -277,9 +277,9 @@ export default function SbtiResult() {
       <div className="container" style={{ marginTop: -20 }}>
         {/* Back Button */}
         <div style={{ marginBottom: 16 }}>
-          <Link to="/sbti">
-            <Button icon={<ArrowLeftOutlined />}>返回测试</Button>
-          </Link>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/comprehensive')}>
+            返回测评
+          </Button>
         </div>
 
         {/* Top 5 Themes */}
@@ -430,14 +430,15 @@ export default function SbtiResult() {
 
         {/* Recommended Assistants */}
         {assistants.length > 0 && (
-          <Card title="为你推荐的AI助手">
+          <Card title="为你精准推荐的AI助手">
             <Row gutter={[16, 16]}>
               {assistants.map((assistant: any) => (
                 <Col xs={24} sm={8} key={assistant.id}>
                   <Card
                     hoverable
                     onClick={() => navigate(`/chat?assistant_id=${assistant.id}`)}
-                    style={{ textAlign: 'center' }}
+                    style={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}
+                    bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
                   >
                     <Avatar
                       size={64}
@@ -451,10 +452,34 @@ export default function SbtiResult() {
                       {assistant.name?.[0]}
                     </Avatar>
                     <h4>{assistant.name}</h4>
-                    <p style={{ color: '#8c8c8c', fontSize: 14, marginBottom: 8 }}>
-                      {assistant.personality?.slice(0, 50)}...
-                    </p>
                     <Tag color="purple">{assistant.mbti_type}</Tag>
+                    {assistant.match_score && (
+                      <div style={{ marginTop: 8 }}>
+                        <Tag color={assistant.match_score >= 70 ? 'green' : assistant.match_score >= 50 ? 'orange' : 'blue'}>
+                          匹配度 {assistant.match_score}%
+                        </Tag>
+                      </div>
+                    )}
+                    <p style={{
+                      marginTop: 12,
+                      color: '#595959',
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      flex: 1,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}>
+                      {assistant.match_reason || assistant.personality?.slice(0, 60)}
+                    </p>
+                    <Button
+                      type="primary"
+                      size="small"
+                      style={{ marginTop: 12, background: '#722ed1' }}
+                    >
+                      开始聊天
+                    </Button>
                   </Card>
                 </Col>
               ))}

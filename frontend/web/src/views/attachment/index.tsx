@@ -196,9 +196,7 @@ export default function AttachmentIndex() {
 
         {/* Back Link */}
         <div style={{ textAlign: 'center', marginTop: 32 }}>
-          <Link to="/">
-            <Button type="text">返回首页</Button>
-          </Link>
+          <Button type="text" onClick={() => navigate(-1)}>返回</Button>
         </div>
       </div>
     </div>

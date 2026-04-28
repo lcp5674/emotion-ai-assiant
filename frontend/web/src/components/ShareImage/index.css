@@ -10,6 +10,10 @@
   background: #f5f5f5;
   border-radius: 8px;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 
 .loading-wrapper {
@@ -24,9 +28,17 @@
 }
 
 .share-canvas {
-  max-width: 100%;
+  width: 100%;
+  max-width: 540px;
   height: auto;
   border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+@media (min-width: 768px) {
+  .share-canvas {
+    max-width: 600px;
+  }
 }
 
 .share-actions {

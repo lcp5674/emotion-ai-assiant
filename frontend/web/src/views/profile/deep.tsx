@@ -674,13 +674,16 @@ export default function DeepProfile() {
         <Card
           style={{ marginTop: 24 }}
           headStyle={{ background: 'linear-gradient(135deg, #722ed1 0%, #eb2f96 100%)', color: '#fff' }}
-          title={<span style={{ color: '#fff' }}><RobotOutlined style={{ marginRight: 8 }} />为你匹配的AI伴侣</span>}
+          title={<span style={{ color: '#fff' }}><RobotOutlined style={{ marginRight: 8 }} />为你精准匹配的AI伴侣</span>}
         >
-          {aiPartners.length > 0 ? (
+          {aiPartners.filter((p: any) => (p.match_score || 0) >= 85).length > 0 ? (
             <Row gutter={[16, 16]}>
-              {aiPartners.map((partner: any) => (
+              {aiPartners
+                .filter((p: any) => (p.match_score || 0) >= 85)
+                .map((partner: any) => (
                 <Col xs={24} sm={12} md={8} key={partner.id}>
-                  <Card hoverable onClick={() => navigate(`/chat?assistant_id=${partner.id}`)} style={{ height: '100%' }}>
+                  <Card hoverable onClick={() => navigate(`/chat?assistant_id=${partner.id}`)} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                    bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ textAlign: 'center' }}>
                       <Avatar
                         size={64}
@@ -693,9 +696,14 @@ export default function DeepProfile() {
                       <div style={{ marginBottom: 8 }}>
                         {partner.mbti_type && <Tag color="purple">{partner.mbti_type}</Tag>}
                         {partner.attachment_style && <Tag color="green">{partner.attachment_style}</Tag>}
+                        {partner.match_score && (
+                          <Tag color={partner.match_score >= 90 ? 'green' : partner.match_score >= 85 ? 'blue' : 'orange'}>
+                            匹配度 {partner.match_score}%
+                          </Tag>
+                        )}
                       </div>
-                      <p style={{ color: '#8c8c8c', fontSize: 13, marginBottom: 12 }}>
-                        {partner.match_reason || partner.personality?.slice(0, 60)}...
+                      <p style={{ color: '#595959', fontSize: 13, marginBottom: 12, lineHeight: 1.6, flex: 1 }}>
+                        {partner.match_reason || partner.personality?.slice(0, 60)}
                       </p>
                       <Button type="primary" size="small" style={{ background: '#722ed1' }}>
                         开始聊天
@@ -706,7 +714,7 @@ export default function DeepProfile() {
               ))}
             </Row>
           ) : (
-            <Empty description="暂无匹配的AI伴侣" />
+            <Empty description="暂无高匹配度的AI伴侣" />
           )}
         </Card>
 

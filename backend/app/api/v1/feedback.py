@@ -171,7 +171,12 @@ async def get_system_feedback_stats(
     """
     获取系统反馈统计（管理员用）
     """
-    # TODO: 添加管理员权限验证
+    # 管理员权限验证
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="需要管理员权限"
+        )
     feedback_service = get_feedback_service()
     stats = feedback_service.get_system_feedback_stats(
         db=db,

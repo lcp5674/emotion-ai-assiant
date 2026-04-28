@@ -136,6 +136,40 @@ export default function PaymentPage() {
         </Card>
       )}
 
+      <div className="benefits-comparison">
+        <h3>免费 vs VIP 权益对比</h3>
+        <div className="benefit-row">
+          <span className="benefit-label">每日对话次数</span>
+          <span className="benefit-free">10次/天</span>
+          <span className="benefit-vip">无限次</span>
+        </div>
+        <div className="benefit-row">
+          <span className="benefit-label">AI模型</span>
+          <span className="benefit-free">基础版</span>
+          <span className="benefit-vip">GPT-4/Claude</span>
+        </div>
+        <div className="benefit-row">
+          <span className="benefit-label">深度人格分析</span>
+          <span className="benefit-free">-</span>
+          <span className="benefit-vip">✅ 完整版</span>
+        </div>
+        <div className="benefit-row">
+          <span className="benefit-label">情感日记分析</span>
+          <span className="benefit-free">基础统计</span>
+          <span className="benefit-vip">AI智能分析</span>
+        </div>
+        <div className="benefit-row">
+          <span className="benefit-label">专属徽章</span>
+          <span className="benefit-free">-</span>
+          <span className="benefit-vip">守护天使</span>
+        </div>
+        <div className="benefit-row">
+          <span className="benefit-label">Live2D动画</span>
+          <span className="benefit-free">基础</span>
+          <span className="benefit-vip">情绪响应</span>
+        </div>
+      </div>
+
       <div className="plans-container">
         <h2 className="section-title">选择会员套餐</h2>
         <div className="plans-list">

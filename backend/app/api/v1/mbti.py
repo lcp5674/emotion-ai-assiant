@@ -102,6 +102,9 @@ async def submit_test(
     if user:
         user.mbti_type = result["mbti_type"]
         user.mbti_result_id = mbti_result.id
+        # 根据MBTI类型更新昵称
+        new_nickname = mbti_service.generate_nickname_from_mbti(result["mbti_type"], user.nickname)
+        user.nickname = new_nickname
         db.commit()
         db.refresh(user)
     else:
@@ -203,6 +206,84 @@ async def get_assistants(
     for a in assistants:
         schema = AiAssistantSchema.model_validate(a)
         schema.is_favorited = a.id in favorited_ids
+        assistant_list.append(schema)
+
+    return AiAssistantListResponse(
+        total=len(assistant_list),
+        list=assistant_list,
+    )
+
+
+@router.get("/assistants/recommended", summary="获取高匹配度AI助手（98%以上，需完成三位一体测评）")
+async def get_high_match_assistants(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取高匹配度的AI助手列表（98%以上匹配度），要求完成三位一体测评
+    
+    如果没有找到98%以上匹配度的助手，会自动为用户创建一个专属定制化助手
+    """
+    mbti_service = get_mbti_service()
+
+    # 获取高匹配度助手（98%以上）
+    scored_assistants = mbti_service.get_high_match_recommended_assistants(
+        db, 
+        current_user.id,
+        min_match_score=98.0
+    )
+
+    # 获取用户收藏列表
+    favorited_ids = set()
+    favorites = db.query(AssistantCollection).filter(
+        AssistantCollection.user_id == current_user.id
+    ).all()
+    favorited_ids = {f.assistant_id for f in favorites}
+
+    # 构建返回数据
+    assistant_list = []
+    for item in scored_assistants:
+        assistant = item["assistant"]
+        schema = AiAssistantSchema.model_validate(assistant)
+        schema.is_favorited = assistant.id in favorited_ids
+        schema.match_reason = item["match_reason"]
+        schema.match_score = item["match_score"]
+        assistant_list.append(schema)
+
+    return AiAssistantListResponse(
+        total=len(assistant_list),
+        list=assistant_list,
+    )
+
+
+@router.get("/assistants/recommended/all", summary="获取所有推荐的AI助手（带推荐理由）")
+async def get_all_recommended_assistants(
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """获取所有推荐的AI助手列表（包含未完成三位一体测评的情况）"""
+    mbti_service = get_mbti_service()
+
+    user_id = current_user.id if current_user else None
+
+    # 获取带推荐理由的助手列表
+    scored_assistants = mbti_service.get_recommended_assistants_with_reason(db, user_id)
+
+    # 获取用户收藏列表
+    favorited_ids = set()
+    if current_user:
+        favorites = db.query(AssistantCollection).filter(
+            AssistantCollection.user_id == current_user.id
+        ).all()
+        favorited_ids = {f.assistant_id for f in favorites}
+
+    # 构建返回数据
+    assistant_list = []
+    for item in scored_assistants:
+        assistant = item["assistant"]
+        schema = AiAssistantSchema.model_validate(assistant)
+        schema.is_favorited = assistant.id in favorited_ids
+        schema.match_reason = item["match_reason"]
+        schema.match_score = item["match_score"]
         assistant_list.append(schema)
 
     return AiAssistantListResponse(
@@ -334,6 +415,9 @@ async def submit_quick_test(
     if user:
         user.mbti_type = MbtiType[result["mbti_type"]]
         user.mbti_result_id = mbti_result.id
+        # 根据MBTI类型更新昵称
+        new_nickname = mbti_service.generate_nickname_from_mbti(result["mbti_type"], user.nickname)
+        user.nickname = new_nickname
         db.commit()
         db.refresh(user)
     else:

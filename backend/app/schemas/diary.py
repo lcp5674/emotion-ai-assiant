@@ -203,6 +203,7 @@ class DiaryStatsResponse(BaseModel):
     categories: Dict[str, int]
     this_month_count: int
     last_month_count: int
+    period_count: int = 0  # 当前选择周期的记录数
 
 
 class AnalysisResponse(BaseModel):

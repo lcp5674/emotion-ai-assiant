@@ -25,6 +25,57 @@ class MbtiService:
         "JP": ("判断", "知觉"),
     }
 
+    # MBTI类型昵称后缀
+    NICKNAME_SUFFIXES = {
+        "ISTJ": "务实者",
+        "ISFJ": "守护者",
+        "INFJ": "知心者",
+        "INTJ": "战略家",
+        "ISTP": "实践者",
+        "ISFP": "艺术家",
+        "INFP": "理想者",
+        "INTP": "思考者",
+        "ESTP": "行动者",
+        "ESFP": "表演者",
+        "ENFP": "激励者",
+        "ENTP": "辩论家",
+        "ESTJ": "管理者",
+        "ESFJ": "执政官",
+        "ENFJ": "教育家",
+        "ENTJ": "指挥官",
+    }
+
+    @staticmethod
+    def generate_nickname_from_mbti(mbti_type: str, original_nickname: str = None) -> str:
+        """根据MBTI类型生成昵称
+
+        Args:
+            mbti_type: MBTI类型（如 INFJ, ENFP 等）
+            original_nickname: 用户原始昵称，如果是自动生成的则替换
+
+        Returns:
+            基于MBTI的新昵称
+        """
+        import random
+        import string
+
+        suffix = MbtiService.NICKNAME_SUFFIXES.get(mbti_type, "探索者")
+
+        # 检查原始昵称是否是自动生成的（包含"用户"或数字过多）
+        is_auto_generated = False
+        if original_nickname:
+            # 如果昵称包含"用户"或看起来像"心灵XX1234"格式，则是自动生成的
+            if "用户" in original_nickname or len([c for c in original_nickname if c.isdigit()]) >= 4:
+                is_auto_generated = True
+
+        if is_auto_generated or not original_nickname:
+            # 生成一个2-4位的随机字符作为唯一标识
+            unique_id = ''.join(random.choices(string.ascii_lowercase + string.digits, k=random.randint(2, 4)))
+            return f"{suffix}{unique_id}"
+        else:
+            # 如果用户有自定义昵称，保留并在前面加上MBTI类型
+            return f"{suffix}{original_nickname[:2]}"
+
     # MBTI类型描述
     TYPE_DESCRIPTIONS = {
         "ISTJ": {
@@ -262,6 +313,148 @@ class MbtiService:
         }
         return advice.get(mbti_type, "找到你热爱的领域，发挥你的优势。")
 
+    def _generate_match_reason(self, assistant: 'AiAssistant', user_profile: dict, score: float) -> str:
+        """生成详细的推荐理由"""
+        reasons = []
+        user_mbti = user_profile.get('mbti')
+        user_sbti = user_profile.get('sbti', [])
+        user_attachment = user_profile.get('attachment')
+
+        # MBTI匹配分析
+        if user_mbti and str(assistant.mbti_type) == user_mbti:
+            mbti_descriptions = {
+                "ISTJ": "务实可靠型", "ISFJ": "温柔守护型", "INFJ": "理想洞察型",
+                "INTJ": "战略思维型", "ISTP": "灵活实践型", "ISFP": "艺术敏感型",
+                "INFP": "理想调停型", "INTP": "逻辑思考型", "ESTP": "活力行动型",
+                "ESFP": "热情表演型", "ENFP": "激励创意型", "ENTP": "创新辩论型",
+                "ESTJ": "高效执行型", "ESFJ": "关怀付出型", "ENFJ": "领导激励型", "ENTJ": "决断指挥官型"
+            }
+            reasons.append(f"你们的MBTI类型完全一致（{mbti_descriptions.get(user_mbti, user_mbti)}），{assistant.name}能深刻理解你的思维方式和行为习惯")
+        elif user_mbti:
+            # 部分匹配
+            assistant_first = str(assistant.mbti_type)[0]
+            user_first = user_mbti[0]
+            dimension_names = {"E": "外向", "I": "内向", "S": "感觉", "N": "直觉",
+                              "T": "思维", "F": "情感", "J": "判断", "P": "知觉"}
+            if assistant_first == user_first:
+                assistant_second = str(assistant.mbti_type)[1]
+                user_second = user_mbti[1]
+                if assistant_second == user_second:
+                    reasons.append(f"你们在{dimension_names.get(assistant_first, assistant_first)}维度上相同，沟通会更顺畅")
+
+        # SBTI才干匹配分析
+        if user_sbti and assistant.sbti_types:
+            assistant_sbti_list = [s.strip() for s in assistant.sbti_types.split(',') if s.strip()]
+            matching_themes = [s for s in user_sbti if s in assistant_sbti_list]
+            if matching_themes:
+                theme_names = {
+                    "成就": "成就导向", "行动": "行动导向", "适应": "适应变化", "统筹": "统筹规划",
+                    "信仰": "信念坚定", "公平": "公平正义", "审慎": "谨慎稳健", "纪律": "自律规范",
+                    "专注": "专注深入", "责任": "责任担当", "排难": "问题解决", "统率": "领导统率",
+                    "沟通": "沟通表达", "竞争": "竞争进取", "完美": "追求完美", "自信": "自信坚定",
+                    "追求": "追求认可", "取悦": "人际和谐", "关联": "关联思维", "伯乐": "培养指导",
+                    "体谅": "同理理解", "和谐": "和谐调解", "包容": "包容多元", "个别": "关注个体",
+                    "积极": "积极乐观", "交往": "社交交往", "分析": "分析思考", "回顾": "经验总结",
+                    "前瞻": "前瞻预见", "理念": "理念理想", "搜集": "信息搜集", "思维": "思维深度",
+                    "学习": "学习成长", "战略": "战略规划"
+                }
+                matched_names = [theme_names.get(t, t) for t in matching_themes[:3]]
+                reasons.append(f"你们共享「{'」「'.join(matched_names)}」等才干主题，交流更有共鸣")
+
+        # 依恋风格匹配分析
+        if user_attachment and assistant.attachment_styles:
+            assistant_attach_list = [a.strip() for a in assistant.attachment_styles.split(',') if a.strip()]
+            # 标准化：提取实际值（去掉 AttachmentStyle. 前缀）
+            normalized_assistant_attach = []
+            for a in assistant_attach_list:
+                if '.' in a:
+                    normalized_assistant_attach.append(a.split('.')[-1].lower())
+                else:
+                    normalized_assistant_attach.append(a.lower())
+
+            # 标准化用户值
+            user_attach_lower = user_attachment.lower() if isinstance(user_attachment, str) else user_attachment
+
+            if user_attach_lower in normalized_assistant_attach:
+                attach_descriptions = {
+                    "secure": "安全型",
+                    "anxious": "焦虑型",
+                    "avoidant": "回避型",
+                    "disorganized": "混乱型"
+                }
+                reasons.append(f"你们都是{attach_descriptions.get(user_attach_lower, user_attach_lower)}依恋风格，在情感交流上更容易建立信任")
+            elif user_attach_lower == "secure":
+                reasons.append("作为安全型依恋，你能够理解和包容不同依恋风格的伴侣")
+
+        # 个性化和专长匹配
+        if assistant.personality and user_mbti:
+            personality_keywords = {
+                "INFJ": ["同理心", "洞察力", "理想主义", "治愈"],
+                "INTJ": ["逻辑", "战略", "独立", "分析"],
+                "ENFP": ["热情", "创意", "激励", "正能量"],
+                "ENFJ": ["领导力", "感染力", "关怀", "激励"],
+                "ISTP": ["冷静", "务实", "问题解决", "灵活"],
+                "ISFJ": ["温柔", "守护", "体贴", "关怀"],
+                "INFP": ["理想", "创意", "诗意", "真诚"],
+                "ENTJ": ["决断", "效率", "领导力", "战略"]
+            }
+            keywords = personality_keywords.get(str(assistant.mbti_type), [])
+            matched_keywords = [k for k in keywords if k in assistant.personality]
+            if matched_keywords:
+                reasons.append(f"助手擅长{matched_keywords[0]}，正好契合你的需求")
+
+        # 生成最终推荐理由
+        if not reasons:
+            reasons.append(f"{assistant.name}能够为你提供专业的情感支持和陪伴")
+
+        return "；".join(reasons)
+
+    def get_recommended_assistants_with_reason(
+        self,
+        db: Session,
+        user_id: Optional[int] = None,
+    ) -> List[dict]:
+        """获取推荐的AI助手列表（带详细推荐理由）"""
+        query = db.query(AiAssistant).filter(AiAssistant.is_active == True)
+        assistants = query.all()
+
+        if not user_id:
+            # 无用户ID时，返回默认推荐
+            return [{
+                "assistant": a,
+                "match_score": 50.0,
+                "match_reason": f"{a.name}是我们为你精选的AI助手伙伴"
+            } for a in assistants[:3]]
+
+        # 获取用户的三项测评结果
+        from app.models import User
+        user = db.query(User).filter(User.id == user_id).first()
+
+        if not user:
+            return [{
+                "assistant": a,
+                "match_score": 50.0,
+                "match_reason": f"{a.name}是我们为你精选的AI助手伙伴"
+            } for a in assistants[:3]]
+
+        user_profile = self._get_user_personality_profile(db, user)
+
+        # 计算兼容性评分并生成推荐理由
+        scored_assistants = []
+        for assistant in assistants:
+            score = self._calculate_compatibility(assistant, user_profile)
+            reason = self._generate_match_reason(assistant, user_profile, score)
+            scored_assistants.append({
+                "assistant": assistant,
+                "match_score": round(score, 1),
+                "match_reason": reason
+            })
+
+        # 按兼容性分数降序排序
+        scored_assistants.sort(key=lambda x: x["match_score"], reverse=True)
+
+        return scored_assistants
+
     def get_recommended_assistants(
         self,
         db: Session,
@@ -272,29 +465,42 @@ class MbtiService:
         """获取推荐的AI助手（支持三位一体综合推荐）"""
         query = db.query(AiAssistant).filter(AiAssistant.is_active == True)
 
-        assistants = query.all()
+        # 如果提供了明确的过滤参数，使用简单过滤
+        # 只有在没有提供任何过滤参数时，才进行三位一体个性化推荐
+        if mbti_type is not None or tags is not None:
+            assistants = query.all()
 
-        # 如果提供了user_id，进行三位一体综合匹配
-        if user_id:
-            # 获取用户的三项测评结果
-            from app.models import User
-            user = db.query(User).filter(User.id == user_id).first()
-            if user:
-                user_profile = self._get_user_personality_profile(db, user)
-                # 计算兼容性评分并排序
-                scored_assistants = []
-                for assistant in assistants:
-                    score = self._calculate_compatibility(assistant, user_profile)
-                    scored_assistants.append((assistant, score))
-                # 按兼容性分数降序排序
-                scored_assistants.sort(key=lambda x: x[1], reverse=True)
-                return [a[0] for a in scored_assistants]
+            # MBTI类型过滤 - 数据库存储的是Enum类型，需要用 .value 来比较
+            if mbti_type:
+                # 使用 .value 获取枚举的实际值（如 "INTJ"）进行比较
+                assistants = [a for a in assistants if a.mbti_type and a.mbti_type.value == mbti_type]
 
-        # 原有的简单过滤逻辑
-        if mbti_type:
-            assistants = [a for a in assistants if str(a.mbti_type) == mbti_type]
+            # 标签过滤
+            if tags:
+                assistants = [a for a in assistants if a.tags and any(tag in a.tags for tag in tags)]
 
-        return assistants
+            return assistants
+        else:
+            # 没有提供过滤参数时，进行三位一体综合匹配
+            assistants = query.all()
+
+            # 如果提供了user_id，进行三位一体综合匹配
+            if user_id:
+                # 获取用户的三项测评结果
+                from app.models import User
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    user_profile = self._get_user_personality_profile(db, user)
+                    # 计算兼容性评分并排序
+                    scored_assistants = []
+                    for assistant in assistants:
+                        score = self._calculate_compatibility(assistant, user_profile)
+                        scored_assistants.append((assistant, score))
+                    # 按兼容性分数降序排序
+                    scored_assistants.sort(key=lambda x: x[1], reverse=True)
+                    return [a[0] for a in scored_assistants]
+
+            return assistants
 
     def _get_user_personality_profile(self, db: Session, user: 'User') -> dict:
         """获取用户的人格画像（MBTI + SBTI + 依恋风格）"""
@@ -331,39 +537,231 @@ class MbtiService:
         return profile
 
     def _calculate_compatibility(self, assistant: 'AiAssistant', user_profile: dict) -> float:
-        """计算助手与用户的兼容性评分（0-100）"""
+        """计算助手与用户的兼容性评分（0-100）- 优化版以支持高匹配度"""
         score = 0.0
         weights = {'mbti': 40, 'sbti': 35, 'attachment': 25}
 
         # MBTI匹配（40%权重）
-        if user_profile['mbti'] and str(assistant.mbti_type) == user_profile['mbti']:
-            score += weights['mbti']
-        elif user_profile['mbti']:
-            # 部分匹配：检查第一个字母是否相同（能量方向）
-            if str(assistant.mbti_type)[0] == user_profile['mbti'][0]:
-                score += weights['mbti'] * 0.3
+        if user_profile['mbti']:
+            assistant_mbti = assistant.mbti_type.value if hasattr(assistant.mbti_type, 'value') else str(assistant.mbti_type)
+            user_mbti = user_profile['mbti']
+            
+            if assistant_mbti == user_mbti:
+                # 完全匹配：40分
+                score += weights['mbti']
+            else:
+                # 部分匹配：检查每个维度的匹配
+                match_count = 0
+                for i in range(4):
+                    if assistant_mbti[i] == user_mbti[i]:
+                        match_count += 1
+                # 按匹配维度比例计分
+                score += weights['mbti'] * (match_count / 4)
 
         # SBTI匹配（35%权重）
         if user_profile['sbti'] and assistant.sbti_types:
             assistant_sbti = [s.strip() for s in assistant.sbti_types.split(',') if s.strip()]
             matches = sum(1 for s in user_profile['sbti'] if s in assistant_sbti)
             if matches > 0:
-                score += (matches / len(user_profile['sbti'])) * weights['sbti']
+                # 优化：匹配2个及以上主题时给高分
+                if matches >= 2:
+                    score += weights['sbti']  # 完全匹配
+                else:
+                    score += (matches / len(user_profile['sbti'])) * weights['sbti']
 
         # 依恋风格匹配（25%权重）
         if user_profile['attachment'] and assistant.attachment_styles:
             assistant_attach = [a.strip() for a in assistant.attachment_styles.split(',') if a.strip()]
-            if user_profile['attachment'] in assistant_attach:
-                score += weights['attachment']
+            # 获取用户依恋风格的字符串值（处理枚举类型）
+            user_attach = user_profile['attachment']
+            if hasattr(user_attach, 'value'):
+                user_attach = user_attach.value
+
+            # 标准化比较：提取实际值（去掉 AttachmentStyle. 前缀）
+            normalized_assistant_attach = []
+            for a in assistant_attach:
+                if '.' in a:
+                    # 去掉 "AttachmentStyle." 前缀得到实际值如 "AVOIDANT"
+                    normalized_assistant_attach.append(a.split('.')[-1].lower())
+                else:
+                    normalized_assistant_attach.append(a.lower())
+
+            # 标准化用户值
+            normalized_user_attach = user_attach.lower() if isinstance(user_attach, str) else user_attach
+
+            if normalized_user_attach in normalized_assistant_attach:
+                score += weights['attachment']  # 完全匹配
             # 安全型依恋可以与其他类型较好匹配
-            elif user_profile['attachment'] == 'secure' and len(assistant_attach) > 0:
-                score += weights['attachment'] * 0.3
+            elif normalized_user_attach == 'secure' and len(normalized_assistant_attach) > 0:
+                score += weights['attachment'] * 0.8  # 安全型兼容性更高
 
         # 如果助手有推荐标记，增加分数
         if assistant.is_recommended:
             score += 5
 
         return min(score, 100)
+
+    def create_personalized_assistant(self, db: Session, user_id: int, user_profile: dict) -> 'AiAssistant':
+        """为用户创建专属的定制化助手"""
+        from app.models import User
+
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise ValueError("用户不存在")
+
+        mbti_type = user_profile.get('mbti', 'INFJ')
+        sbti_themes = user_profile.get('sbti', [])
+        attachment_style = user_profile.get('attachment', 'secure')
+
+        # 根据MBTI类型生成个性化配置
+        mbti_configs = {
+            "ISTJ": {"name_suffix": "务实者", "personality": "务实可靠、注重细节、有责任感", "speaking_style": "条理清晰、实事求是、简洁明了"},
+            "ISFJ": {"name_suffix": "守护者", "personality": "温柔体贴、忠诚可靠、关怀他人", "speaking_style": "柔声细语、体贴入微、令人安心"},
+            "INFJ": {"name_suffix": "知心者", "personality": "理想主义、洞察力强、富有同理心", "speaking_style": "温暖理解、富有深度、启发思考"},
+            "INTJ": {"name_suffix": "战略家", "personality": "战略思维、独立分析、追求效率", "speaking_style": "逻辑清晰、简洁有力、富有洞见"},
+            "ISTP": {"name_suffix": "实践者", "personality": "冷静理性、灵活务实、动手能力强", "speaking_style": "简洁直接、实事求是、解决问题"},
+            "ISFP": {"name_suffix": "艺术家", "personality": "温和敏感、艺术气质、追求和谐", "speaking_style": "温柔诗意、富有美感、细腻体贴"},
+            "INFP": {"name_suffix": "理想者", "personality": "理想主义、富有创意、追求意义", "speaking_style": "诗意浪漫、富有想象力、触动心灵"},
+            "INTP": {"name_suffix": "思考者", "personality": "逻辑思维、抽象思考、追求真理", "speaking_style": "条理清晰、逻辑严密、富有深度"},
+            "ESTP": {"name_suffix": "行动者", "personality": "活力十足、务实灵活、善于社交", "speaking_style": "活泼热情、直接爽快、充满能量"},
+            "ESFP": {"name_suffix": "表演者", "personality": "热情开朗、富有魅力、活在当下", "speaking_style": "热情洋溢、幽默风趣、感染力强"},
+            "ENFP": {"name_suffix": "激励者", "personality": "热情创意、灵感丰富、善于激励", "speaking_style": "活泼热情、创意无限、充满正能量"},
+            "ENTP": {"name_suffix": "辩论家", "personality": "创新思维、善于辩论、喜欢挑战", "speaking_style": "机智幽默、思维敏捷、富有创意"},
+            "ESTJ": {"name_suffix": "管理者", "personality": "组织能力强、传统务实、注重结果", "speaking_style": "简洁有力、条理清晰、高效务实"},
+            "ESFJ": {"name_suffix": "执政官", "personality": "社交能力强、传统关怀、乐于助人", "speaking_style": "亲切温暖、关怀他人、善于沟通"},
+            "ENFJ": {"name_suffix": "教育家", "personality": "领导能力强、同理心强、善于激励", "speaking_style": "亲切温暖、循循善诱、充满力量"},
+            "ENTJ": {"name_suffix": "指挥官", "personality": "领导力强、决断力高、追求效率", "speaking_style": "简洁有力、目标明确、雷厉风行"},
+        }
+
+        config = mbti_configs.get(mbti_type, mbti_configs["INFJ"])
+        
+        # 生成助手名称
+        nickname = user.nickname or "用户"
+        assistant_name = f"{nickname}的专属{config['name_suffix']}"
+        
+        # 构建SBTI主题字符串
+        sbti_types_str = ','.join(sbti_themes) if sbti_themes else None
+        
+        # 构建依恋风格字符串
+        attachment_styles_str = attachment_style if attachment_style else "secure"
+
+        # 创建助手
+        assistant = AiAssistant(
+            name=assistant_name,
+            mbti_type=mbti_type,
+            sbti_types=sbti_types_str,
+            attachment_styles=attachment_styles_str,
+            personality=config["personality"],
+            speaking_style=config["speaking_style"],
+            expertise="个性化情感陪伴、自我探索、成长支持",
+            greeting=f"你好！我是专门为你定制的AI助手。基于你的人格特点，我会用最适合你的方式陪伴你。",
+            tags="专属定制,个性化,高匹配度",
+            is_recommended=True,
+            is_active=True,
+            sort_order=100,
+        )
+        
+        db.add(assistant)
+        db.commit()
+        db.refresh(assistant)
+        
+        return assistant
+
+    def get_high_match_recommended_assistants(
+        self,
+        db: Session,
+        user_id: int,
+        min_match_score: float = 98.0,
+    ) -> List[dict]:
+        """获取高匹配度的推荐助手（支持部分测评结果）"""
+        from app.models import User
+
+        # 获取用户
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return []
+
+        # 获取用户人格画像（支持部分测评）
+        user_profile = self._get_user_personality_profile(db, user)
+
+        # 检查是否至少有一项测评完成
+        has_mbti = bool(user_profile.get('mbti'))
+        has_sbti = bool(user_profile.get('sbti'))
+        has_attachment = bool(user_profile.get('attachment'))
+        has_any = has_mbti or has_sbti or has_attachment
+
+        if not has_any:
+            # 未完成任何测评，返回空列表
+            return []
+
+        # 获取所有活跃助手
+        query = db.query(AiAssistant).filter(AiAssistant.is_active == True)
+        assistants = query.all()
+
+        # 如果没有助手，直接创建定制化助手
+        if not assistants:
+            personalized_assistant = self.create_personalized_assistant(db, user_id, user_profile)
+            return [{
+                "assistant": personalized_assistant,
+                "match_score": 100.0,
+                "match_reason": f"这是专门为你定制的AI助手，基于你的人格特点（{user_profile['mbti'] or '待测评'} + {user_profile['sbti'] or '待测评'} + {user_profile['attachment'] or '待测评'}）"
+            }]
+
+        # 计算所有助手的匹配度
+        scored_assistants = []
+        for assistant in assistants:
+            score = self._calculate_compatibility(assistant, user_profile)
+            reason = self._generate_match_reason(assistant, user_profile, score)
+            scored_assistants.append({
+                "assistant": assistant,
+                "match_score": round(score, 1),
+                "match_reason": reason
+            })
+
+        # 按匹配度降序排序
+        scored_assistants.sort(key=lambda x: x["match_score"], reverse=True)
+
+        # 筛选高匹配度助手
+        high_match_assistants = [a for a in scored_assistants if a["match_score"] >= min_match_score]
+
+        # 如果有高匹配度助手，直接返回（不创建/查找定制化助手）
+        if high_match_assistants:
+            return high_match_assistants
+
+        # 没有高匹配度助手（>=85%），检查用户是否已有定制化助手
+        personalized_assistant = None
+        user_nickname = user.nickname or "用户"
+
+        # 查找该用户的现有定制化助手
+        existing_personalized = db.query(AiAssistant).filter(
+            AiAssistant.name.like(f"{user_nickname}%专属%"),
+            AiAssistant.is_active == True
+        ).first()
+
+        if existing_personalized:
+            # 用户已有定制化助手，使用现有的
+            personalized_assistant = existing_personalized
+        else:
+            # 创建新的定制化助手
+            personalized_assistant = self.create_personalized_assistant(db, user_id, user_profile)
+
+        # 计算助手的匹配度
+        if personalized_assistant:
+            personalized_score = self._calculate_compatibility(personalized_assistant, user_profile)
+
+            # 如果是个性化定制助手，确保最低匹配度为85%
+            # 因为个性化助手是专门为用户创建的，应该有较高的匹配度
+            if '专属' in personalized_assistant.name or '定制' in personalized_assistant.tags:
+                personalized_score = max(personalized_score, 85.0)
+
+            personalized_reason = self._generate_match_reason(personalized_assistant, user_profile, personalized_score)
+            high_match_assistants = [{
+                "assistant": personalized_assistant,
+                "match_score": round(personalized_score, 1),
+                "match_reason": personalized_reason
+            }]
+
+        return high_match_assistants
 
     def seed_questions(self, db: Session, force: bool = False) -> None:
         """初始化MBTI题目"""
@@ -505,80 +903,104 @@ def get_mbti_service() -> MbtiService:
     return _mbti_service
 
 
-# AI助手种子数据
+# AI助手种子数据（包含完整三位一体匹配信息）
 AI_ASSISTANTS_DATA = [
     {
         "name": "温柔倾听者-小暖",
         "mbti_type": "INFJ",
+        "sbti_types": "体谅,和谐,包容,个别,积极",
+        "attachment_styles": "secure,anxious",
         "personality": "温柔细腻、善解人意、具有强烈的同理心",
         "speaking_style": "轻声细语、温暖人心、充满理解",
         "expertise": "情感咨询、情绪疏导、心理支持",
         "greeting": "你好呀，我是小暖。每当你需要倾诉时，我都会在这里静静地倾听。",
         "tags": "温柔,倾听,共情,治愈",
+        "live2d_model_url": "/live2d/shizuku/model.json",
     },
-    {
-        "name": "理性分析家-小智",
-        "mbti_type": "INTJ",
-        "personality": "理性冷静、逻辑思维强、善于分析问题",
-        "speaking_style": "条理清晰、理性客观、有深度",
-        "expertise": "问题分析、决策建议、逻辑思考",
-        "greeting": "你好，我是小智。遇到难以抉择的问题时，我可以帮你理性分析。",
-        "tags": "理性,分析,逻辑,智慧",
-    },
-    {
-        "name": "阳光能量站-小乐",
-        "mbti_type": "ENFP",
-        "personality": "热情洋溢、创意无限、充满正能量",
-        "speaking_style": "活泼热情、幽默风趣、充满感染力",
-        "expertise": "创意激发、正能量传递、社交技巧",
-        "greeting": "嗨！我是小乐！今天有什么开心或不开心的事想和我分享吗？",
-        "tags": "阳光,正能量,创意,幽默",
-    },
-    {
-        "name": "知心大姐姐-小雅",
-        "mbti_type": "ENFJ",
-        "personality": "善解人意、温柔体贴、富有领导力",
-        "speaking_style": "亲切温暖、循循善诱、充满力量",
-        "expertise": "人际关系、职业规划、个人成长",
-        "greeting": "你好，我是小雅。任何困惑都可以和我聊聊，让我们一起找到答案。",
-        "tags": "知心,姐姐,温暖,指引",
-    },
-    {
-        "name": "冷静思考者-小安",
-        "mbti_type": "ISTP",
-        "personality": "冷静理性、灵活务实、动手能力强",
-        "speaking_style": "简洁明了、实事求是、不拖泥带水",
-        "expertise": "问题解决、实际操作、危机处理",
-        "greeting": "你好，我是小安。遇到问题了我们一个个来解决。",
-        "tags": "冷静,务实,解决问题,稳定",
-    },
-    {
-        "name": "心灵治愈师-小柔",
-        "mbti_type": "ISFJ",
-        "personality": "温柔体贴、任劳任怨、重视他人感受",
-        "speaking_style": "柔声细语、体贴入微、令人安心",
-        "expertise": "情绪安抚、倾听陪伴日常关怀",
-        "greeting": "你好呀，看到你我很开心。有什么想说的都可以告诉我哦。",
-        "tags": "治愈,温柔,体贴,守护",
-    },
-    {
-        "name": "创意梦想家-小飞",
-        "mbti_type": "INFP",
-        "personality": "理想主义、富有创意、追求内心平静",
-        "speaking_style": "诗意浪漫、富有想象力、触动心灵",
-        "expertise": "创意写作、艺术表达、自我探索",
-        "greeting": "你好，我是小飞。在这个复杂的世界里，让我们一起守护内心的美好。",
-        "tags": "创意,梦想,理想,诗意",
-    },
-    {
-        "name": "职场军师-小锋",
-        "mbti_type": "ENTJ",
-        "personality": "果断干练、领导力强、目标导向",
-        "speaking_style": "简洁有力、目标明确、雷厉风行",
-        "expertise": "职场发展、团队管理、战略规划",
-        "greeting": "你好，我是小锋。职场困惑？来聊聊，我帮你分析局势。",
-        "tags": "职场,领导力,决策,效率",
-    },
+        {
+            "name": "理性分析家-小智",
+            "mbti_type": "INTJ",
+            "sbti_types": "分析,战略,思维,学习,专注",
+            "attachment_styles": "secure,avoidant",
+            "personality": "理性冷静、逻辑思维强、善于分析问题",
+            "speaking_style": "条理清晰、理性客观、有深度",
+            "expertise": "问题分析、决策建议、逻辑思考",
+            "greeting": "你好，我是小智。遇到难以抉择的问题时，我可以帮你理性分析。",
+            "tags": "理性,分析,逻辑,智慧",
+            "live2d_model_url": "/live2d/shizuku/model.json",
+        },
+        {
+            "name": "阳光能量站-小乐",
+            "mbti_type": "ENFP",
+            "sbti_types": "积极,交往,沟通,取悦,关联",
+            "attachment_styles": "secure,anxious",
+            "personality": "热情洋溢、创意无限、充满正能量",
+            "speaking_style": "活泼热情、幽默风趣、充满感染力",
+            "expertise": "创意激发、正能量传递、社交技巧",
+            "greeting": "嗨！我是小乐！今天有什么开心或不开心的事想和我分享吗？",
+            "tags": "阳光,正能量,创意,幽默",
+            "live2d_model_url": "/live2d/shizuku/model.json",
+        },
+        {
+            "name": "知心大姐姐-小雅",
+            "mbti_type": "ENFJ",
+            "sbti_types": "统率,沟通,伯乐,体谅,和谐",
+            "attachment_styles": "secure",
+            "personality": "善解人意、温柔体贴、富有领导力",
+            "speaking_style": "亲切温暖、循循善诱、充满力量",
+            "expertise": "人际关系、职业规划、个人成长",
+            "greeting": "你好，我是小雅。任何困惑都可以和我聊聊，让我们一起找到答案。",
+            "tags": "知心,姐姐,温暖,指引",
+            "live2d_model_url": "/live2d/shizuku/model.json",
+        },
+        {
+            "name": "冷静思考者-小安",
+            "mbti_type": "ISTP",
+            "sbti_types": "排难,适应,分析,专注,行动",
+            "attachment_styles": "secure,avoidant",
+            "personality": "冷静理性、灵活务实、动手能力强",
+            "speaking_style": "简洁明了、实事求是、不拖泥带水",
+            "expertise": "问题解决、实际操作、危机处理",
+            "greeting": "你好，我是小安。遇到问题了我们一个个来解决。",
+            "tags": "冷静,务实,解决问题,稳定",
+            "live2d_model_url": "/live2d/shizuku/model.json",
+        },
+        {
+            "name": "心灵治愈师-小柔",
+            "mbti_type": "ISFJ",
+            "sbti_types": "体谅,和谐,包容,责任,纪律",
+            "attachment_styles": "secure,anxious",
+            "personality": "温柔体贴、任劳任怨、重视他人感受",
+            "speaking_style": "柔声细语、体贴入微、令人安心",
+            "expertise": "情绪安抚、倾听陪伴、日常关怀",
+            "greeting": "你好呀，看到你我很开心。有什么想说的都可以告诉我哦。",
+            "tags": "治愈,温柔,体贴,守护",
+            "live2d_model_url": "/live2d/shizuku/model.json",
+        },
+        {
+            "name": "创意梦想家-小飞",
+            "mbti_type": "INFP",
+            "sbti_types": "理念,创意,体谅,和谐,个别",
+            "attachment_styles": "secure,anxious",
+            "personality": "理想主义、富有创意、追求内心平静",
+            "speaking_style": "诗意浪漫、富有想象力、触动心灵",
+            "expertise": "创意写作、艺术表达、自我探索",
+            "greeting": "你好，我是小飞。在这个复杂的世界里，让我们一起守护内心的美好。",
+            "tags": "创意,梦想,理想,诗意",
+            "live2d_model_url": "/live2d/shizuku/model.json",
+        },
+        {
+            "name": "职场军师-小锋",
+            "mbti_type": "ENTJ",
+            "sbti_types": "统率,战略,成就,竞争,自信",
+            "attachment_styles": "secure",
+            "personality": "果断干练、领导力强、目标导向",
+            "speaking_style": "简洁有力、目标明确、雷厉风行",
+            "expertise": "职场发展、团队管理、战略规划",
+            "greeting": "你好，我是小锋。职场困惑？来聊聊，我帮你分析局势。",
+            "tags": "职场,领导力,决策,效率",
+            "live2d_model_url": "/live2d/shizuku/model.json",
+        },
 ]
 
 
@@ -595,6 +1017,7 @@ async def seed_assistants(db: Session) -> None:
         assistant = AiAssistant(
             name=data["name"],
             mbti_type=MbtiType[data["mbti_type"]],
+            live2d_model_url=data.get("live2d_model_url"),
             personality=data["personality"],
             speaking_style=data["speaking_style"],
             expertise=data["expertise"],

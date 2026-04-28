@@ -13,6 +13,7 @@ from app.models import User, Conversation, Message, AiAssistant
 from app.services.rag.generator import get_generator
 from app.services.rag.retriever import get_retriever
 from app.services.llm.factory import chat_stream
+from app.services.sentiment_service import get_sentiment_service
 from app.services.member_service import get_member_service
 from app.services.content_filter import get_content_filter
 from app.services.crisis_service import get_crisis_detector
@@ -201,11 +202,18 @@ async def handle_websocket_chat(
                 db.add(user_message)
                 db.commit()
                 db.refresh(user_message)
-                
-                # 发送消息ID给客户端
+
+                # 分析用户情绪
+                sentiment_service = get_sentiment_service()
+                emotion_result = sentiment_service.analyze(query)
+                # 注意：不要在日志中记录用户输入内容，以防敏感信息泄露
+                loguru.logger.info(f"用户情绪分析: expression={emotion_result.get('expression')}, motion={emotion_result.get('motion')}, intensity={emotion_result.get('intensity')}")
+
+                # 发送消息ID和情绪数据给客户端
                 await websocket.send_text(json.dumps({
                     "type": "message_sent",
                     "message_id": user_message.id,
+                    "emotion": emotion_result,
                 }))
                 
                 # 获取用户MBTI
@@ -248,14 +256,20 @@ async def handle_websocket_chat(
                 # 流式生成回复
                 full_content = ""
                 message_id = None
-                
+                emotion_result_for_ai = sentiment_service.analyze(full_content) if full_content else emotion_result
+
                 async for chunk in chat_stream(messages, temperature=0.8, max_tokens=1500):
                     full_content += chunk
                     await websocket.send_text(json.dumps({
                         "type": "chunk",
                         "content": chunk,
+                        "emotion": emotion_result,  # 发送用户情绪，让前端可以同步显示
                     }))
-                
+
+                # 分析AI回复的情绪（用于控制助手表情动作）
+                ai_emotion = sentiment_service.analyze(full_content)
+                loguru.logger.info(f"AI回复情绪分析: emotion={ai_emotion.get('emotion')}, expression={ai_emotion.get('expression')}, motion={ai_emotion.get('motion')}")
+
                 # 保存助手消息
                 assistant_message = Message(
                     conversation_id=conversation.id,
@@ -268,11 +282,13 @@ async def handle_websocket_chat(
                 db.refresh(assistant_message)
                 message_id = assistant_message.id
 
-                # 发送完成消息（包含完整内容）
+                # 发送完成消息（包含完整内容和AI情绪）
                 await websocket.send_text(json.dumps({
                     "type": "done",
                     "message_id": message_id,
                     "content": full_content,
+                    "emotion": emotion_result,  # 用户情绪
+                    "ai_emotion": ai_emotion,  # AI回复情绪
                 }))
                 
                 # 更新对话时间

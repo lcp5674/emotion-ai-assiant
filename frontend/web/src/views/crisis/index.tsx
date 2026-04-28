@@ -12,6 +12,7 @@ import './index.css'
 const { Title, Text, Paragraph } = Typography
 
 export default function CrisisPage() {
+  const navigate = useNavigate()
   const [resources, setResources] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -43,9 +44,7 @@ export default function CrisisPage() {
   return (
     <div className="crisis-container">
       <div style={{ marginBottom: 16 }}>
-        <Link to="/">
-          <Button icon={<ArrowLeftOutlined />}>返回首页</Button>
-        </Link>
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>返回</Button>
       </div>
       <Card loading={loading} className="crisis-card">
         {resources && (

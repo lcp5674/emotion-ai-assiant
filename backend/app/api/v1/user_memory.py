@@ -49,7 +49,7 @@ async def add_memory(
         confidence=request.confidence or 1.0,
     )
 
-    return UserMemoryResponse.from_orm(memory)
+    return UserMemoryResponse.model_validate(memory)
 
 
 @router.get("/{memory_id}", summary="获取记忆详情", response_model=UserMemoryResponse)
@@ -68,7 +68,7 @@ async def get_memory(
             detail="记忆不存在",
         )
 
-    return UserMemoryResponse.from_orm(memory)
+    return UserMemoryResponse.model_validate(memory)
 
 
 @router.get("/list", summary="获取记忆列表", response_model=UserMemoryListResponse)
@@ -100,7 +100,7 @@ async def list_memories(
         page=page,
         page_size=page_size,
         has_next=has_next,
-        data=[UserMemoryResponse.from_orm(m) for m in memories],
+        data=[UserMemoryResponse.model_validate(m) for m in memories],
     )
 
 
@@ -122,7 +122,7 @@ async def update_memory(
             detail="记忆不存在",
         )
 
-    return UserMemoryResponse.from_orm(memory)
+    return UserMemoryResponse.model_validate(memory)
 
 
 @router.delete("/{memory_id}", summary="删除记忆")
@@ -160,7 +160,7 @@ async def search_memories(
         limit=limit,
     )
 
-    return [UserMemoryResponse.from_orm(r) for r in results]
+    return [UserMemoryResponse.model_validate(r) for r in results]
 
 
 @router.get("/stats", summary="获取记忆统计", response_model=MemoryStatisticsResponse)
@@ -199,7 +199,7 @@ async def add_insight(
         confidence=request.confidence or 0.5,
     )
 
-    return MemoryInsightResponse.from_orm(insight)
+    return MemoryInsightResponse.model_validate(insight)
 
 
 @router.get("/insights", summary="获取洞察列表", response_model=List[MemoryInsightResponse])
@@ -212,7 +212,7 @@ async def list_insights(
     memory_service = get_user_memory_service()
     insights = memory_service.list_insights(db, current_user.id, insight_type)
 
-    return [MemoryInsightResponse.from_orm(i) for i in insights]
+    return [MemoryInsightResponse.model_validate(i) for i in insights]
 
 
 # ============ 用户偏好 ============
@@ -311,4 +311,4 @@ async def get_relevant_memories(
         limit=limit,
     )
 
-    return [UserMemoryResponse.from_orm(r) for r in results]
+    return [UserMemoryResponse.model_validate(r) for r in results]

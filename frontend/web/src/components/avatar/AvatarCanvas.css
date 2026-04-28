@@ -1,0 +1,773 @@
+/* Avatar Canvas Styles - 赛博生命周期望 */
+
+/* 容器 */
+.avatar-canvas {
+  position: relative;
+  width: 200px;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.3s ease;
+}
+
+.avatar-canvas:hover {
+  transform: scale(1.02);
+}
+
+/* 加载状态 */
+.avatar-loading {
+  background: linear-gradient(135deg, #f0f5ff 0%, #f5f5f5 100%);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.avatar-loading-text {
+  margin-top: 12px;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* 虚拟形象主体 */
+.avatar-figure {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 头部 */
+.avatar-head {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+  border: 3px solid #722ed1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(114, 46, 209, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* 脸部 */
+.avatar-face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 表情Emoji */
+.avatar-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+
+/* 眼睛 */
+.avatar-eyes {
+  display: flex;
+  gap: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.avatar-eyes.talking {
+  opacity: 1;
+}
+
+.avatar-eye {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #333;
+  animation: blink 3s infinite;
+}
+
+@keyframes blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+/* 嘴巴 */
+.avatar-mouth {
+  width: 20px;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.avatar-mouth.talking {
+  opacity: 1;
+  animation: talk 0.3s infinite;
+}
+
+@keyframes talk {
+  0%, 100% {
+    height: 4px;
+    border-radius: 2px;
+  }
+  50% {
+    height: 10px;
+    border-radius: 5px;
+  }
+}
+
+/* 身体 */
+.avatar-body {
+  margin-top: -10px;
+  z-index: 5;
+}
+
+.avatar-torso {
+  width: 60px;
+  height: 70px;
+  background: linear-gradient(180deg, #722ed1 0%, #531dab 100%);
+  border-radius: 30px 30px 20px 20px;
+  box-shadow: 0 4px 15px rgba(114, 46, 209, 0.3);
+}
+
+/* 手臂 */
+.avatar-arm {
+  position: absolute;
+  width: 20px;
+  height: 60px;
+  background: linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%);
+  border-radius: 10px;
+  top: 90px;
+  transition: all 0.3s ease;
+}
+
+.avatar-arm-left {
+  left: -15px;
+  transform: rotate(15deg);
+}
+
+.avatar-arm-right {
+  right: -15px;
+  transform: rotate(-15deg);
+}
+
+.avatar-arm.waving {
+  animation: wave 0.5s ease-in-out infinite;
+}
+
+.avatar-arm-left.waving {
+  transform-origin: top center;
+}
+
+.avatar-arm-right.waving {
+  transform-origin: top center;
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: rotate(15deg);
+  }
+  50% {
+    transform: rotate(-30deg);
+  }
+}
+
+/* 名字标签 */
+.avatar-name-tag {
+  position: absolute;
+  bottom: -30px;
+  padding: 4px 12px;
+  background: rgba(114, 46, 209, 0.9);
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 动作指示器 */
+.avatar-motion-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* ==================== 动画状态 ==================== */
+
+/* 待机动画 - 轻微浮动 */
+.avatar-idle .avatar-figure {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* 说话动画 */
+.avatar-talking .avatar-mouth {
+  opacity: 1;
+}
+
+/* 挥手动画 */
+.avatar-wave .avatar-arm-right {
+  animation: wave 0.5s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: rotate(-15deg);
+  }
+  50% {
+    transform: rotate(-45deg);
+  }
+}
+
+/* 点头动画 */
+.avatar-nod .avatar-head {
+  animation: nod 0.5s ease-in-out;
+}
+
+@keyframes nod {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+/* 摇头动画 */
+.avatar-shake .avatar-head {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* 开心跳动 */
+.avatar-jump .avatar-figure {
+  animation: jump 0.8s ease-in-out infinite;
+}
+
+@keyframes jump {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* 难过低头 */
+.avatar-droop .avatar-head {
+  animation: droop 1.5s ease-in-out;
+}
+
+@keyframes droop {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(10px) rotate(5deg);
+  }
+}
+
+/* 深色模式适配 */
+.dark .avatar-canvas {
+  background: transparent;
+}
+
+.dark .avatar-head {
+  background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+  box-shadow: 0 4px 15px rgba(114, 46, 209, 0.4);
+}
+
+.dark .avatar-body .avatar-torso {
+  background: linear-gradient(180deg, #9333ea 0%, #722ed1 100%);
+}
+
+.dark .avatar-arm {
+  background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+}
+
+.dark .avatar-eye {
+  background: #fff;
+}
+
+.dark .avatar-mouth {
+  background: #fff;
+}
+
+/* ==================== Live2D Canvas 情绪动画 ==================== */
+
+/* Live2D容器的情绪动画 - 直接应用在canvas上 */
+
+/* 通用点头动画 */
+.live2d-canvas.avatar-motion-nod canvas {
+  animation: nod-canvas 0.4s ease-in-out 3;
+}
+
+@keyframes nod-canvas {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(5px) rotate(3deg); }
+  75% { transform: translateY(5px) rotate(-3deg); }
+}
+
+/* 兴奋/开心动画 */
+.live2d-canvas.avatar-motion-excited canvas {
+  animation: excited-canvas 0.3s ease-in-out infinite;
+}
+
+@keyframes excited-canvas {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.02); }
+}
+
+/* 悲伤动画 */
+.live2d-canvas.avatar-motion-sad canvas {
+  animation: sad-canvas 2s ease-in-out infinite;
+}
+
+@keyframes sad-canvas {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+/* 愤怒动画 */
+.live2d-canvas.avatar-motion-angry canvas {
+  animation: angry-canvas 0.3s ease-in-out infinite;
+}
+
+@keyframes angry-canvas {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* 思考动画 */
+.live2d-canvas.avatar-motion-thinking canvas {
+  animation: thinking-canvas 2s ease-in-out infinite;
+}
+
+@keyframes thinking-canvas {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-5deg); }
+  60% { transform: rotate(3deg); }
+}
+
+/* 挥手动画 */
+.live2d-canvas.avatar-motion-wave canvas {
+  animation: wave-canvas 0.6s ease-in-out infinite;
+}
+
+@keyframes wave-canvas {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(10deg); }
+}
+
+/* 拍手动画 */
+.live2d-canvas.avatar-motion-clap canvas {
+  animation: clap-canvas 0.3s ease-in-out infinite;
+}
+
+@keyframes clap-canvas {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* 跳跃动画 */
+.live2d-canvas.avatar-motion-jump canvas {
+  animation: jump-canvas 0.8s ease-in-out infinite;
+}
+
+@keyframes jump-canvas {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+/* 说话动画 */
+.live2d-canvas.avatar-motion-speak canvas {
+  animation: speak-canvas 0.3s ease-in-out infinite;
+}
+
+@keyframes speak-canvas {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.05); }
+}
+
+/* idle动画 */
+.live2d-canvas.avatar-motion-idle canvas,
+.live2d-canvas.avatar-motion-idle {
+  animation: idle-canvas 3s ease-in-out infinite;
+}
+
+@keyframes idle-canvas {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 哭泣动画 */
+.live2d-canvas.avatar-motion-cry canvas {
+  animation: cry-canvas 1s ease-in-out infinite;
+}
+
+@keyframes cry-canvas {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-2px) translateY(2px); }
+  75% { transform: translateX(2px) translateY(2px); }
+}
+
+/* 焦虑动画 */
+.live2d-canvas.avatar-motion-anxious canvas {
+  animation: anxious-canvas 0.5s ease-in-out infinite;
+}
+
+@keyframes anxious-canvas {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+/* 惊讶动画 */
+.live2d-canvas.avatar-motion-surprised canvas {
+  animation: surprised-canvas 0.4s ease-out;
+}
+
+@keyframes surprised-canvas {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08) translateY(-8px); }
+  100% { transform: scale(1); }
+}
+
+/* 旋转动画 */
+.live2d-canvas.avatar-motion-spin canvas {
+  animation: spin-canvas 1s ease-in-out;
+}
+
+@keyframes spin-canvas {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 跺脚动画 */
+.live2d-canvas.avatar-motion-stamp canvas {
+  animation: stamp-canvas 0.3s ease-in-out;
+}
+
+@keyframes stamp-canvas {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+/* 握拳动画 */
+.live2d-canvas.avatar-motion-clench canvas {
+  animation: clench-canvas 0.5s ease-in-out forwards;
+}
+
+@keyframes clench-canvas {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* ==================== 增强版情绪动作动画 ==================== */
+
+/* 通用点头动画 - 更明显更夸张 */
+.avatar-motion-nod .avatar-figure {
+  animation: nod-animation 0.4s ease-in-out 5;
+  background: radial-gradient(circle, rgba(82, 196, 26, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+@keyframes nod-animation {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  20% { transform: translateY(5px) rotate(5deg) scale(1.03); }
+  40% { transform: translateY(3px) rotate(-3deg) scale(1.02); }
+  60% { transform: translateY(5px) rotate(5deg) scale(1.03); }
+  80% { transform: translateY(3px) rotate(-3deg) scale(1.02); }
+}
+
+.avatar-motion-nod .avatar-head {
+  border-color: #52c41a !important;
+  box-shadow: 0 0 20px rgba(82, 196, 26, 0.6), 0 0 40px rgba(82, 196, 26, 0.3);
+  transition: all 0.3s ease;
+}
+
+.avatar-motion-nod .avatar-torso {
+  background: linear-gradient(180deg, #73d13d 0%, #52c41a 100%) !important;
+  transition: background 0.3s ease;
+}
+
+/* 兴奋/开心动画 */
+.avatar-motion-excited .avatar-figure {
+  animation: excited-bounce 0.3s ease-in-out infinite;
+}
+
+@keyframes excited-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-18px) scale(1.04); }
+}
+
+.avatar-motion-excited .avatar-head {
+  border-color: #52c41a !important;
+  box-shadow: 0 0 30px rgba(82, 196, 26, 0.7);
+}
+
+/* 悲伤动画 */
+.avatar-motion-sad .avatar-figure {
+  animation: sad-slow 2s ease-in-out infinite;
+}
+
+@keyframes sad-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+.avatar-motion-sad .avatar-head {
+  border-color: #1890ff !important;
+  transform: translateY(5px) rotate(3deg);
+  transition: all 0.5s ease;
+}
+
+.avatar-motion-sad .avatar-body {
+  opacity: 0.8;
+}
+
+/* 愤怒动画 */
+.avatar-motion-angry .avatar-figure {
+  animation: angry-shake 0.3s ease-in-out infinite;
+}
+
+@keyframes angry-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.avatar-motion-angry .avatar-head {
+  border-color: #f5222d !important;
+  box-shadow: 0 0 15px rgba(245, 34, 45, 0.5);
+  animation: angry-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes angry-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+/* 思考动画 */
+.avatar-motion-thinking .avatar-head {
+  animation: thinking-tilt 2s ease-in-out infinite;
+}
+
+@keyframes thinking-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-8deg); }
+  60% { transform: rotate(5deg); }
+}
+
+/* 挥手动画 - 应用于手臂 */
+.avatar-motion-wave .avatar-arm-right {
+  animation: arm-wave-anim 0.6s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+@keyframes arm-wave-anim {
+  0%, 100% { transform: rotate(-15deg); }
+  50% { transform: rotate(-45deg); }
+}
+
+/* 拍手动画 */
+.avatar-motion-clap .avatar-figure {
+  animation: clap-animation 0.3s ease-in-out infinite;
+}
+
+@keyframes clap-animation {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.avatar-motion-clap .avatar-arm-right {
+  animation: arm-clap-anim 0.3s ease-in-out infinite;
+}
+
+.avatar-motion-clap .avatar-arm-left {
+  animation: arm-clap-left-anim 0.3s ease-in-out infinite;
+}
+
+@keyframes arm-clap-anim {
+  0%, 100% { transform: rotate(-15deg); }
+  50% { transform: rotate(5deg) translateX(-5px); }
+}
+
+@keyframes arm-clap-left-anim {
+  0%, 100% { transform: rotate(15deg); }
+  50% { transform: rotate(-5deg) translateX(5px); }
+}
+
+/* 跳跃动画 */
+.avatar-motion-jump .avatar-figure {
+  animation: jump-animation 0.8s ease-in-out infinite;
+}
+
+@keyframes jump-animation {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.05); }
+}
+
+/* 说话动画 */
+.avatar-motion-speak .avatar-mouth {
+  opacity: 1;
+  animation: talk 0.3s infinite;
+}
+
+@keyframes talk {
+  0%, 100% { height: 4px; border-radius: 2px; }
+  50% { height: 10px; border-radius: 5px; }
+}
+
+/* 情绪idle动画 */
+.avatar-motion-idle .avatar-figure {
+  animation: idle-float 3s ease-in-out infinite;
+}
+
+@keyframes idle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 哭泣动画 */
+.avatar-motion-cry .avatar-figure {
+  animation: cry-shake 1s ease-in-out infinite;
+}
+
+@keyframes cry-shake {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-2px) translateY(2px); }
+  75% { transform: translateX(2px) translateY(2px); }
+}
+
+.avatar-motion-cry .avatar-head {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 15px rgba(24, 144, 255, 0.5);
+}
+
+/* 焦虑动画 */
+.avatar-motion-anxious .avatar-figure {
+  animation: anxious-shake 0.5s ease-in-out infinite;
+}
+
+@keyframes anxious-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+.avatar-motion-anxious .avatar-head {
+  border-color: #fa8c16 !important;
+  box-shadow: 0 0 15px rgba(250, 140, 22, 0.5);
+}
+
+/* 惊讶动画 */
+.avatar-motion-surprised .avatar-figure {
+  animation: surprised-jump 0.4s ease-out;
+}
+
+@keyframes surprised-jump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1) translateY(-10px); }
+  100% { transform: scale(1); }
+}
+
+.avatar-motion-surprised .avatar-head {
+  border-color: #faad14 !important;
+  box-shadow: 0 0 20px rgba(250, 173, 20, 0.6);
+}
+
+/* 旋转动画 */
+.avatar-motion-spin .avatar-figure {
+  animation: spin-animation 1s ease-in-out;
+}
+
+@keyframes spin-animation {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.05); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* 跺脚动画 */
+.avatar-motion-stamp .avatar-figure {
+  animation: stamp-animation 0.3s ease-in-out;
+}
+
+@keyframes stamp-animation {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+/* 握拳动画 */
+.avatar-motion-clench .avatar-arm-right,
+.avatar-motion-clench .avatar-arm-left {
+  animation: clench-animation 0.5s ease-in-out forwards;
+}
+
+@keyframes clench-animation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-30deg) scaleY(0.8); }
+}
+
+/* 手臂动作：挥手 */
+.arm-wave {
+  animation: arm-wave-anim 0.6s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+@keyframes arm-wave-anim {
+  0%, 100% { transform: rotate(-15deg); }
+  50% { transform: rotate(-45deg); }
+}
+
+/* 手臂动作：拍手 */
+.arm-clap {
+  animation: arm-clap-anim 0.3s ease-in-out infinite;
+}
+
+@keyframes arm-clap-anim {
+  0%, 100% {
+    transform: rotate(-15deg);
+  }
+  50% {
+    transform: rotate(5deg) translateX(-5px);
+  }
+}

@@ -15,17 +15,23 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.3.0",
+    "@xenova/transformers": "^2.17.2",
     "antd": "^5.15.0",
     "axios": "^1.6.7",
+    "canvas-confetti": "^1.9.4",
     "d3": "^7.9.0",
     "dayjs": "^1.11.10",
     "i18next": "^26.0.4",
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-http-backend": "^3.0.4",
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "^6.5.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^17.0.2",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.22.0",
+    "remark-gfm": "^4.0.1",
     "zustand": "^4.5.0"
   },
   "devDependencies": {
@@ -55,5 +61,8 @@
       "eslint --fix",
       "prettier --write"
     ]
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.60.2"
   }
 }

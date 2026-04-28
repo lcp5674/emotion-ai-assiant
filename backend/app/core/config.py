@@ -120,7 +120,7 @@ class Settings(BaseSettings):
     SPARK_APP_ID: Optional[str] = None
 
     # 向量数据库配置
-    VECTOR_DB_TYPE: str = "milvus"  # milvus/qdrant/faiss
+    VECTOR_DB_TYPE: str = "faiss"  # milvus/qdrant/faiss
     MILVUS_HOST: str = "localhost"
     MILVUS_PORT: int = 19530
     MILVUS_COLLECTION: str = "emotion_knowledge"
@@ -139,12 +139,25 @@ class Settings(BaseSettings):
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "password"
 
-    # SMS配置 (支持 mock/alibaba)
+    # SMS配置 (支持 mock/alibaba/spug)
     SMS_PROVIDER: str = "mock"
     ALIBABA_ACCESS_KEY_ID: Optional[str] = None
     ALIBABA_ACCESS_KEY_SECRET: Optional[str] = None
     ALIBABA_SMS_SIGN_NAME: str = "心灵伴侣AI"
     ALIBABA_SMS_TEMPLATE_CODE: str = "SMS_xxxxx"
+
+    # Spug推送配置 (支持 Bark/ServerChan/DingTalk/Feishu/Telegram/Email)
+    SPUG_ENABLED: bool = False
+    SPUG_WEBHOOK_URL: Optional[str] = None  # Spug Webhook地址
+    SPUG_CHANNEL: str = "bark"  # 推送渠道: bark/serverchan/dingtalk/feishu/telegram/email
+    SPUG_BARK_KEY: Optional[str] = None  # Bark的DeviceKey
+    SPUG_DINGTALK_SECRET: Optional[str] = None  # 钉钉签名密钥
+    SPUG_FEISHU_SECRET: Optional[str] = None  # 飞书签名密钥
+    SPUG_EMAIL_HOST: Optional[str] = None  # 邮件服务器
+    SPUG_EMAIL_PORT: int = 587
+    SPUG_EMAIL_USER: Optional[str] = None
+    SPUG_EMAIL_PASSWORD: Optional[str] = None
+    SPUG_EMAIL_TO: Optional[str] = None  # 收件人
 
     # 内容安全配置 (支持 keyword/alibaba/mock)
     CONTENT_FILTER_PROVIDER: str = "keyword"

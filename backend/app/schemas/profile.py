@@ -86,6 +86,7 @@ class AiPartnerItem(BaseModel):
     personality: Optional[str] = None
     attachment_style: Optional[str] = None
     match_reason: str
+    match_score: Optional[float] = None
     tags: List[str] = []
 
 

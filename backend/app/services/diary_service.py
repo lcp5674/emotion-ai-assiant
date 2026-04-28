@@ -57,8 +57,19 @@ class DiaryService:
                 raise ValueError("心情评分必须在1-10之间")
             if not request.content or len(request.content.strip()) < 10:
                 raise ValueError("日记内容至少10个字符")
-            if request.primary_emotion and request.primary_emotion not in [e.value for e in EmotionType]:
-                raise ValueError("无效的情绪类型")
+            if request.primary_emotion:
+                # 映射前端值到后端值 - 完整的情绪映射
+                emotion_mapping = {
+                    "calm": "peaceful",      # 前端calm对应后端peaceful
+                    "surprised": "confused", # 前端surprised映射为confused
+                }
+                mapped_emotion = emotion_mapping.get(request.primary_emotion, request.primary_emotion)
+                if mapped_emotion not in [e.value for e in EmotionType]:
+                    # 如果映射后仍然不在枚举中，设为None
+                    loguru.logger.warning(f"未知的情绪类型: {request.primary_emotion} -> {mapped_emotion}, 设为None")
+                    mapped_emotion = None
+            else:
+                mapped_emotion = None
 
             # 转换日期字符串为date对象
             diary_date = datetime.strptime(request.date, "%Y-%m-%d").date()
@@ -82,7 +93,7 @@ class DiaryService:
                 date=diary_date,
                 mood_score=request.mood_score,
                 mood_level=MoodLevel(mood_level) if mood_level else None,
-                primary_emotion=EmotionType(request.primary_emotion) if request.primary_emotion else None,
+                primary_emotion=EmotionType(mapped_emotion) if mapped_emotion else None,
                 secondary_emotions=request.secondary_emotions,
                 emotion_tags=request.emotion_tags,
                 content=request.content,
@@ -372,19 +383,33 @@ class DiaryService:
         self,
         db: Session,
         user_id: int,
-        time_range: str = "week",  # week/month/quarter/year
+        time_range: str = "week",  # week/month/quarter/year/all
     ) -> Dict[str, Any]:
         """获取心情趋势"""
         today = date.today()
 
         if time_range == "week":
-            start_date = today - timedelta(days=7)
+            # 本周：从本周一到现在
+            weekday = today.weekday()
+            start_date = today - timedelta(days=weekday)
         elif time_range == "month":
-            start_date = today - timedelta(days=30)
+            # 本月：从本月1号到现在
+            start_date = today.replace(day=1)
         elif time_range == "quarter":
-            start_date = today - timedelta(days=90)
+            # 本季度：从本季度第一天到现在
+            quarter_month = (today.month - 1) // 3 * 3 + 1
+            start_date = today.replace(month=quarter_month, day=1)
         elif time_range == "year":
-            start_date = today - timedelta(days=365)
+            # 本年：从今年1月1号到现在
+            start_date = today.replace(month=1, day=1)
+        elif time_range == "all":
+            # 全部：获取用户的注册日期
+            from app.models import User
+            user = db.query(User).filter(User.id == user_id).first()
+            if user and user.created_at:
+                start_date = user.created_at.date()
+            else:
+                start_date = today - timedelta(days=365)
         else:
             start_date = today - timedelta(days=7)
 
@@ -409,7 +434,7 @@ class DiaryService:
 
             # 趋势点
             trend_data.append({
-                "date": diary.date,
+                "date": diary.date.isoformat() if diary.date else None,
                 "mood_score": diary.mood_score,
                 "mood_level": diary.mood_level.value if diary.mood_level else None,
                 "primary_emotion": diary.primary_emotion.value if diary.primary_emotion else None,
@@ -438,12 +463,41 @@ class DiaryService:
             "mood_distribution": mood_distribution,
         }
 
-    def get_stats(self, db: Session, user_id: int) -> Dict[str, Any]:
-        """获取日记统计"""
+    def get_stats(self, db: Session, user_id: int, time_range: str = "month") -> Dict[str, Any]:
+        """获取日记统计
+
+        Args:
+            db: 数据库会话
+            user_id: 用户ID
+            time_range: 时间范围 (week/month/quarter/year)
+        """
+        # 计算时间范围起始日期
+        today = date.today()
+        if time_range == "week":
+            period_start = today - timedelta(days=7)
+        elif time_range == "month":
+            period_start = date(today.year, today.month, 1)
+        elif time_range == "quarter":
+            # 最近三个月
+            period_start = today - timedelta(days=90)
+        elif time_range == "year":
+            period_start = date(today.year, 1, 1)
+        else:
+            period_start = date(today.year, today.month, 1)
+
         # 总日记数
         total_count = db.query(EmotionDiary).filter(
             and_(
                 EmotionDiary.user_id == user_id,
+                EmotionDiary.is_deleted == False,
+            )
+        ).count()
+
+        # 当前选择周期的记录数
+        period_count = db.query(EmotionDiary).filter(
+            and_(
+                EmotionDiary.user_id == user_id,
+                EmotionDiary.date >= period_start,
                 EmotionDiary.is_deleted == False,
             )
         ).count()
@@ -557,6 +611,7 @@ class DiaryService:
             "categories": categories,
             "this_month_count": this_month_count,
             "last_month_count": last_month_count,
+            "period_count": period_count,
         }
 
     # ============ AI分析 ============
@@ -642,13 +697,18 @@ class DiaryService:
             return {"status": "failed", "analysis": None, "suggestion": None}
 
 
-# 全局服务实例
+# 全局服务实例（线程安全）
+import threading
 _diary_service: Optional[DiaryService] = None
+_diary_lock = threading.Lock()
 
 
 def get_diary_service() -> DiaryService:
-    """获取日记服务实例"""
+    """获取日记服务实例（线程安全单例）"""
     global _diary_service
     if _diary_service is None:
-        _diary_service = DiaryService()
+        with _diary_lock:
+            # 双重检查锁定
+            if _diary_service is None:
+                _diary_service = DiaryService()
     return _diary_service

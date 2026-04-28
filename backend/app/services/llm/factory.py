@@ -186,7 +186,8 @@ def _get_primary_provider_name() -> str:
     except Exception as e:
         loguru.logger.warning(f"获取LLM_PROVIDER失败: {e}")
 
-    return ""
+    # 默认使用doubao作为主Provider
+    return "doubao"
 
 
 def _get_failover_chain() -> List[str]:
@@ -226,22 +227,25 @@ def get_llm_provider() -> LLMProvider:
     if _llm_provider is None:
         provider_name = _get_primary_provider_name()
 
-        if not provider_name:
-            raise ValueError(
-                "LLM_PROVIDER is not configured. "
-                "Please set LLM_PROVIDER in database. "
-                f"Available providers: {list(PROVIDER_MAP.keys())}"
-            )
-
+        # 如果provider不支持，尝试降级链
         if provider_name not in PROVIDER_MAP:
-            raise ValueError(f"Unknown LLM provider: {provider_name}. Available providers: {list(PROVIDER_MAP.keys())}")
+            loguru.logger.warning(f"LLM provider '{provider_name}' not supported, trying failover chain")
+            try:
+                _llm_provider = get_llm_provider_with_failover()
+                return _llm_provider
+            except RuntimeError as e:
+                raise RuntimeError(f"No available LLM provider. Please configure a valid LLM provider in the database. {e}")
 
         _llm_provider = _create_provider(provider_name)
 
         if _llm_provider is None:
-            raise RuntimeError(f"Failed to initialize LLM provider: {provider_name}")
+            # 尝试使用降级链
+            try:
+                _llm_provider = get_llm_provider_with_failover()
+            except RuntimeError as e:
+                raise RuntimeError(f"Failed to initialize LLM provider '{provider_name}' and all failover providers failed. Please check API key configuration. {e}")
 
-        loguru.logger.info(f"LLM Provider initialized: {provider_name}")
+        loguru.logger.info(f"LLM Provider initialized: {_get_primary_provider_name()}")
 
     return _llm_provider
 

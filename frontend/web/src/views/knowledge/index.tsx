@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, Row, Col, Tag, Input, Spin, Pagination, Empty, Button } from 'antd'
-import { SearchOutlined, EyeOutlined, LikeOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { SearchOutlined, EyeOutlined, LikeOutlined, ArrowLeftOutlined, BookOutlined } from '@ant-design/icons'
 import { api } from '../../api/request'
+import { useTheme } from '../../hooks/useTheme'
 
 interface Article {
   id: number
@@ -19,16 +20,17 @@ interface Article {
 
 const categories = [
   { key: 'all', name: '全部' },
-  { key: 'emotion', name: '情绪管理' },
-  { key: 'relationship', name: '人际关系' },
-  { key: 'self_growth', name: '个人成长' },
-  { key: 'psychology', name: '心理知识' },
-  { key: 'love', name: '恋爱心理' },
-  { key: 'family', name: '家庭关系' },
+  { key: 'emotion', name: '情绪管理', gradient: ['#ef4444', '#f87171'] },
+  { key: 'relationship', name: '人际关系', gradient: ['#f97316', '#fb923c'] },
+  { key: 'self_growth', name: '个人成长', gradient: ['#10b981', '#34d399'] },
+  { key: 'psychology', name: '心理知识', gradient: ['#3b82f6', '#60a5fa'] },
+  { key: 'love', name: '恋爱心理', gradient: ['#ec4899', '#f472b6'] },
+  { key: 'family', name: '家庭关系', gradient: ['#8b5cf6', '#a78bfa'] },
 ]
 
 export default function Knowledge() {
   const navigate = useNavigate()
+  const { themeColors, themeColor } = useTheme()
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -36,6 +38,8 @@ export default function Knowledge() {
   const [pageSize] = useState(12)
   const [category, setCategory] = useState('all')
   const [searchKeyword, setSearchKeyword] = useState('')
+
+  const themeGradient = themeColors[themeColor]
 
   useEffect(() => {
     loadArticles()
@@ -59,148 +63,278 @@ export default function Knowledge() {
   }
 
   const getCategoryColor = (cat: string) => {
-    const colors: Record<string, string> = {
-      emotion: 'red',
-      relationship: 'orange',
-      self_growth: 'green',
-      psychology: 'blue',
-      love: 'pink',
-      family: 'purple',
-    }
-    return colors[cat] || 'default'
+    const catInfo = categories.find(c => c.key === cat)
+    return catInfo?.gradient || [themeGradient, themeGradient]
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       {/* Header */}
       <header style={{
-        background: 'linear-gradient(135deg, #722ed1 0%, #b37feb 100%)',
-        padding: '40px 0',
+        background: `linear-gradient(135deg, ${themeGradient} 0%, ${themeGradient}cc 100%)`,
+        padding: '60px 24px',
         textAlign: 'center',
         color: '#fff',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div className="container">
-          <h1 style={{ fontSize: 36, marginBottom: 8 }}>心理知识库</h1>
-          <p style={{ fontSize: 18, opacity: 0.9 }}>
+        <div style={{
+          position: 'absolute',
+          top: '-30%',
+          right: '-10%',
+          width: '50%',
+          height: '150%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+          borderRadius: '50%',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{
+            width: 80,
+            height: 80,
+            borderRadius: '24px',
+            background: 'rgba(255,255,255,0.2)',
+            backdropFilter: 'blur(10px)',
+            margin: '0 auto 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '2px solid rgba(255,255,255,0.3)',
+          }}>
+            <BookOutlined style={{ fontSize: 36, color: '#fff' }} />
+          </div>
+          <h1 style={{ fontSize: 36, marginBottom: 12, fontWeight: 700 }}>
+            心理知识库
+          </h1>
+          <p style={{ fontSize: 18, opacity: 0.9, margin: 0 }}>
             丰富心理学知识，助你自我成长
           </p>
         </div>
       </header>
 
-      <div className="container" style={{ padding: '24px 16px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 60px' }}>
         {/* Back */}
-        <div style={{ marginBottom: 16 }}>
-          <Link to="/">
-            <Button icon={<ArrowLeftOutlined />} type="text">
-              返回首页
-            </Button>
-          </Link>
-        </div>
+        <Link to="/">
+          <Button icon={<ArrowLeftOutlined />} style={{ borderRadius: 12, marginBottom: 20 }}>返回首页</Button>
+        </Link>
 
         {/* Search */}
-        <Card style={{ marginBottom: 24 }}>
+        <Card
+          style={{
+            marginBottom: 20,
+            border: 'none',
+            borderRadius: 20,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+          }}
+          bodyStyle={{ padding: 20 }}
+        >
           <Input
             placeholder="搜索文章..."
-            prefix={<SearchOutlined />}
+            prefix={<SearchOutlined style={{ color: themeGradient }} />}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             allowClear
             size="large"
+            style={{ borderRadius: 14 }}
           />
-          <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {categories.map(cat => (
+        </Card>
+
+        {/* Category Tabs */}
+        <div style={{
+          display: 'flex',
+          gap: 10,
+          flexWrap: 'wrap',
+          marginBottom: 24,
+        }}>
+          {categories.map((cat) => {
+            const isActive = category === cat.key
+            const colors = cat.gradient || [themeGradient, themeGradient]
+            return (
               <Tag
                 key={cat.key}
-                onClick={() => {
-                  setCategory(cat.key)
-                  setPage(1)
+                onClick={() => setCategory(cat.key)}
+                style={{
+                  cursor: 'pointer',
+                  borderRadius: 20,
+                  padding: '8px 20px',
+                  fontSize: 14,
+                  border: isActive ? 'none' : '1px solid #e5e7eb',
+                  background: isActive
+                    ? `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)`
+                    : '#fff',
+                  color: isActive ? '#fff' : '#6b7280',
+                  fontWeight: isActive ? 600 : 400,
+                  transition: 'all 0.2s ease',
+                  boxShadow: isActive ? `0 4px 15px ${colors[0]}40` : 'none',
                 }}
-                style={{ cursor: 'pointer', padding: '4px 12px' }}
-                color={category === cat.key ? '#722ed1' : 'default'}
               >
                 {cat.name}
               </Tag>
-            ))}
-          </div>
-        </Card>
+            )
+          })}
+        </div>
 
-        {/* Articles */}
+        {/* Articles Grid */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 60 }}>
+          <div style={{ textAlign: 'center', padding: 80 }}>
             <Spin size="large" />
           </div>
-        ) : (
+        ) : articles.length > 0 ? (
           <>
-            <Row gutter={[24, 24]}>
-              {articles.map((article) => (
-                <Col xs={24} sm={12} lg={8} xl={6} key={article.id}>
-                  <Card
-                    hoverable
-                    onClick={() => navigate(`/knowledge/${article.id}`)}
-                    cover={
-                      article.cover_image ? (
+            <Row gutter={[20, 20]}>
+              {articles.map((article) => {
+                const colors = getCategoryColor(article.category)
+                return (
+                  <Col xs={24} sm={12} lg={8} xl={6} key={article.id}>
+                    <Card
+                      hoverable
+                      onClick={() => navigate(`/knowledge/${article.id}`)}
+                      style={{
+                        border: 'none',
+                        borderRadius: 20,
+                        overflow: 'hidden',
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                        transition: 'all 0.3s ease',
+                      }}
+                      bodyStyle={{ padding: 0 }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform = 'translateY(-8px)'
+                        ;(e.currentTarget as HTMLElement).style.boxShadow = `0 20px 50px ${colors[0]}25`
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+                        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      {/* Cover */}
+                      <div style={{
+                        height: 140,
+                        background: article.cover_image
+                          ? `url(${article.cover_image}) center/cover`
+                          : `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)`,
+                        position: 'relative',
+                      }}>
+                        {!article.cover_image && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '100%',
+                            fontSize: 48,
+                          }}>
+                            <BookOutlined style={{ color: 'rgba(255,255,255,0.8)' }} />
+                          </div>
+                        )}
+                        <Tag
+                          style={{
+                            position: 'absolute',
+                            top: 12,
+                            right: 12,
+                            background: 'rgba(255,255,255,0.95)',
+                            color: colors[0],
+                            borderRadius: 8,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            border: 'none',
+                          }}
+                        >
+                          {categories.find(c => c.key === article.category)?.name || article.category}
+                        </Tag>
+                      </div>
+
+                      {/* Content */}
+                      <div style={{ padding: '16px 20px 20px' }}>
+                        <h3 style={{
+                          fontSize: 16,
+                          fontWeight: 600,
+                          marginBottom: 8,
+                          color: '#1f2937',
+                          lineHeight: 1.4,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}>
+                          {article.title}
+                        </h3>
+                        {article.summary && (
+                          <p style={{
+                            fontSize: 13,
+                            color: '#6b7280',
+                            lineHeight: 1.6,
+                            marginBottom: 12,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}>
+                            {article.summary}
+                          </p>
+                        )}
+                        {article.tags && (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                            {article.tags.split(',').slice(0, 2).map((tag, i) => (
+                              <Tag
+                                key={i}
+                                style={{
+                                  background: '#f3f4f6',
+                                  color: '#6b7280',
+                                  borderRadius: 8,
+                                  fontSize: 11,
+                                  border: 'none',
+                                }}
+                              >
+                                {tag.trim()}
+                              </Tag>
+                            ))}
+                          </div>
+                        )}
                         <div style={{
-                          height: 160,
-                          backgroundImage: `url(${article.cover_image})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        }} />
-                      ) : (
-                        <div style={{
-                          height: 160,
-                          background: 'linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%)',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
+                          justifyContent: 'space-between',
+                          color: '#9ca3af',
+                          fontSize: 12,
                         }}>
-                          <span style={{ fontSize: 48, color: '#722ed1' }}>📖</span>
-                        </div>
-                      )
-                    }
-                  >
-                    <Tag color={getCategoryColor(article.category)} style={{ marginBottom: 8 }}>
-                      {categories.find(c => c.key === article.category)?.name || article.category}
-                    </Tag>
-                    <Card.Meta
-                      title={<div style={{ fontSize: 16 }}>{article.title}</div>}
-                      description={
-                        <div>
-                          <p style={{
-                            color: '#8c8c8c',
-                            fontSize: 13,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
-                            {article.summary || article.title}
-                          </p>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, color: '#8c8c8c', fontSize: 12 }}>
+                          <div style={{ display: 'flex', gap: 12 }}>
                             <span><EyeOutlined /> {article.view_count}</span>
                             <span><LikeOutlined /> {article.like_count}</span>
                           </div>
+                          <span>
+                            {new Date(article.created_at).toLocaleDateString('zh-CN')}
+                          </span>
                         </div>
-                      }
-                    />
-                  </Card>
-                </Col>
-              ))}
+                      </div>
+                    </Card>
+                  </Col>
+                )
+              })}
             </Row>
 
-            {articles.length === 0 && (
-              <Empty description="暂无文章" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            )}
-
-            {total > pageSize && (
-              <div style={{ textAlign: 'center', marginTop: 24 }}>
-                <Pagination
-                  current={page}
-                  pageSize={pageSize}
-                  total={total}
-                  onChange={setPage}
-                />
-              </div>
-            )}
+            {/* Pagination */}
+            <div style={{ textAlign: 'center', marginTop: 40 }}>
+              <Pagination
+                current={page}
+                total={total}
+                pageSize={pageSize}
+                onChange={setPage}
+                showSizeChanger={false}
+                style={{ display: 'inline-block' }}
+              />
+            </div>
           </>
+        ) : (
+          <Card
+            style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              border: 'none',
+              borderRadius: 20,
+            }}
+          >
+            <BookOutlined style={{ fontSize: 48, color: '#d1d5db', marginBottom: 16 }} />
+            <h3 style={{ color: '#6b7280', marginBottom: 8 }}>暂无文章</h3>
+            <p style={{ color: '#9ca3af', fontSize: 14 }}>试试其他分类或搜索条件</p>
+          </Card>
         )}
       </div>
     </div>

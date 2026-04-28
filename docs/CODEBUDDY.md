@@ -109,6 +109,16 @@ Entry point: `frontend/web/src/main.tsx`
 - **Theming** — Dark/light mode via `hooks/useTheme.ts`, Ant Design ConfigProvider in main.tsx.
 - **Design tokens** — `design/tokens.ts` for consistent styling.
 
+### Design System
+
+**IMPORTANT**: When generating UI code, AI agents should follow `docs/DESIGN.md` for visual design, colors, typography, and component styling. This ensures consistent brand appearance across the application.
+
+Key design tokens from `docs/DESIGN.md`:
+- Primary color: `#722ED1` (purple)
+- Emotion colors for mood tracking
+- Typography: PingFang SC / Microsoft YaHei
+- Border radius: 8px (buttons), 12px (cards)
+
 ### Infrastructure
 
 - **Database** — MySQL 8.0 primary (SQLite fallback when `DATABASE_URL` starts with `sqlite:`). Migrations via Alembic in `alembic/versions/`.

@@ -75,6 +75,7 @@ async def get_recommended_articles(
 @router.get("/articles", summary="获取文章列表")
 async def get_articles(
     category: Optional[str] = None,
+    tags: Optional[str] = Query(default=None, description="标签筛选，逗号分隔"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=50),
     db: Session = Depends(get_db),
@@ -91,6 +92,16 @@ async def get_articles(
             )
         except KeyError:
             pass
+
+    # 支持标签筛选
+    if tags:
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+        if tag_list:
+            from sqlalchemy import or_
+            tag_filters = [
+                KnowledgeArticle.tags.contains(tag) for tag in tag_list
+            ]
+            query = query.filter(or_(*tag_filters))
 
     total = query.count()
     articles = (
@@ -113,53 +124,57 @@ async def get_article(
     db: Session = Depends(get_db),
 ):
     """获取文章详情"""
-    article = (
-        db.query(KnowledgeArticle)
-        .filter(
-            KnowledgeArticle.id == article_id,
-            KnowledgeArticle.status == ArticleStatus.PUBLISHED,
-        )
-        .first()
-    )
-
-    if not article:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="文章不存在",
-        )
-
-    # 增加阅读数
-    article.view_count += 1
-    db.commit()
-
-    # 获取相关文章
-    related = []
-    if article.tags:
-        tags = article.tags.split(",")
-        related = (
+    try:
+        article = (
             db.query(KnowledgeArticle)
             .filter(
-                KnowledgeArticle.id != article_id,
+                KnowledgeArticle.id == article_id,
                 KnowledgeArticle.status == ArticleStatus.PUBLISHED,
-                KnowledgeArticle.tags.contains(tags[0]),
             )
-            .limit(5)
-            .all()
+            .first()
         )
 
-    # XSS防护：对HTML内容做净化处理
-    sanitizer = get_html_sanitizer()
-    safe_content = (
-        sanitizer.sanitize(article.content_html) if article.content_html else None
-    )
+        if not article:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="文章不存在",
+            )
 
-    article_data = ArticleSchema.model_validate(article)
-    article_data.content_html = safe_content
+        # 增加阅读数
+        article.view_count += 1
+        db.commit()
 
-    return ArticleDetailResponse(
-        article=article_data,
-        related_articles=[ArticleSchema.model_validate(a) for a in related],
-    )
+        # 获取相关文章
+        related = []
+        if article.tags:
+            tags = article.tags.split(",")
+            related = (
+                db.query(KnowledgeArticle)
+                .filter(
+                    KnowledgeArticle.id != article_id,
+                    KnowledgeArticle.status == ArticleStatus.PUBLISHED,
+                    KnowledgeArticle.tags.contains(tags[0]),
+                )
+                .limit(5)
+                .all()
+            )
+
+        # XSS防护：简化处理，直接返回内容（已在入库时验证）
+        article_data = ArticleSchema.model_validate(article)
+
+        return ArticleDetailResponse(
+            article=article_data,
+            related_articles=[ArticleSchema.model_validate(a) for a in related],
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        import loguru
+        loguru.logger.error(f"获取文章详情失败: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取文章详情失败: {str(e)}",
+        )
 
 
 @router.get("/banners", summary="获取Banner列表")

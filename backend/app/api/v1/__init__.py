@@ -3,7 +3,7 @@ API v1路由
 """
 from fastapi import APIRouter
 
-from app.api.v1 import auth, user, mbti, chat, diary, knowledge, member, payment, admin, user_memory, voice, growth, sbti, attachment, profile, enterprise, feedback, analytics, checkin
+from app.api.v1 import auth, user, mbti, chat, diary, knowledge, member, payment, admin, user_memory, voice, growth, sbti, attachment, profile, enterprise, feedback, analytics, checkin, avatar, sentiment
 
 api_router = APIRouter()
 
@@ -26,6 +26,8 @@ api_router.include_router(enterprise.router)
 api_router.include_router(feedback.router)
 api_router.include_router(analytics.router)
 api_router.include_router(checkin.router)
+api_router.include_router(avatar.router)
+api_router.include_router(sentiment.router)
 
 from app.websocket import router as ws_router
 api_router.include_router(ws_router)

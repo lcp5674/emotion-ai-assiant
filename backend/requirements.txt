@@ -25,6 +25,13 @@ openai==1.10.0
 anthropic==0.18.0
 qianfan>=0.3.4  # 百度文心
 
+# Sentiment Analysis (CPU only)
+# snownlp - 轻量级中文情感分析库，无需深度学习框架
+snownlp>=0.12.0
+
+# 如果需要 transformers 模型（更大但更准确），使用 CPU 版本
+# torch>=2.0.0+cpu; extra == 'cpu'  # CPU版本需要从源码安装，太复杂
+
 # HTTP client
 httpx==0.26.0
 

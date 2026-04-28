@@ -78,23 +78,25 @@ export default function CheckInPage() {
     }
   }
 
-  const handleCreateReminder = async (values: any) => {
-    setReminderLoading(true)
-    try {
-      await api.checkin.createReminder({
-        ...values,
-        scheduled_time: values.scheduled_time.format('YYYY-MM-DD HH:mm:ss'),
-      })
-      message.success('提醒创建成功')
-      setReminderVisible(false)
-      form.resetFields()
-    } catch (error) {
-      console.error('创建提醒失败', error)
-      message.error('创建提醒失败')
-    } finally {
-      setReminderLoading(false)
+const handleCreateReminder = async (values: any) => {
+      setReminderLoading(true)
+      try {
+        await api.checkin.createReminder({
+          reminder_type: 'daily_checkin',
+          title: values.title,
+          message: values.message || '',
+          scheduled_time: dayjs(values.scheduled_time).format('YYYY-MM-DDTHH:mm:ss'),
+        })
+        message.success('提醒创建成功')
+        setReminderVisible(false)
+        form.resetFields()
+      } catch (error) {
+        console.error('创建提醒失败', error)
+        message.error('创建提醒失败')
+      } finally {
+        setReminderLoading(false)
+      }
     }
-  }
 
   const getStreakEmoji = (streak: number) => {
     if (streak >= 30) return '🔥'
@@ -127,11 +129,14 @@ export default function CheckInPage() {
         color: '#fff',
       }}>
         <div className="container">
-          <Link to="/">
-            <Button icon={<ArrowLeftOutlined />} type="text" style={{ color: '#fff', position: 'absolute', left: 16, top: 20 }}>
-              返回
-            </Button>
-          </Link>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            type="text"
+            style={{ color: '#fff', position: 'absolute', left: 16, top: 20 }}
+            onClick={() => navigate(-1)}
+          >
+            返回
+          </Button>
           <CalendarOutlined style={{ fontSize: 48, marginBottom: 16 }} />
           <h1 style={{ fontSize: 28, marginBottom: 8 }}>每日打卡</h1>
           <p>坚持打卡，获得更多成就与奖励</p>
@@ -365,12 +370,13 @@ export default function CheckInPage() {
             <Input placeholder="例如：每日心情记录提醒" />
           </Form.Item>
 
-          <Form.Item
-            name="message"
-            label="提醒内容"
-          >
-            <Input.TextArea placeholder="请输入提醒内容..." rows={3} />
-          </Form.Item>
+              <Form.Item
+                name="message"
+                label="提醒内容"
+                rules={[{ required: false }]} // 提醒内容不是必填的
+              >
+                <Input.TextArea placeholder="请输入提醒内容..." rows={3} />
+              </Form.Item>
 
           <Form.Item
             name="scheduled_time"

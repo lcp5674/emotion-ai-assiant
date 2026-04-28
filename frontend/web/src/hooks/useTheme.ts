@@ -12,10 +12,7 @@ const themeColors = {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'light'
-    return (localStorage.getItem('theme') as Theme) || 'light'
-  })
+  const [theme, setTheme] = useState<Theme>(() => 'light')
 
   const [themeColor, setThemeColor] = useState<ThemeColor>(() => {
     if (typeof window === 'undefined') return 'purple'
@@ -24,12 +21,8 @@ export function useTheme() {
 
   // 应用主题到 body
   useEffect(() => {
-    if (theme === 'dark') {
-      document.body.classList.add('dark')
-    } else {
-      document.body.classList.remove('dark')
-    }
-    localStorage.setItem('theme', theme)
+    document.body.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
   }, [theme])
 
   useEffect(() => {
@@ -37,7 +30,7 @@ export function useTheme() {
   }, [themeColor])
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+    setTheme('light')
   }
 
   const changeThemeColor = (color: ThemeColor) => {

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Card, Tag, Spin, Button, Divider } from 'antd'
 import { ArrowLeftOutlined, EyeOutlined, LikeOutlined, StarOutlined } from '@ant-design/icons'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { api } from '../../api/request'
 
 export default function ArticleDetail() {
@@ -120,9 +122,9 @@ export default function ArticleDetail() {
           <Divider />
 
           {/* Content */}
-          <div style={{ lineHeight: 2, fontSize: 16, color: '#262626' }}>
+          <div style={{ lineHeight: 2, fontSize: 16, color: '#262626' }} className="article-content">
             {article.content ? (
-              <div dangerouslySetInnerHTML={{ __html: article.content }} />
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content}</ReactMarkdown>
             ) : (
               <p>{article.summary || '暂无内容'}</p>
             )}
